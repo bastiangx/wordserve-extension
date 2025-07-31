@@ -1,0 +1,54 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+@layer base {
+  :root {
+    --radius: 0.625rem;
+    --background: 0.139 0.029 285.882; /* #191724 */
+    --foreground: 0.844 0.009 302.727; /* #e0def4 */
+    --card: 0.174 0.033 285.556; /* #1f1d2e */
+    --card-foreground: 0.844 0.009 302.727; /* #e0def4 */
+    --popover: 0.174 0.033 285.556; /* #1f1d2e */
+    --popover-foreground: 0.844 0.009 302.727; /* #e0def4 */
+    --primary: 0.647 0.137 320.109; /* #c4a7e7 */
+    --primary-foreground: 0.139 0.029 285.882; /* #191724 */
+    --secondary: 0.214 0.037 284.444; /* #26233a */
+    --secondary-foreground: 0.844 0.009 302.727; /* #e0def4 */
+    --muted: 0.214 0.037 284.444; /* #26233a */
+    --muted-foreground: 0.597 0.031 295.833; /* #908caa */
+    --accent: 0.214 0.037 284.444; /* #26233a */
+    --accent-foreground: 0.844 0.009 302.727; /* #e0def4 */
+    --destructive: 0.639 0.127 358.32; /* #eb6f92 */
+    --destructive-foreground: 0.844 0.009 302.727; /* #e0def4 */
+    --border: 0.214 0.037 284.444; /* #26233a */
+    --input: 0.214 0.037 284.444; /* #26233a */
+    --ring: 0.647 0.137 320.109; /* #c4a7e7 */
+    --chart-1: 0.639 0.127 358.32; /* #eb6f92 */
+    --chart-2: 0.775 0.09 77.727; /* #f6c177 */
+    --chart-3: 0.789 0.065 19.048; /* #ebbcba */
+    --chart-4: 0.454 0.065 211.111; /* #31748f */
+    --chart-5: 0.693 0.069 199.231; /* #9ccfd8 */
+    --sidebar: 0.174 0.033 285.556; /* #1f1d2e */
+    --sidebar-foreground: 0.844 0.009 302.727; /* #e0def4 */
+    --sidebar-primary: 0.647 0.137 320.109; /* #c4a7e7 */
+    --sidebar-primary-foreground: 0.139 0.029 285.882; /* #191724 */
+    --sidebar-accent: 0.214 0.037 284.444; /* #26233a */
+    --sidebar-accent-foreground: 0.844 0.009 302.727; /* #e0def4 */
+    --sidebar-border: 0.214 0.037 284.444; /* #26233a */
+    --sidebar-ring: 0.647 0.137 320.109; /* #c4a7e7 */
+  }
+}
+
+@layer base {
+  * {
+    border-color: oklch(var(--border));
+  }
+  body {
+    background-color: oklch(var(--background));
+    color: oklch(var(--foreground));
+    font-family: "Space Mono", monospace;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "PT Serif", serif;
+  }
+}
