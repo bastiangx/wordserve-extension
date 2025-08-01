@@ -24,3 +24,7 @@ web-ext.config.ts
 *.njsproj
 *.sln
 *.sw?
+agents
+todo.md
+wordserve
+ws-obsidian
