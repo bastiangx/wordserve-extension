@@ -1,54 +1,217 @@
-@import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Geist+Mono:wght@100..900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   :root {
-    --radius: 0.625rem;
-    --background: 0.139 0.029 285.882; /* #191724 */
-    --foreground: 0.844 0.009 302.727; /* #e0def4 */
-    --card: 0.174 0.033 285.556; /* #1f1d2e */
-    --card-foreground: 0.844 0.009 302.727; /* #e0def4 */
-    --popover: 0.174 0.033 285.556; /* #1f1d2e */
-    --popover-foreground: 0.844 0.009 302.727; /* #e0def4 */
-    --primary: 0.647 0.137 320.109; /* #c4a7e7 */
-    --primary-foreground: 0.139 0.029 285.882; /* #191724 */
-    --secondary: 0.214 0.037 284.444; /* #26233a */
-    --secondary-foreground: 0.844 0.009 302.727; /* #e0def4 */
-    --muted: 0.214 0.037 284.444; /* #26233a */
-    --muted-foreground: 0.597 0.031 295.833; /* #908caa */
-    --accent: 0.214 0.037 284.444; /* #26233a */
-    --accent-foreground: 0.844 0.009 302.727; /* #e0def4 */
-    --destructive: 0.639 0.127 358.32; /* #eb6f92 */
-    --destructive-foreground: 0.844 0.009 302.727; /* #e0def4 */
-    --border: 0.214 0.037 284.444; /* #26233a */
-    --input: 0.214 0.037 284.444; /* #26233a */
-    --ring: 0.647 0.137 320.109; /* #c4a7e7 */
-    --chart-1: 0.639 0.127 358.32; /* #eb6f92 */
-    --chart-2: 0.775 0.09 77.727; /* #f6c177 */
-    --chart-3: 0.789 0.065 19.048; /* #ebbcba */
-    --chart-4: 0.454 0.065 211.111; /* #31748f */
-    --chart-5: 0.693 0.069 199.231; /* #9ccfd8 */
-    --sidebar: 0.174 0.033 285.556; /* #1f1d2e */
-    --sidebar-foreground: 0.844 0.009 302.727; /* #e0def4 */
-    --sidebar-primary: 0.647 0.137 320.109; /* #c4a7e7 */
-    --sidebar-primary-foreground: 0.139 0.029 285.882; /* #191724 */
-    --sidebar-accent: 0.214 0.037 284.444; /* #26233a */
-    --sidebar-accent-foreground: 0.844 0.009 302.727; /* #e0def4 */
-    --sidebar-border: 0.214 0.037 284.444; /* #26233a */
-    --sidebar-ring: 0.647 0.137 320.109; /* #c4a7e7 */
+    /* Rosépine color scheme - official HSL values */
+    --background: 249 22% 12%; /* #191724 base */
+    --foreground: 245 50% 91%; /* #e0def4 text */
+    --card: 247 23% 15%; /* #1f1d2e surface */
+    --card-foreground: 245 50% 91%; /* #e0def4 text */
+    --popover: 248 25% 18%; /* #26233a overlay */
+    --popover-foreground: 245 50% 91%; /* #e0def4 text */
+    --primary: 189 43% 73%; /* #9ccfd8 foam */
+    --primary-foreground: 249 22% 12%; /* #191724 base */
+    --secondary: 267 57% 78%; /* #c4a7e7 iris */
+    --secondary-foreground: 249 22% 12%; /* #191724 base */
+    --muted: 249 12% 47%; /* #6e6a86 muted */
+    --muted-foreground: 248 15% 61%; /* #908caa subtle */
+    --accent: 189 43% 73%; /* #9ccfd8 foam */
+    --accent-foreground: 249 22% 12%; /* #191724 base */
+    --destructive: 343 76% 68%; /* #eb6f92 love */
+    --destructive-foreground: 245 50% 91%; /* #e0def4 text */
+    --border: 248 25% 18%; /* #26233a overlay */
+    --input: 247 23% 15%; /* #1f1d2e surface */
+    --ring: 189 43% 73%; /* #9ccfd8 foam */
+    --radius: 6px;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
-}
 
-@layer base {
   * {
-    border-color: oklch(var(--border));
+    @apply border-border;
   }
+
   body {
-    background-color: oklch(var(--background));
-    color: oklch(var(--foreground));
-    font-family: "Space Mono", monospace;
+    @apply bg-background text-foreground;
+    font-family: "Geist Mono", monospace;
   }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: "PT Serif", serif;
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Atkinson Hyperlegible", sans-serif;
+  }
+
+  /* Custom button hover states with Rosépine colors */
+  .hover\:text-primary\/80:hover {
+    color: hsl(189 43% 73% / 0.8);
+  }
+
+  /* Tab button hover states */
+  button:hover {
+    transition: all 0.2s ease;
+  }
+
+  /* Vertical tab styling */
+  nav button {
+    transition: all 0.15s ease-in-out;
+  }
+
+  nav button:hover {
+    background-color: hsl(var(--muted) / 0.5);
+  }
+
+  nav button.active {
+    background-color: hsl(var(--primary) / 0.1);
+    border-color: hsl(var(--primary) / 0.2);
+    color: hsl(var(--primary));
+  }
+
+  /* Sidebar active state */
+  [data-sidebar="menu-button"][data-active="true"] {
+    background-color: hsl(var(--primary) / 0.1) !important;
+    color: hsl(var(--primary)) !important;
+    font-weight: 500 !important;
+  }
+
+  [data-sidebar="menu-button"][data-active="true"]:hover {
+    background-color: hsl(var(--primary) / 0.15) !important;
+  }
+
+  /* Remove number input arrows */
+  /* Chrome, Safari, Edge, Opera */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Firefox */
+  input[type="number"] {
+    appearance: textfield;
+  }
+
+  /* Input hover states */
+  input:hover:not(:focus):not(:disabled) {
+    border-color: hsl(var(--primary) / 0.4);
+  }
+
+  select:hover:not(:focus):not(:disabled) {
+    border-color: hsl(var(--primary) / 0.4);
+  }
+
+  textarea:hover:not(:focus):not(:disabled) {
+    border-color: hsl(var(--primary) / 0.4);
+  }
+
+  .dark {
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  /* Atkinson Hyperlegible font classes */
+  .atkinson-hyperlegible-regular {
+    font-family: "Atkinson Hyperlegible", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  .atkinson-hyperlegible-bold {
+    font-family: "Atkinson Hyperlegible", sans-serif;
+    font-weight: 700;
+    font-style: normal;
+  }
+
+  .atkinson-hyperlegible-regular-italic {
+    font-family: "Atkinson Hyperlegible", sans-serif;
+    font-weight: 400;
+    font-style: italic;
+  }
+
+  .atkinson-hyperlegible-bold-italic {
+    font-family: "Atkinson Hyperlegible", sans-serif;
+    font-weight: 700;
+    font-style: italic;
+  }
+
+  /* Geist Mono font classes */
+  .geist-mono-100 {
+    font-family: "Geist Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 100;
+    font-style: normal;
+  }
+  .geist-mono-200 {
+    font-family: "Geist Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 200;
+    font-style: normal;
+  }
+  .geist-mono-300 {
+    font-family: "Geist Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+  }
+  .geist-mono-400 {
+    font-family: "Geist Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+  }
+  .geist-mono-500 {
+    font-family: "Geist Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+  }
+  .geist-mono-600 {
+    font-family: "Geist Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+  }
+  .geist-mono-700 {
+    font-family: "Geist Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 700;
+    font-style: normal;
+  }
+  .geist-mono-800 {
+    font-family: "Geist Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 800;
+    font-style: normal;
+  }
+  .geist-mono-900 {
+    font-family: "Geist Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 900;
+    font-style: normal;
+  }
+
+  /* Card background matching */
+  .card {
+    background-color: hsl(var(--background));
+    border-color: hsl(var(--border));
   }
 }
