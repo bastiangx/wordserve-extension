@@ -3,7 +3,7 @@ import {
   SuggestionMenu,
   Suggestion,
   SuggestionMenuProps,
-} from "./suggestion-menu";
+} from "./menu";
 
 export class ReactSuggestionMenuRenderer {
   private root: Root | null = null;
@@ -12,7 +12,16 @@ export class ReactSuggestionMenuRenderer {
   render(props: SuggestionMenuProps) {
     if (!this.container) {
       this.container = document.createElement("div");
-      this.container.className = "wordserve-menu-container";
+      this.container.className = "ws-menu-container";
+      this.container.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 2147483647;
+        pointer-events: none;
+        width: 100vw;
+        height: 100vh;
+      `;
       document.body.appendChild(this.container);
       this.root = createRoot(this.container);
     }

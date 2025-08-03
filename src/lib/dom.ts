@@ -1,5 +1,18 @@
-import { WordServeWASMProxy, type Suggestion as WASMSuggestion, type WASMCompleterStats } from "./wordserve-wasm-proxy";
-import { ReactSuggestionMenuRenderer, type Suggestion } from "@/components/wordserve";
+import {
+  WordServeWASMProxy,
+  type Suggestion as WASMSuggestion,
+  type WASMCompleterStats,
+} from "./wasm/ws-wasm";
+import {
+  ReactSuggestionMenuRenderer,
+  type Suggestion,
+} from "@/components/wordserve";
+import { 
+  KeyboardHandler,
+  type KeyboardHandlerCallbacks,
+  type KeyboardHandlerSettings 
+} from "./kbd";
+import { shouldActivateForDomain, type DomainSettings } from "./domains";
 
 interface WordServeEngine {
   waitForReady(): Promise<void>;
@@ -32,23 +45,20 @@ export interface WordServeSettings {
     customFontFamily?: string;
     customFontSize?: number;
   };
-  domains: {
-    blacklistMode: boolean;
-    blacklist: string[];
-    whitelist: string[];
-  };
+  domains: DomainSettings;
 }
 
-interface InputState {
-  element: HTMLElement;
-  currentValue: string;
-  caretPosition: number;
+export interface InputState {
   currentWord: string;
   wordStart: number;
   wordEnd: number;
   suggestions: Array<{ word: string; rank: number }>;
   selectedIndex: number;
   isActive: boolean;
+  position?: { x: number; y: number }; // Store initial position to prevent shifting
+  currentValue: string;
+  caretPosition: number;
+  keyboardHandler?: KeyboardHandler;
 }
 
 export class DOMManager {
@@ -64,36 +74,9 @@ export class DOMManager {
     this.wordserve = wordserve;
     this.settings = settings;
 
-    if (this.shouldActivateForDomain(window.location.hostname)) {
+    if (shouldActivateForDomain(window.location.hostname, this.settings.domains)) {
       this.init();
     }
-  }
-
-  private shouldActivateForDomain(hostname: string): boolean {
-    const { blacklistMode, blacklist, whitelist } = this.settings.domains;
-
-    if (blacklistMode) {
-      // In blacklist mode, activate unless domain is blacklisted
-      return !this.matchesDomainList(hostname, blacklist);
-    } else {
-      // In whitelist mode, only activate if domain is whitelisted
-      return this.matchesDomainList(hostname, whitelist);
-    }
-  }
-
-  private matchesDomainList(hostname: string, domainList: string[]): boolean {
-    return domainList.some((pattern) => {
-      // Convert glob patterns to regex
-      const regexPattern = pattern
-        .replace(/\./g, "\\.")
-        .replace(/\*/g, ".*")
-        .replace(/\?/g, ".");
-
-      const regex = new RegExp(`^${regexPattern}$`, "i");
-      return (
-        regex.test(hostname) || hostname.includes(pattern.replace(/\*/g, ""))
-      );
-    });
   }
 
   private init() {
@@ -104,10 +87,10 @@ export class DOMManager {
 
   private createGlobalStyles() {
     const style = document.createElement("style");
-    style.id = "wordserve-styles";
+    style.id = "ws-styles";
     style.textContent = `
       /* Rose Pine theme colors for WordServe suggestion menu */
-      .wordserve-suggestion-menu {
+      .ws-suggestion-menu {
         position: fixed;
         background: #191724;
         border: 1px solid #26233a;
@@ -122,10 +105,10 @@ export class DOMManager {
         font-size: ${this.getFontSize()}px;
         font-weight: ${this.settings.fontWeight};
         backdrop-filter: blur(8px);
-        animation: wordserve-fade-in 0.15s ease-out;
+        animation: ws-fade-in 0.15s ease-out;
       }
       
-      @keyframes wordserve-fade-in {
+      @keyframes ws-fade-in {
         from {
           opacity: 0;
           transform: scale(0.95) translateY(-4px);
@@ -136,12 +119,12 @@ export class DOMManager {
         }
       }
       
-      .wordserve-suggestion-menu.compact {
+      .ws-suggestion-menu.compact {
         font-size: ${this.getFontSize() * 0.9}px;
       }
       
-      .wordserve-suggestion-item {
-        padding: ${this.settings.compactMode ? '6px 12px' : '8px 12px'};
+      .ws-suggestion-item {
+        padding: ${this.settings.compactMode ? "6px 12px" : "8px 12px"};
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -152,28 +135,28 @@ export class DOMManager {
         margin: 2px 4px;
       }
       
-      .wordserve-suggestion-item:hover {
+      .ws-suggestion-item:hover {
         background: #1f1d2e;
       }
       
-      .wordserve-suggestion-item.selected {
+      .ws-suggestion-item.selected {
         background: #31748f;
         color: #e0def4;
       }
       
-      .wordserve-suggestion-word {
+      .ws-suggestion-word {
         flex: 1;
         display: flex;
         align-items: center;
       }
       
-      .wordserve-suggestion-prefix {
+      .ws-suggestion-prefix {
         color: #908caa;
         font-weight: 500;
         ${this.settings.accessibility.boldSuffix ? "font-weight: bold;" : ""}
       }
       
-      .wordserve-suggestion-suffix {
+      .ws-suggestion-suffix {
         color: #e0def4;
         ${this.settings.accessibility.boldSuffix ? "font-weight: bold;" : ""}
         ${
@@ -183,48 +166,47 @@ export class DOMManager {
         }
       }
       
-      .wordserve-suggestion-meta {
+      .ws-suggestion-meta {
         display: flex;
         align-items: center;
         gap: 4px;
         margin-left: 8px;
       }
       
-      .wordserve-suggestion-number,
-      .wordserve-suggestion-rank {
+      .ws-suggestion-number,
+      .ws-suggestion-rank {
         font-size: 0.75rem;
         color: #6e6a86;
         font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
       }
       
-      .wordserve-suggestion-item.selected .wordserve-suggestion-number,
-      .wordserve-suggestion-item.selected .wordserve-suggestion-rank {
+      .ws-suggestion-item.selected .ws-suggestion-number,
+      .ws-suggestion-item.selected .ws-suggestion-rank {
         color: #e0def4;
         opacity: 0.8;
       }
       
-      /* Scrollbar styling for menu */
-      .wordserve-suggestion-menu::-webkit-scrollbar {
+      .ws-suggestion-menu::-webkit-scrollbar {
         width: 6px;
       }
       
-      .wordserve-suggestion-menu::-webkit-scrollbar-track {
+      .ws-suggestion-menu::-webkit-scrollbar-track {
         background: transparent;
       }
       
-      .wordserve-suggestion-menu::-webkit-scrollbar-thumb {
+      .ws-suggestion-menu::-webkit-scrollbar-thumb {
         background: #26233a;
         border-radius: 3px;
       }
       
-      .wordserve-suggestion-menu::-webkit-scrollbar-thumb:hover {
+      .ws-suggestion-menu::-webkit-scrollbar-thumb:hover {
         background: #403d52;
       }
     `;
 
     if (this.settings.accessibility.customColor) {
       style.textContent += `
-        .wordserve-suggestion-item.selected {
+        .ws-suggestion-item.selected {
           background: ${this.settings.accessibility.customColor} !important;
         }
       `;
@@ -232,7 +214,7 @@ export class DOMManager {
 
     if (this.settings.accessibility.customFontFamily) {
       style.textContent += `
-        .wordserve-suggestion-menu {
+        .ws-suggestion-menu {
           font-family: ${this.settings.accessibility.customFontFamily};
         }
       `;
@@ -311,7 +293,6 @@ export class DOMManager {
     }
 
     const inputState: InputState = {
-      element,
       currentValue: this.getInputValue(element),
       caretPosition: 0,
       currentWord: "",
@@ -322,11 +303,34 @@ export class DOMManager {
       isActive: false,
     };
 
+    // Create keyboard handler callbacks
+    const keyboardCallbacks: KeyboardHandlerCallbacks = {
+      onNavigate: (direction: number) => this.navigateSuggestions(element, direction),
+      onCommit: (addSpace: boolean) => this.commitSuggestion(element, addSpace),
+      onHide: () => this.hideSuggestions(element),
+      onSelectByNumber: (index: number) => this.selectSuggestion(element, index),
+    };
+
+    // Create keyboard handler settings from our settings
+    const keyboardSettings: KeyboardHandlerSettings = {
+      numberSelection: this.settings.numberSelection,
+      autoInsertionCommitMode: this.settings.autoInsertionCommitMode,
+      smartBackspace: this.settings.smartBackspace,
+    };
+
+    // Create keyboard handler
+    inputState.keyboardHandler = new KeyboardHandler(
+      element,
+      inputState,
+      keyboardCallbacks,
+      keyboardSettings
+    );
+
     this.inputStates.set(element, inputState);
 
-    // Event listeners
+    // Event listeners (keyboard handler manages menu navigation, but we need backspace)
     element.addEventListener("input", this.handleInput.bind(this, element));
-    element.addEventListener("keydown", this.handleKeyDown.bind(this, element));
+    element.addEventListener("keydown", this.handleGlobalKeys.bind(this, element));
     element.addEventListener("focus", this.handleFocus.bind(this, element));
     element.addEventListener("blur", this.handleBlur.bind(this, element));
     element.addEventListener("click", this.handleClick.bind(this, element));
@@ -362,8 +366,6 @@ export class DOMManager {
     return true;
   }
 
-
-
   private handleInput(element: HTMLElement, event: Event) {
     const inputState = this.inputStates.get(element);
     if (!inputState) return;
@@ -375,57 +377,19 @@ export class DOMManager {
     this.debounceSearch(element);
   }
 
-  private handleKeyDown(element: HTMLElement, event: KeyboardEvent) {
+  private handleGlobalKeys(element: HTMLElement, event: KeyboardEvent) {
     const inputState = this.inputStates.get(element);
-    if (!inputState || !inputState.isActive) return;
+    if (!inputState) return;
 
-    // Number selection (1-9)
-    if (this.settings.numberSelection && event.key >= "1" && event.key <= "9") {
-      const index = parseInt(event.key) - 1;
-      if (index < inputState.suggestions.length) {
-        event.preventDefault();
-        this.selectSuggestion(element, index);
-        return;
-      }
-    }
-
+    // Only handle keys that the keyboard handler doesn't manage
+    // or keys that need to work even when menu isn't active
     switch (event.key) {
-      case "ArrowDown":
-        event.preventDefault();
-        this.navigateSuggestions(element, 1);
-        break;
-      case "ArrowUp":
-        event.preventDefault();
-        this.navigateSuggestions(element, -1);
-        break;
-      case "Enter":
-        event.preventDefault();
-        if (
-          this.settings.autoInsertionCommitMode === "enter-only" ||
-          this.settings.autoInsertionCommitMode === "space-commits"
-        ) {
-          this.commitSuggestion(element, false);
-        }
-        break;
-      case "Tab":
-        event.preventDefault();
-        this.commitSuggestion(element, true);
-        break;
-      case "Escape":
-        event.preventDefault();
-        this.hideSuggestions(element);
-        break;
-      case " ":
-        if (this.settings.autoInsertionCommitMode === "space-commits") {
-          event.preventDefault();
-          this.commitSuggestion(element, true);
-        }
-        break;
       case "Backspace":
         if (this.settings.smartBackspace) {
           this.handleSmartBackspace(element, event);
         }
         break;
+      // Let keyboard handler manage all other keys when menu is active
     }
   }
 
@@ -517,16 +481,12 @@ export class DOMManager {
     }
 
     // Convert suggestions to the format expected by the React component
-    const suggestions: Suggestion[] = inputState.suggestions.map(s => ({
+    const suggestions: Suggestion[] = inputState.suggestions.map((s) => ({
       word: s.word,
-      rank: s.rank
+      rank: s.rank,
     }));
 
-    const rect = element.getBoundingClientRect();
-    const position = {
-      x: rect.left,
-      y: rect.bottom + window.scrollY + 4
-    };
+    const position = this.calculateMenuPosition(element, inputState);
 
     this.menuRenderer.render({
       suggestions,
@@ -541,14 +501,125 @@ export class DOMManager {
       },
       showRanking: this.settings.showRankingOverride,
       showNumbers: this.settings.numberSelection,
-      compactMode: this.settings.compactMode
+      compactMode: this.settings.compactMode,
     });
+  }
+
+  private calculateMenuPosition(
+    element: HTMLElement,
+    inputState: InputState
+  ): { x: number; y: number } {
+    // If position is already stored, reuse it to prevent shifting during navigation
+    if (inputState.position) {
+      return inputState.position;
+    }
+
+    const isContentEditable =
+      element.isContentEditable || element.tagName === "DIV";
+
+    let position: { x: number; y: number };
+    if (isContentEditable) {
+      position = this.getContentEditableCaretPosition(element);
+    } else {
+      position = this.getInputCaretPosition(element, inputState.caretPosition);
+    }
+
+    // Store the position to prevent shifting during navigation
+    inputState.position = position;
+    return position;
+  }
+
+  private getInputCaretPosition(
+    element: HTMLElement,
+    caretPosition: number
+  ): { x: number; y: number } {
+    const input = element as HTMLInputElement;
+    const rect = element.getBoundingClientRect();
+
+    // Create a temporary element to measure text width
+    const tempDiv = document.createElement("div");
+    tempDiv.style.cssText = `
+      position: fixed;
+      visibility: hidden;
+      white-space: pre;
+      font: ${window.getComputedStyle(input).font};
+      padding: ${window.getComputedStyle(input).padding};
+      border: ${window.getComputedStyle(input).border};
+    `;
+
+    const textBeforeCaret = input.value.substring(0, caretPosition);
+    tempDiv.textContent = textBeforeCaret;
+    document.body.appendChild(tempDiv);
+
+    const textWidth = tempDiv.getBoundingClientRect().width;
+    document.body.removeChild(tempDiv);
+
+    const scrollLeft = input.scrollLeft || 0;
+    const x = rect.left + textWidth - scrollLeft;
+    const y = rect.bottom + window.scrollY;
+
+    return this.adjustPositionForViewport({ x, y });
+  }
+
+  private getContentEditableCaretPosition(element: HTMLElement): {
+    x: number;
+    y: number;
+  } {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      const rect = element.getBoundingClientRect();
+      return this.adjustPositionForViewport({
+        x: rect.left,
+        y: rect.bottom + window.scrollY,
+      });
+    }
+
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+
+    const x = rect.left;
+    const y = rect.bottom + window.scrollY;
+
+    return this.adjustPositionForViewport({ x, y });
+  }
+
+  private adjustPositionForViewport(position: { x: number; y: number }): {
+    x: number;
+    y: number;
+  } {
+    const menuWidth = 300; // estimated menu width
+    const menuHeight = 200; // estimated menu height
+    const padding = 10;
+
+    let { x, y } = position;
+
+    // Adjust horizontal position if menu would go off screen
+    const availableSpaceRight = window.innerWidth - x;
+    if (availableSpaceRight < menuWidth + padding) {
+      x = Math.max(padding, window.innerWidth - menuWidth - padding);
+    }
+
+    // Adjust vertical position if menu would go off screen
+    const availableSpaceBottom = window.innerHeight - (y - window.scrollY);
+    if (availableSpaceBottom < menuHeight + padding) {
+      // Try to place above the caret
+      y = position.y - menuHeight - 10;
+
+      // If still not enough space, clamp to viewport
+      if (y < window.scrollY + padding) {
+        y = window.scrollY + padding;
+      }
+    }
+
+    return { x: Math.max(padding, x), y };
   }
 
   private hideSuggestions(element: HTMLElement) {
     const inputState = this.inputStates.get(element);
     if (inputState) {
       inputState.isActive = false;
+      // Clear stored position so it gets recalculated next time
+      inputState.position = undefined;
     }
 
     // Hide React menu
@@ -561,7 +632,6 @@ export class DOMManager {
       this.suggestionMenu.remove();
       this.suggestionMenu = null;
     }
-
   }
 
   private navigateSuggestions(element: HTMLElement, direction: number) {
@@ -580,16 +650,13 @@ export class DOMManager {
     if (!inputState || !this.menuRenderer) return;
 
     // Update React menu selection
-    const suggestions: Suggestion[] = inputState.suggestions.map(s => ({
+    const suggestions: Suggestion[] = inputState.suggestions.map((s) => ({
       word: s.word,
-      rank: s.rank
+      rank: s.rank,
     }));
 
-    const rect = element.getBoundingClientRect();
-    const position = {
-      x: rect.left,
-      y: rect.bottom + window.scrollY + 4
-    };
+    // Use stored position to prevent shifting during navigation
+    const position = this.calculateMenuPosition(element, inputState);
 
     this.menuRenderer.updateSelection(
       inputState.selectedIndex,
@@ -605,14 +672,14 @@ export class DOMManager {
       {
         showRanking: this.settings.showRankingOverride,
         showNumbers: this.settings.numberSelection,
-        compactMode: this.settings.compactMode
+        compactMode: this.settings.compactMode,
       }
     );
 
     // Fallback: update old-style menu if it exists
     if (this.suggestionMenu) {
       const items = this.suggestionMenu.querySelectorAll(
-        ".wordserve-suggestion-item"
+        ".ws-suggestion-item"
       );
       items.forEach((item, index) => {
         item.classList.toggle("selected", index === inputState.selectedIndex);
@@ -767,11 +834,24 @@ export class DOMManager {
     this.settings = newSettings;
 
     // Update styles
-    const existingStyle = document.getElementById("wordserve-styles");
+    const existingStyle = document.getElementById("ws-styles");
     if (existingStyle) {
       existingStyle.remove();
     }
     this.createGlobalStyles();
+
+    // Update keyboard handler settings for all inputs
+    const keyboardSettings: KeyboardHandlerSettings = {
+      numberSelection: newSettings.numberSelection,
+      autoInsertionCommitMode: newSettings.autoInsertionCommitMode,
+      smartBackspace: newSettings.smartBackspace,
+    };
+
+    for (const [element, inputState] of this.inputStates) {
+      if (inputState.keyboardHandler) {
+        inputState.keyboardHandler.updateSettings(keyboardSettings);
+      }
+    }
 
     // Update ghost text for all inputs
     for (const [element, inputState] of this.inputStates) {
@@ -799,13 +879,18 @@ export class DOMManager {
       this.menuRenderer = null;
     }
 
-    // Clean up ghost text elements (removed)
+    // Clean up keyboard handlers
+    for (const [element, inputState] of this.inputStates) {
+      if (inputState.keyboardHandler) {
+        inputState.keyboardHandler.detach();
+      }
+    }
 
     // Clean up input states
     this.inputStates.clear();
 
     // Remove styles
-    const style = document.getElementById("wordserve-styles");
+    const style = document.getElementById("ws-styles");
     if (style) {
       style.remove();
     }

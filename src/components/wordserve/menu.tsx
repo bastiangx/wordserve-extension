@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 export interface Suggestion {
@@ -25,12 +25,33 @@ export const SuggestionMenu: React.FC<SuggestionMenuProps> = ({
   currentWord,
   position,
   onSelect,
-  onClose,
   showRanking = false,
   showNumbers = true,
   compactMode = false,
   className,
 }) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const selectedItemRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (selectedItemRef.current && menuRef.current) {
+      const selectedElement = selectedItemRef.current;
+      const menuElement = menuRef.current;
+      
+      const selectedRect = selectedElement.getBoundingClientRect();
+      const menuRect = menuElement.getBoundingClientRect();
+      
+      const isAboveViewport = selectedRect.top < menuRect.top;
+      const isBelowViewport = selectedRect.bottom > menuRect.bottom;
+      
+      if (isAboveViewport || isBelowViewport) {
+        selectedElement.scrollIntoView({
+          block: 'nearest',
+        });
+      }
+    }
+  }, [selectedIndex]);
+
   const handleItemClick = (index: number) => {
     onSelect(index);
   };
@@ -39,9 +60,10 @@ export const SuggestionMenu: React.FC<SuggestionMenuProps> = ({
 
   return (
     <div
+      ref={menuRef}
       className={cn(
-        "wordserve-suggestion-menu",
-        "fixed z-[999999] bg-background/95 backdrop-blur-sm",
+        "ws-suggestion-menu",
+        "fixed bg-background/80 backdrop-blur-lg",
         "border border-border rounded-md shadow-lg",
         "min-w-[200px] max-w-[400px] max-h-[300px] overflow-y-auto",
         "animate-in fade-in-0 zoom-in-95 duration-100",
@@ -51,6 +73,8 @@ export const SuggestionMenu: React.FC<SuggestionMenuProps> = ({
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
+        zIndex: 2147483647,
+        position: "fixed",
       }}
     >
       <div className="p-1">
@@ -62,8 +86,9 @@ export const SuggestionMenu: React.FC<SuggestionMenuProps> = ({
           return (
             <div
               key={`${suggestion.word}-${index}`}
+              ref={isSelected ? selectedItemRef : null}
               className={cn(
-                "wordserve-suggestion-item",
+                "ws-suggestion-item",
                 "flex items-center justify-between gap-2 px-3 py-2",
                 "rounded-sm cursor-pointer transition-colors",
                 "hover:bg-accent hover:text-accent-foreground",
@@ -73,24 +98,24 @@ export const SuggestionMenu: React.FC<SuggestionMenuProps> = ({
               onClick={() => handleItemClick(index)}
               data-index={index}
             >
-              <div className="wordserve-suggestion-word flex-1 flex items-center">
-                <span className="wordserve-suggestion-prefix text-muted-foreground font-medium">
+              <div className="ws-suggestion-word flex-1 flex items-center">
+                <span className="ws-suggestion-prefix text-muted-foreground font-medium">
                   {prefix}
                 </span>
-                <span className="wordserve-suggestion-suffix text-foreground">
+                <span className="ws-suggestion-suffix text-foreground">
                   {suffix}
                 </span>
               </div>
-              
+
               {(showNumbers || showRanking) && (
-                <div className="wordserve-suggestion-meta flex items-center gap-1">
+                <div className="ws-suggestion-meta flex items-center gap-1">
                   {showNumbers && (
-                    <span className="wordserve-suggestion-number text-xs text-muted-foreground/70 font-mono">
+                    <span className="ws-suggestion-number text-xs text-muted-foreground/70 font-mono">
                       {index + 1}
                     </span>
                   )}
                   {showRanking && (
-                    <span className="wordserve-suggestion-rank text-xs text-muted-foreground/50 font-mono">
+                    <span className="ws-suggestion-rank text-xs text-muted-foreground/50 font-mono">
                       #{suggestion.rank}
                     </span>
                   )}

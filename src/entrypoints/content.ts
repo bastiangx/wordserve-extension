@@ -1,6 +1,10 @@
 import "@/globals.css";
-import { getWASMInstance } from "@/lib/wordserve-wasm-proxy";
-import { DOMManager, WordServeSettings } from "@/lib/dom-manager";
+import { getWASMInstance } from "@/lib/wasm/ws-wasm";
+import { DOMManager, WordServeSettings } from "@/lib/dom";
+import {
+  shouldActivateForDomain,
+  type DomainSettings,
+} from "@/lib/domains";
 
 const DEFAULT_SETTINGS: WordServeSettings = {
   minWordLength: 3,
@@ -15,7 +19,7 @@ const DEFAULT_SETTINGS: WordServeSettings = {
   debugMode: false,
   abbreviationsEnabled: true,
   autoInsertion: true,
-  autoInsertionCommitMode: "space-commits",
+  autoInsertionCommitMode: "enter-only",
   smartBackspace: true,
   accessibility: {
     boldSuffix: false,
@@ -61,14 +65,20 @@ export default defineContentScript({
     try {
       // Load settings from storage
       const settings = await loadSettings();
+      const globalSettings = await browser.storage.sync.get("globalEnabled");
+      const globalEnabled = globalSettings.globalEnabled !== false; // default to true
 
-      // Check if we should activate on this domain
-      if (!shouldActivateForDomain(window.location.hostname, settings)) {
+      // Check if globally disabled
+      if (!globalEnabled) {
         return;
       }
 
-      // Show loading indicator
-      showIndicator("WordServe Loading...", "#f59e0b");
+      // Check if we should activate on this domain
+      if (
+        !shouldActivateForDomain(window.location.hostname, settings.domains)
+      ) {
+        return;
+      }
 
       // Initialize WASM proxy
       const wordserve = getWASMInstance();
@@ -77,18 +87,55 @@ export default defineContentScript({
       // Initialize DOM manager
       domManager = new DOMManager(wordserve, settings);
 
-      // Show ready indicator
-      showIndicator("WordServe Active", "#10b981");
-
       // Listen for settings updates
-      browser.runtime.onMessage.addListener((message) => {
+      browser.runtime.onMessage.addListener(async (message) => {
         if (message.type === "settingsUpdated" && domManager) {
           domManager.updateSettings(message.settings);
+        }
+
+        if (message.type === "globalToggle") {
+          if (message.enabled) {
+            if (!domManager) {
+              const settings = await loadSettings();
+              if (
+                shouldActivateForDomain(
+                  window.location.hostname,
+                  settings.domains
+                )
+              ) {
+                const wordserve = getWASMInstance();
+                await wordserve.waitForReady();
+                domManager = new DOMManager(wordserve, settings);
+              }
+            }
+          } else {
+            if (domManager) {
+              domManager.destroy();
+              domManager = null;
+            }
+          }
+        }
+
+        if (message.type === "domainSettingsChanged") {
+          const shouldActivate = shouldActivateForDomain(
+            window.location.hostname,
+            message.settings
+          );
+
+          if (shouldActivate && !domManager) {
+            const settings = await loadSettings();
+            settings.domains = message.settings;
+            const wordserve = getWASMInstance();
+            await wordserve.waitForReady();
+            domManager = new DOMManager(wordserve, settings);
+          } else if (!shouldActivate && domManager) {
+            domManager.destroy();
+            domManager = null;
+          }
         }
       });
     } catch (error) {
       console.error("WordServe initialization error:", error);
-      showIndicator("WordServe Error", "#ef4444");
     }
   },
 });
@@ -101,67 +148,4 @@ async function loadSettings(): Promise<WordServeSettings> {
     console.warn("Failed to load settings, using defaults:", error);
     return DEFAULT_SETTINGS;
   }
-}
-
-function shouldActivateForDomain(
-  hostname: string,
-  settings: WordServeSettings
-): boolean {
-  const { blacklistMode, blacklist, whitelist } = settings.domains;
-
-  if (blacklistMode) {
-    return !matchesDomainList(hostname, blacklist);
-  } else {
-    return matchesDomainList(hostname, whitelist);
-  }
-}
-
-function matchesDomainList(hostname: string, domainList: string[]): boolean {
-  return domainList.some((pattern) => {
-    const regexPattern = pattern
-      .replace(/\./g, "\\.")
-      .replace(/\*/g, ".*")
-      .replace(/\?/g, ".");
-
-    const regex = new RegExp(`^${regexPattern}$`, "i");
-    return (
-      regex.test(hostname) || hostname.includes(pattern.replace(/\*/g, ""))
-    );
-  });
-}
-
-function showIndicator(text: string, color: string) {
-  // Remove existing indicator
-  const existing = document.getElementById("wordserve-indicator");
-  if (existing) {
-    existing.remove();
-  }
-
-  const indicator = document.createElement("div");
-  indicator.id = "wordserve-indicator";
-  indicator.style.cssText = `
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    z-index: 999999;
-    background: ${color};
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-family: "Space Mono", monospace;
-    font-size: 12px;
-    font-weight: 500;
-    opacity: 0.9;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-  `;
-  indicator.textContent = text;
-
-  document.body.appendChild(indicator);
-
-  // Remove after 3 seconds
-  setTimeout(() => {
-    indicator.style.opacity = "0";
-    setTimeout(() => indicator.remove(), 300);
-  }, 3000);
 }

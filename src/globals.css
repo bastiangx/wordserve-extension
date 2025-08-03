@@ -23,6 +23,10 @@
     --accent-foreground: 249 22% 12%; /* #191724 base */
     --destructive: 343 76% 68%; /* #eb6f92 love */
     --destructive-foreground: 245 50% 91%; /* #e0def4 text */
+    --success: 156 100% 12%; /* #31c48d equivalent in HSL */
+    --success-foreground: 155 95% 95%; /* light green text */
+    --error: 0 93% 94%; /* #fecaca equivalent - light red bg */
+    --error-foreground: 0 74% 42%; /* #dc2626 equivalent - dark red text */
     --border: 248 25% 18%; /* #26233a overlay */
     --input: 247 23% 15%; /* #1f1d2e surface */
     --ring: 189 43% 73%; /* #9ccfd8 foam */
@@ -213,5 +217,35 @@
   .card {
     background-color: hsl(var(--background));
     border-color: hsl(var(--border));
+  }
+
+  /* Menu Styling */
+  .ws-menu-container {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 2147483647 !important;
+    pointer-events: none !important;
+    width: 100vw !important;
+    height: 100vh !important;
+  }
+
+  .ws-suggestion-menu {
+    pointer-events: auto !important;
+    position: fixed !important;
+    z-index: 2147483647 !important;
+    font-family: "Geist Mono", monospace, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  }
+
+  .ws-suggestion-item {
+    cursor: pointer !important;
+    transition: background-color 0.15s ease-in-out !important;
+  }
+
+  .ws-suggestion-word {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
   }
 }

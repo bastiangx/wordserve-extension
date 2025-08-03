@@ -1,7 +1,4 @@
-/* popup-specific overrides; fonts and colors come from globals.css */
 :root {
   background-color: var(--background-color);
   color: var(--foreground-color);
 }
-
-/* Logo and button-specific styling remains in App.css */

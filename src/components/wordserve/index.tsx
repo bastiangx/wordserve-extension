@@ -2,5 +2,5 @@ export {
   SuggestionMenu,
   type Suggestion,
   type SuggestionMenuProps,
-} from "./suggestion-menu";
-export { ReactSuggestionMenuRenderer } from "./menu-renderer";
+} from "./menu";
+export { ReactSuggestionMenuRenderer } from "./render";
