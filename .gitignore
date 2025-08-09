@@ -26,5 +26,3 @@ web-ext.config.ts
 *.sw?
 agents
 todo.md
-wordserve
-ws-obsidian
