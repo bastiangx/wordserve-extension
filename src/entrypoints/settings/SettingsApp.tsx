@@ -1,20 +1,28 @@
 "use client";
-
+import { FaGithub } from "react-icons/fa";
+import { SiKofi } from "react-icons/si";
+import {
+  Palette,
+  SettingsIcon,
+  Globe,
+  Keyboard,
+  X,
+  Glasses,
+  RotateCcw,
+  Save,
+} from "lucide-react";
+import type { DomainSettings } from "@/lib/domains";
+import type { WordServeSettings } from "@/types";
+import { DEFAULT_SETTINGS } from "@/lib/defaults";
+import { GeneralSettings } from "./components/general";
+import { BehaviorSettings } from "./components/Behavior";
+import { KeyboardSettings } from "./components/keyboard";
+import { AppearanceSettings } from "./components/appearance";
+import { AccessibilitySettings } from "./components/accessibility";
+import { DomainSettingsComponent } from "./components/domain";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import {
@@ -49,98 +57,6 @@ import {
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
 
-// Interactive modifier key input component
-function KeyBindingInput({
-  value,
-  onChange,
-  className,
-}: {
-  value: string[];
-  onChange: (modifiers: string[]) => void;
-  className?: string;
-}) {
-  const [focused, setFocused] = useState(false);
-  const [currentKeys, setCurrentKeys] = useState<string[]>([]);
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    e.preventDefault();
-
-    const modifiers: string[] = [];
-    if (e.ctrlKey || e.metaKey) modifiers.push("ctrl");
-    if (e.shiftKey) modifiers.push("shift");
-    if (e.altKey) modifiers.push("alt");
-
-    setCurrentKeys(modifiers);
-  };
-
-  const handleKeyUp = (e: React.KeyboardEvent) => {
-    e.preventDefault();
-
-    // Only apply the change when all keys are released
-    const modifiers: string[] = [];
-    if (e.ctrlKey || e.metaKey) modifiers.push("ctrl");
-    if (e.shiftKey) modifiers.push("shift");
-    if (e.altKey) modifiers.push("alt");
-
-    if (modifiers.length === 0 && currentKeys.length > 0) {
-      onChange(currentKeys);
-      setCurrentKeys([]);
-    }
-  };
-  const handleBlur = () => {
-    setFocused(false);
-    setCurrentKeys([]);
-  };
-  const displayKeys = focused ? currentKeys : value;
-  const displayText = displayKeys.length > 0 ? displayKeys.join("+") : "none";
-
-  return (
-    <div
-      className={`flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      onKeyUp={handleKeyUp}
-      onFocus={() => setFocused(true)}
-      onBlur={handleBlur}
-    >
-      <span className={`self-center ${focused ? "text-muted-foreground" : ""}`}>
-        {focused ? "Press modifier keys..." : displayText}
-      </span>
-      {value.length > 0 && !focused && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onChange([]);
-          }}
-          className="ml-auto self-center text-muted-foreground hover:text-foreground"
-          type="button"
-        >
-          ×
-        </button>
-      )}
-    </div>
-  );
-}
-import { FaGithub } from "react-icons/fa";
-import { SiKofi } from "react-icons/si";
-import {
-  Trash2,
-  Plus,
-  Palette,
-  SettingsIcon,
-  Globe,
-  Shield,
-  Keyboard,
-  X,
-  Glasses,
-  RotateCcw,
-  Save,
-  Minus,
-} from "lucide-react";
-import type { DomainSettings } from "@/lib/domains";
-import type { WordServeSettings } from "@/types";
-import { DEFAULT_SETTINGS } from "@/lib/defaults";
-
 const navigationItems = [
   {
     id: "general",
@@ -153,6 +69,12 @@ const navigationItems = [
     title: "Behavior",
     icon: Keyboard,
     description: "Input behavior and keyboard shortcuts",
+  },
+  {
+    id: "keyboard",
+    title: "Keyboard",
+    icon: Keyboard,
+    description: "Keyboard shortcuts and bindings",
   },
   {
     id: "appearance",
@@ -280,30 +202,6 @@ function SettingsApp() {
     }));
   };
 
-  const addDomain = (listType: "blacklist" | "whitelist") => {
-    if (!newDomainInput.trim()) return;
-
-    const currentList = pendingSettings.domains[listType];
-    if (!currentList.includes(newDomainInput.trim())) {
-      updatePendingDomainSetting(listType, [
-        ...currentList,
-        newDomainInput.trim(),
-      ]);
-    }
-    setNewDomainInput("");
-  };
-
-  const removeDomain = (
-    listType: "blacklist" | "whitelist",
-    domain: string
-  ) => {
-    const currentList = pendingSettings.domains[listType];
-    updatePendingDomainSetting(
-      listType,
-      currentList.filter((d) => d !== domain)
-    );
-  };
-
   const resetToDefaults = () => {
     setPendingSettings(DEFAULT_SETTINGS);
   };
@@ -319,30 +217,6 @@ function SettingsApp() {
     updatePendingSetting(key, newValue as any);
   };
 
-  const validateAndUpdateNumber = (
-    key: keyof WordServeSettings,
-    value: string,
-    min: number,
-    max: number
-  ) => {
-    const numValue = Number.parseInt(value);
-    if (isNaN(numValue)) {
-      showNotification("error", `Invalid number entered for ${key}`);
-      return;
-    }
-    if (numValue < min) {
-      showNotification("error", `Value must be at least ${min}`);
-      updatePendingSetting(key, min as any);
-      return;
-    }
-    if (numValue > max) {
-      showNotification("error", `Value must be at most ${max}`);
-      updatePendingSetting(key, max as any);
-      return;
-    }
-    updatePendingSetting(key, numValue as any);
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -354,957 +228,62 @@ function SettingsApp() {
     );
   }
 
-  const renderGeneralSettings = () => (
-    <div className="space-y-6">
-      <Card className="rounded-md card">
-        <CardContent className="space-y-6 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="minWordLength">Minimum word length</Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => adjustNumber("minWordLength", -1, 1, 10)}
-                  disabled={pendingSettings.minWordLength <= 1}
-                  className="h-8 w-8 p-0"
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <Input
-                  id="minWordLength"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={pendingSettings.minWordLength}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === "") return;
-                    const numValue = parseInt(value);
-                    if (!isNaN(numValue)) {
-                      updatePendingSetting("minWordLength", numValue);
-                    }
-                  }}
-                  onBlur={(e) => {
-                    const value = e.target.value;
-                    if (!value) {
-                      updatePendingSetting("minWordLength", 1);
-                      return;
-                    }
-                    const numValue = parseInt(value);
-                    if (isNaN(numValue) || numValue < 1) {
-                      updatePendingSetting("minWordLength", 1);
-                    } else if (numValue > 10) {
-                      updatePendingSetting("minWordLength", 10);
-                    }
-                  }}
-                  className="text-center max-w-20"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => adjustNumber("minWordLength", 1, 1, 10)}
-                  disabled={pendingSettings.minWordLength >= 10}
-                  className="h-8 w-8 p-0"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Words shorter than this won't trigger suggestions
-              </p>
-            </div>
-
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="maxSuggestions">Maximum suggestions</Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => adjustNumber("maxSuggestions", -4, 1, 100)}
-                  disabled={pendingSettings.maxSuggestions <= 1}
-                  className="h-8 w-8 p-0"
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <Input
-                  id="maxSuggestions"
-                  type="number"
-                  min="1"
-                  max="100"
-                  step="4"
-                  value={pendingSettings.maxSuggestions}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === "") return; // Allow empty for editing
-                    const numValue = parseInt(value);
-                    if (!isNaN(numValue)) {
-                      updatePendingSetting("maxSuggestions", numValue);
-                    }
-                  }}
-                  onBlur={(e) => {
-                    const value = e.target.value;
-                    if (!value) {
-                      updatePendingSetting("maxSuggestions", 1);
-                      return;
-                    }
-                    const numValue = parseInt(value);
-                    if (isNaN(numValue) || numValue < 1) {
-                      updatePendingSetting("maxSuggestions", 1);
-                    } else if (numValue > 100) {
-                      updatePendingSetting("maxSuggestions", 100);
-                    }
-                  }}
-                  className="text-center max-w-20"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => adjustNumber("maxSuggestions", 4, 1, 100)}
-                  disabled={pendingSettings.maxSuggestions >= 100}
-                  className="h-8 w-8 p-0"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Maximum number of suggestions to show
-              </p>
-            </div>
-
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="debounceTime">Response delay (ms)</Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => adjustNumber("debounceTime", -50, 0, 1000)}
-                  disabled={pendingSettings.debounceTime <= 0}
-                  className="h-8 w-8 p-0"
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <Input
-                  id="debounceTime"
-                  type="number"
-                  min="0"
-                  max="1000"
-                  step="50"
-                  value={pendingSettings.debounceTime}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === "") return; // Allow empty for editing
-                    const numValue = parseInt(value);
-                    if (!isNaN(numValue)) {
-                      updatePendingSetting("debounceTime", numValue);
-                    }
-                  }}
-                  onBlur={(e) => {
-                    const value = e.target.value;
-                    if (!value) {
-                      updatePendingSetting("debounceTime", 0);
-                      return;
-                    }
-                    const numValue = parseInt(value);
-                    if (isNaN(numValue) || numValue < 0) {
-                      updatePendingSetting("debounceTime", 0);
-                    } else if (numValue > 1000) {
-                      updatePendingSetting("debounceTime", 1000);
-                    }
-                  }}
-                  className="text-center max-w-20"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => adjustNumber("debounceTime", 50, 0, 1000)}
-                  disabled={pendingSettings.debounceTime >= 1000}
-                  className="h-8 w-8 p-0"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Delay before showing suggestions while typing
-              </p>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Number selection</Label>
-                <p className="text-sm text-muted-foreground">
-                  Use number keys to select suggestions
-                </p>
-              </div>
-              <Switch
-                checked={pendingSettings.numberSelection}
-                onCheckedChange={(checked) =>
-                  updatePendingSetting("numberSelection", checked)
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Show ranking override</Label>
-                <p className="text-sm text-muted-foreground">
-                  Display ranking numbers in suggestion list
-                </p>
-              </div>
-              <Switch
-                checked={pendingSettings.showRankingOverride}
-                onCheckedChange={(checked) =>
-                  updatePendingSetting("showRankingOverride", checked)
-                }
-              />
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="font-medium">Keyboard bindings</h3>
-
-              <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
-                <div className="space-y-2">
-                  <Label>Insert without space</Label>
-                  <div className="flex gap-2">
-                    <KeyBindingInput
-                      value={
-                        pendingSettings.keyBindings.insertWithoutSpace.modifiers
-                      }
-                      onChange={(modifiers) =>
-                        updatePendingSetting("keyBindings", {
-                          ...pendingSettings.keyBindings,
-                          insertWithoutSpace: {
-                            ...pendingSettings.keyBindings.insertWithoutSpace,
-                            modifiers,
-                          },
-                        })
-                      }
-                      className="max-w-32"
-                    />
-                    <Select
-                      value={pendingSettings.keyBindings.insertWithoutSpace.key}
-                      onValueChange={(value: "enter" | "tab" | "space") =>
-                        updatePendingSetting("keyBindings", {
-                          ...pendingSettings.keyBindings,
-                          insertWithoutSpace: {
-                            ...pendingSettings.keyBindings.insertWithoutSpace,
-                            key: value,
-                          },
-                        })
-                      }
-                    >
-                      <SelectTrigger className="w-24">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="enter">Enter</SelectItem>
-                        <SelectItem value="tab">Tab</SelectItem>
-                        <SelectItem value="space">Space</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Key combination to insert suggestion without adding a space
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Insert with space</Label>
-                  <div className="flex gap-2">
-                    <KeyBindingInput
-                      value={
-                        pendingSettings.keyBindings.insertWithSpace.modifiers
-                      }
-                      onChange={(modifiers) =>
-                        updatePendingSetting("keyBindings", {
-                          ...pendingSettings.keyBindings,
-                          insertWithSpace: {
-                            ...pendingSettings.keyBindings.insertWithSpace,
-                            modifiers,
-                          },
-                        })
-                      }
-                      className="max-w-32"
-                    />
-                    <Select
-                      value={pendingSettings.keyBindings.insertWithSpace.key}
-                      onValueChange={(value: "enter" | "tab" | "space") =>
-                        updatePendingSetting("keyBindings", {
-                          ...pendingSettings.keyBindings,
-                          insertWithSpace: {
-                            ...pendingSettings.keyBindings.insertWithSpace,
-                            key: value,
-                          },
-                        })
-                      }
-                    >
-                      <SelectTrigger className="w-24">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="enter">Enter</SelectItem>
-                        <SelectItem value="tab">Tab</SelectItem>
-                        <SelectItem value="space">Space</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Key combination to insert suggestion and add a space
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Theme mode</Label>
-                <p className="text-sm text-muted-foreground">
-                  Adapt to website colors or use isolated theme
-                </p>
-              </div>
-              <Select
-                value={pendingSettings.themeMode}
-                onValueChange={(value: "adaptive" | "isolated") =>
-                  updatePendingSetting("themeMode", value)
-                }
-              >
-                <SelectTrigger className="w-24">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="isolated">Isolated</SelectItem>
-                  <SelectItem value="adaptive">Adaptive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const renderBehaviorSettings = () => (
-    <div className="space-y-6">
-      <Card className="rounded-md card">
-        <CardContent className="space-y-6 p-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Abbreviations</Label>
-                <p className="text-sm text-muted-foreground">
-                  Enable expansion of common abbreviations
-                </p>
-              </div>
-              <Switch
-                checked={pendingSettings.abbreviationsEnabled}
-                onCheckedChange={(checked) =>
-                  updatePendingSetting("abbreviationsEnabled", checked)
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Auto insertion</Label>
-                <p className="text-sm text-muted-foreground">
-                  Automatically insert suggestions when typing
-                </p>
-              </div>
-              <Switch
-                checked={pendingSettings.autoInsertion}
-                onCheckedChange={(checked) =>
-                  updatePendingSetting("autoInsertion", checked)
-                }
-              />
-            </div>
-
-            {pendingSettings.autoInsertion && (
-              <div className="space-y-2 max-w-xs">
-                <Label htmlFor="autoInsertionCommitMode">Commit mode</Label>
-                <Select
-                  value={pendingSettings.autoInsertionCommitMode}
-                  onValueChange={(value: "space-commits" | "enter-only") =>
-                    updatePendingSetting("autoInsertionCommitMode", value)
-                  }
-                >
-                  <SelectTrigger id="autoInsertionCommitMode">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="space-commits">Space commits</SelectItem>
-                    <SelectItem value="enter-only">Enter only</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-muted-foreground">
-                  How to confirm auto-inserted suggestions
-                </p>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Smart backspace</Label>
-                <p className="text-sm text-muted-foreground">
-                  Intelligently handle backspace in suggestions
-                </p>
-              </div>
-              <Switch
-                checked={pendingSettings.smartBackspace}
-                onCheckedChange={(checked) =>
-                  updatePendingSetting("smartBackspace", checked)
-                }
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const renderAppearanceSettings = () => (
-    <div className="space-y-6">
-      <Card className="rounded-md card">
-        <CardContent className="space-y-6 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="fontSize">Font size (px)</Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => adjustNumber("fontSize", -1, 8, 32)}
-                  disabled={
-                    typeof pendingSettings.fontSize === "number" &&
-                    pendingSettings.fontSize <= 8
-                  }
-                  className="h-8 w-8 p-0"
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <Input
-                  id="fontSize"
-                  type="number"
-                  min="8"
-                  max="32"
-                  value={pendingSettings.fontSize}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === "" || value === "0") return;
-                    const numValue = parseInt(value);
-                    if (!isNaN(numValue) && numValue >= 8 && numValue <= 32) {
-                      updatePendingSetting("fontSize", numValue);
-                    }
-                  }}
-                  onBlur={(e) => {
-                    const value = e.target.value;
-                    if (!value || value === "0") {
-                      updatePendingSetting("fontSize", 8);
-                      return;
-                    }
-                    const numValue = parseInt(value);
-                    if (isNaN(numValue) || numValue < 8) {
-                      updatePendingSetting("fontSize", 8);
-                    } else if (numValue > 32) {
-                      updatePendingSetting("fontSize", 32);
-                    }
-                  }}
-                  className="text-center max-w-20"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => adjustNumber("fontSize", 1, 8, 32)}
-                  disabled={
-                    typeof pendingSettings.fontSize === "number" &&
-                    pendingSettings.fontSize >= 32
-                  }
-                  className="h-8 w-8 p-0"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Size of text in suggestions
-              </p>
-            </div>
-
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="fontWeight">Font weight</Label>
-              <Select
-                value={pendingSettings.fontWeight}
-                onValueChange={(value: WordServeSettings["fontWeight"]) =>
-                  updatePendingSetting("fontWeight", value)
-                }
-              >
-                <SelectTrigger id="fontWeight">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="thin">Thin</SelectItem>
-                  <SelectItem value="extralight">Extra Light</SelectItem>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="semibold">Semi Bold</SelectItem>
-                  <SelectItem value="bold">Bold</SelectItem>
-                  <SelectItem value="extrabold">Extra Bold</SelectItem>
-                  <SelectItem value="black">Black</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-muted-foreground">
-                Weight of text in suggestions
-              </p>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="font-medium">Layout & Visual</h3>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Compact mode</Label>
-                <p className="text-sm text-muted-foreground">
-                  Reduce spacing and padding in suggestions
-                </p>
-              </div>
-              <Switch
-                checked={pendingSettings.compactMode}
-                onCheckedChange={(checked) =>
-                  updatePendingSetting("compactMode", checked)
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Ghost text</Label>
-                <p className="text-sm text-muted-foreground">
-                  Show preview text inline with typing
-                </p>
-              </div>
-              <Switch
-                checked={pendingSettings.ghostTextEnabled}
-                onCheckedChange={(checked) =>
-                  updatePendingSetting("ghostTextEnabled", checked)
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Ranking position</Label>
-                <p className="text-sm text-muted-foreground">
-                  Position of ranking numbers in suggestion menu
-                </p>
-              </div>
-              <Select
-                value={pendingSettings.rankingPosition}
-                onValueChange={(value: "left" | "right") =>
-                  updatePendingSetting("rankingPosition", value)
-                }
-              >
-                <SelectTrigger className="w-24">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="left">Left</SelectItem>
-                  <SelectItem value="right">Right</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Menu border</Label>
-                <p className="text-sm text-muted-foreground">
-                  Show border around the suggestion menu
-                </p>
-              </div>
-              <Switch
-                checked={pendingSettings.menuBorder}
-                onCheckedChange={(checked) =>
-                  updatePendingSetting("menuBorder", checked)
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Rounded borders</Label>
-                <p className="text-sm text-muted-foreground">
-                  Use rounded corners for the suggestion menu
-                </p>
-              </div>
-              <Switch
-                checked={pendingSettings.menuBorderRadius}
-                onCheckedChange={(checked) =>
-                  updatePendingSetting("menuBorderRadius", checked)
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Theme mode</Label>
-                <p className="text-sm text-muted-foreground">
-                  How the menu integrates with page themes
-                </p>
-              </div>
-              <Select
-                value={pendingSettings.themeMode}
-                onValueChange={(value: "adaptive" | "isolated") =>
-                  updatePendingSetting("themeMode", value)
-                }
-              >
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="adaptive">Adaptive</SelectItem>
-                  <SelectItem value="isolated">Isolated</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const renderAccessibilitySettings = () => (
-    <div className="space-y-6">
-      <Card className="rounded-md card">
-        <CardContent className="space-y-6 p-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Bold suffix</Label>
-                <p className="text-sm text-muted-foreground">
-                  Make the completion part of suggestions bold
-                </p>
-              </div>
-              <Switch
-                checked={pendingSettings.accessibility.boldSuffix}
-                onCheckedChange={(checked) =>
-                  updatePendingAccessibilitySetting("boldSuffix", checked)
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Uppercase suggestions</Label>
-                <p className="text-sm text-muted-foreground">
-                  Convert all suggestions to uppercase
-                </p>
-              </div>
-              <Switch
-                checked={pendingSettings.accessibility.uppercaseSuggestions}
-                onCheckedChange={(checked) =>
-                  updatePendingAccessibilitySetting(
-                    "uppercaseSuggestions",
-                    checked
-                  )
-                }
-              />
-            </div>
-
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="prefixColorIntensity">
-                Prefix color intensity
-              </Label>
-              <Select
-                value={pendingSettings.accessibility.prefixColorIntensity}
-                onValueChange={(
-                  value: "normal" | "muted" | "faint" | "accent"
-                ) =>
-                  updatePendingAccessibilitySetting(
-                    "prefixColorIntensity",
-                    value
-                  )
-                }
-              >
-                <SelectTrigger id="prefixColorIntensity">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="muted">Muted</SelectItem>
-                  <SelectItem value="faint">Faint</SelectItem>
-                  <SelectItem value="accent">Accent</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="ghostTextColorIntensity">
-                Ghost text color intensity
-              </Label>
-              <Select
-                value={pendingSettings.accessibility.ghostTextColorIntensity}
-                onValueChange={(
-                  value: "normal" | "muted" | "faint" | "accent"
-                ) =>
-                  updatePendingAccessibilitySetting(
-                    "ghostTextColorIntensity",
-                    value
-                  )
-                }
-              >
-                <SelectTrigger id="ghostTextColorIntensity">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="muted">Muted</SelectItem>
-                  <SelectItem value="faint">Faint</SelectItem>
-                  <SelectItem value="accent">Accent</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="customColor">Custom color (optional)</Label>
-              <Input
-                id="customColor"
-                type="color"
-                value={pendingSettings.accessibility.customColor || "#000000"}
-                onChange={(e) =>
-                  updatePendingAccessibilitySetting(
-                    "customColor",
-                    e.target.value
-                  )
-                }
-                className="h-10"
-              />
-            </div>
-
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="customFontFamily">
-                Custom font family (optional)
-              </Label>
-              <Input
-                id="customFontFamily"
-                type="text"
-                placeholder="e.g., Arial, sans-serif"
-                value={pendingSettings.accessibility.customFontFamily || ""}
-                onChange={(e) =>
-                  updatePendingAccessibilitySetting(
-                    "customFontFamily",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="customFontSize">
-                Custom font size (optional)
-              </Label>
-              <Input
-                id="customFontSize"
-                type="number"
-                min="8"
-                max="32"
-                placeholder="14"
-                value={pendingSettings.accessibility.customFontSize || ""}
-                onChange={(e) =>
-                  updatePendingAccessibilitySetting(
-                    "customFontSize",
-                    e.target.value ? Number.parseInt(e.target.value) : undefined
-                  )
-                }
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const renderDomainSettings = () => (
-    <div className="space-y-6">
-      <Card className="rounded-md card">
-        <CardContent className="space-y-6 p-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Domain filtering mode</Label>
-                <p className="text-sm text-muted-foreground">
-                  When enabled, WordServe works on all sites except blacklisted
-                  ones
-                </p>
-              </div>
-              <Switch
-                checked={pendingSettings.domains.blacklistMode}
-                onCheckedChange={(checked) =>
-                  updatePendingDomainSetting("blacklistMode", checked)
-                }
-              />
-            </div>
-
-            {!pendingSettings.domains.blacklistMode && (
-              <div className="flex items-start gap-3 p-4 bg-blue-50/10 border border-blue-500/20 rounded-md">
-                <Shield className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <div className="font-medium text-sm">
-                    Whitelist mode active
-                  </div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    WordServe will only work on domains you explicitly allow.
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Input
-                placeholder="Enter domain (e.g., *.example.com, secure.*, exact.domain.com)"
-                value={newDomainInput}
-                onChange={(e) => setNewDomainInput(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addDomain(
-                      pendingSettings.domains.blacklistMode
-                        ? "blacklist"
-                        : "whitelist"
-                    );
-                  }
-                }}
-                className="max-w-md"
-              />
-              <Button
-                onClick={() =>
-                  addDomain(
-                    pendingSettings.domains.blacklistMode
-                      ? "blacklist"
-                      : "whitelist"
-                  )
-                }
-                disabled={!newDomainInput.trim()}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add
-              </Button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">
-                    {pendingSettings.domains.blacklistMode
-                      ? "Blacklisted domains"
-                      : "Whitelisted domains"}
-                  </h4>
-                  <Badge variant="secondary">
-                    {pendingSettings.domains.blacklistMode
-                      ? pendingSettings.domains.blacklist.length
-                      : pendingSettings.domains.whitelist.length}{" "}
-                    domains
-                  </Badge>
-                </div>
-
-                <div className="max-h-60 overflow-y-auto border rounded-md p-3 bg-muted/50">
-                  {(pendingSettings.domains.blacklistMode
-                    ? pendingSettings.domains.blacklist
-                    : pendingSettings.domains.whitelist
-                  ).length === 0 ? (
-                    <p className="text-muted-foreground text-sm text-center py-4">
-                      No domains{" "}
-                      {pendingSettings.domains.blacklistMode
-                        ? "blacklisted"
-                        : "whitelisted"}{" "}
-                      yet
-                    </p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {(pendingSettings.domains.blacklistMode
-                        ? pendingSettings.domains.blacklist
-                        : pendingSettings.domains.whitelist
-                      ).map((domain) => (
-                        <Badge
-                          key={domain}
-                          variant="secondary"
-                          className="flex items-center gap-1"
-                        >
-                          {domain}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-auto p-0 ml-1"
-                            onClick={() =>
-                              removeDomain(
-                                pendingSettings.domains.blacklistMode
-                                  ? "blacklist"
-                                  : "whitelist",
-                                domain
-                              )
-                            }
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="text-sm text-muted-foreground space-y-1">
-                  <p>
-                    <strong>Pattern examples:</strong>
-                  </p>
-                  <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li>
-                      <code>*.paypal.com</code> - matches all paypal.com
-                      subdomains
-                    </li>
-                    <li>
-                      <code>*payment*</code> - matches any domain containing
-                      "payment"
-                    </li>
-                    <li>
-                      <code>secure.*</code> - matches any domain starting with
-                      "secure."
-                    </li>
-                    <li>
-                      <code>exact.domain.com</code> - matches only this exact
-                      domain
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
   const renderContent = () => {
     switch (activeSection) {
       case "general":
-        return renderGeneralSettings();
+        return (
+          <GeneralSettings
+            pendingSettings={pendingSettings}
+            updatePendingSetting={updatePendingSetting}
+            adjustNumber={adjustNumber}
+          />
+        );
       case "behavior":
-        return renderBehaviorSettings();
+        return (
+          <BehaviorSettings
+            pendingSettings={pendingSettings}
+            updatePendingSetting={updatePendingSetting}
+          />
+        );
+      case "keyboard":
+        return (
+          <KeyboardSettings
+            pendingSettings={pendingSettings}
+            updatePendingSetting={updatePendingSetting}
+          />
+        );
       case "appearance":
-        return renderAppearanceSettings();
+        return (
+          <AppearanceSettings
+            pendingSettings={pendingSettings}
+            updatePendingSetting={updatePendingSetting}
+            adjustNumber={adjustNumber}
+          />
+        );
       case "accessibility":
-        return renderAccessibilitySettings();
+        return (
+          <AccessibilitySettings
+            pendingSettings={pendingSettings.accessibility}
+            updatePendingAccessibilitySetting={
+              updatePendingAccessibilitySetting
+            }
+          />
+        );
       case "domains":
-        return renderDomainSettings();
+        return (
+          <DomainSettingsComponent
+            pendingSettings={pendingSettings.domains}
+            updatePendingDomainSetting={updatePendingDomainSetting}
+          />
+        );
       default:
-        return renderGeneralSettings();
+        return (
+          <GeneralSettings
+            pendingSettings={pendingSettings}
+            updatePendingSetting={updatePendingSetting}
+            adjustNumber={adjustNumber}
+          />
+        );
     }
   };
 
