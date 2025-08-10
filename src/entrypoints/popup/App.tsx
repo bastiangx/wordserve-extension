@@ -5,15 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Plus, X, Power, Shield, ShieldOff } from "lucide-react";
 import { FaGithub } from "react-icons/fa";
-import { matchesDomainPattern } from "@/lib/domains";
+import { matchesDomainPattern, type DomainSettings } from "@/lib/domains";
 import "../../globals.css";
 import "./App.css";
 
-interface DomainSettings {
-  blacklistMode: boolean;
-  blacklist: string[];
-  whitelist: string[];
-}
+// DomainSettings now imported from lib/domains to avoid duplicate interface definition
 
 export default function App() {
   const [globalEnabled, setGlobalEnabled] = useState(true);

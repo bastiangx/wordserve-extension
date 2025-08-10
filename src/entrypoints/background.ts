@@ -1,303 +1,445 @@
-export default defineBackground(() => {
-  console.log('WordServe background script loaded');
+import browser from "webextension-polyfill";
+import { DOMAIN_BLACKLIST, DEFAULT_DOMAIN_WHITELIST, DEFAULT_SETTINGS } from "@/lib/defaults";
 
-  // WASM functionality
+async function cryptoDigestSHA256(data: Uint8Array): Promise<string> {
+  try {
+    const digest = await crypto.subtle.digest("SHA-256", new Uint8Array(data));
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  } catch {
+    return "";
+  }
+}
+
+export default defineBackground(() => {
+  console.log("WordServe background script loaded");
+
   class BackgroundWordServeWASM {
     private isInitialized = false;
     private isLoading = false;
-
+    get ready(): boolean {
+      return this.isInitialized;
+    }
     async initialize(): Promise<void> {
-      if (this.isInitialized || this.isLoading) {
-        return;
-      }
+      if (this.isInitialized || this.isLoading) return;
       this.isLoading = true;
       try {
-        // Use importScripts for service worker context
         self.importScripts(browser.runtime.getURL("wasm_exec.js" as any));
-        
         const wasmResponse = await fetch(
-          browser.runtime.getURL("wordserve-wasm.wasm" as any)
+          browser.runtime.getURL("wordserve.wasm" as any)
         );
+        if (!wasmResponse.ok)
+          throw new Error(`wasm fetch ${wasmResponse.status}`);
         const wasmBytes = await wasmResponse.arrayBuffer();
-
-        // Create Go runtime and instantiate WASM
         const go = new (globalThis as any).Go();
         const wasmModule = await WebAssembly.instantiate(
           wasmBytes,
           go.importObject
         );
-
-        // Wait for WASM to signal readiness
         await new Promise<void>((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error("WASM initialization timeout"));
-          }, 10000);
-
+          const timeout = setTimeout(
+            () => reject(new Error("WASM initialization timeout")),
+            10000
+          );
           (globalThis as any).wasmReady = () => {
             clearTimeout(timeout);
             this.isInitialized = true;
             resolve();
           };
-
-          // Start the Go program
           go.run(wasmModule.instance).catch((error: any) => {
             clearTimeout(timeout);
             reject(new Error(`Go program failed: ${error}`));
           });
         });
-      } catch (error) {
+      } catch (e) {
         this.isLoading = false;
-        throw new Error(`Failed to initialize WASM: ${error}`);
+        throw e;
       } finally {
         this.isLoading = false;
       }
     }
+    async completeMsgPack(packed: Uint8Array) {
+      if (!this.isInitialized) throw new Error("WASM not initialized");
+      console.debug(
+        "[WordServe] WASM calling wasmCompleter.complete with:",
+        packed
+      );
 
-    async complete(prefix: string, limit: number = 20) {
-      if (!this.isInitialized) {
-        throw new Error("WASM not initialized");
+      try {
+        const result = (globalThis as any).wasmCompleter.complete(packed);
+        console.debug(
+          "[WordServe] WASM completer returned type:",
+          typeof result,
+          "instanceof Uint8Array:",
+          result instanceof Uint8Array
+        );
+        console.debug("[WordServe] WASM completer result:", result);
+
+        if (result && typeof result === "object" && result.error) {
+          throw new Error(result.error);
+        }
+        return result;
+      } catch (error) {
+        console.error("[WordServe] WASM completer error:", error);
+        throw error;
       }
-
+    }
+    async getStats() {
+      if (!this.isInitialized) throw new Error("WASM not initialized");
+      return (globalThis as any).wasmCompleter.stats();
+    }
+    async completeRaw(prefix: string, limit: number) {
+      if (!this.isInitialized) throw new Error("WASM not initialized");
       const result = (globalThis as any).wasmCompleter.completeRaw(
         prefix,
         limit
       );
-      if (result.error) {
-        throw new Error(result.error);
-      }
+      if (result.error) throw new Error(result.error);
       return result.suggestions;
-    }
-
-    async getStats() {
-      if (!this.isInitialized) {
-        throw new Error("WASM not initialized");
-      }
-      return (globalThis as any).wasmCompleter.stats();
-    }
-
-    get ready(): boolean {
-      return this.isInitialized;
     }
   }
 
   let wasmInstance: BackgroundWordServeWASM | null = null;
 
-  // Initialize WASM when background script loads
-  async function initializeWASM() {
-    try {
-      wasmInstance = new BackgroundWordServeWASM();
-      await wasmInstance.initialize();
-
-      // Load dictionary data
-      await loadDictionaryData();
-
-      console.log("WordServe WASM initialized in background");
-    } catch (error) {
-      console.error("Failed to initialize WordServe WASM:", error);
-    }
+  function broadcast(type: string, payload: any = {}) {
+    browser.tabs.query({}).then((tabs) => {
+      for (const tab of tabs)
+        if (tab.id)
+          browser.tabs
+            .sendMessage(tab.id, { type, ...payload })
+            .catch(() => {});
+    });
   }
+
+  async function recordError(message: string) {
+    try {
+      await browser.storage.local.set({
+        wordserveLastError: { message, ts: Date.now() },
+      });
+    } catch {}
+    console.error("WordServe error:", message);
+    broadcast("wordserve-error", { message });
+  }
+
+  const MIN_CHUNK_BYTES = 200; // sanity
+  const EXPECTED_CHUNKS = 7;
 
   async function loadDictionaryData() {
     if (!wasmInstance) return;
-
     try {
-      // Load binary dictionary chunks
-      const chunkPromises = [];
-      for (let i = 1; i <= 7; i++) {
+      // Attempt to fetch asset manifest for integrity (non-fatal)
+      let manifest: Record<string, { sha256?: string }> | null = null;
+      try {
+        const resp = await fetch(
+          browser.runtime.getURL("asset-manifest.json" as any)
+        );
+        if (resp.ok) {
+          const data = await resp.json();
+          manifest = {};
+          for (const a of data.assets || []) {
+            manifest[a.path] = { sha256: a.sha256 };
+          }
+        }
+      } catch {}
+      const chunkPromises: Promise<Uint8Array>[] = [];
+      for (let i = 1; i <= EXPECTED_CHUNKS; i++) {
         const chunkNum = String(i).padStart(4, "0");
         chunkPromises.push(
           fetch(browser.runtime.getURL(`data/dict_${chunkNum}.bin` as any))
-            .then((response) => response.arrayBuffer())
-            .then((buffer) => new Uint8Array(buffer))
+            .then((r) => {
+              if (!r.ok) throw new Error(`dict_${chunkNum} status ${r.status}`);
+              return r.arrayBuffer();
+            })
+            .then((b) => new Uint8Array(b))
         );
       }
-
       const chunks = await Promise.all(chunkPromises);
-
+      if (chunks.length !== EXPECTED_CHUNKS)
+        throw new Error(
+          `expected ${EXPECTED_CHUNKS} chunks, got ${chunks.length}`
+        );
+      // Hash verify wasm + words.txt if manifest provides
+      if (manifest) {
+        try {
+          const wasmSpec = manifest["wordserve.wasm"];
+          if (wasmSpec?.sha256) {
+            const wasmBuf = new Uint8Array(
+              await (
+                await fetch(browser.runtime.getURL("wordserve.wasm" as any))
+              ).arrayBuffer()
+            );
+            const wasmHash = await cryptoDigestSHA256(wasmBuf);
+            if (wasmHash !== wasmSpec.sha256)
+              throw new Error("hash mismatch for wordserve.wasm");
+          }
+          const wordsSpec = manifest["data/words.txt"];
+          if (wordsSpec?.sha256) {
+            const wordsBuf = new Uint8Array(
+              await (
+                await fetch(browser.runtime.getURL("data/words.txt" as any))
+              ).arrayBuffer()
+            );
+            const wordsHash = await cryptoDigestSHA256(wordsBuf);
+            if (wordsHash !== wordsSpec.sha256)
+              throw new Error("hash mismatch for data/words.txt");
+          }
+        } catch (ihErr) {
+          console.warn("Integrity check (non-fatal) failed:", ihErr);
+        }
+      }
+      for (let i = 0; i < chunks.length; i++) {
+        const chk = chunks[i];
+        if (chk.byteLength < MIN_CHUNK_BYTES)
+          throw new Error(`chunk ${i} too small (${chk.byteLength} bytes)`);
+        // Hash verification if manifest present
+        if (manifest) {
+          const path = `data/dict_${String(i + 1).padStart(4, "0")}.bin`;
+          const spec = manifest[path];
+          if (spec?.sha256) {
+            const hash = await cryptoDigestSHA256(chk);
+            if (hash !== spec.sha256) {
+              throw new Error(`hash mismatch for ${path}`);
+            }
+          }
+        }
+      }
       if ((globalThis as any).wasmCompleter?.initWithBinaryData) {
         const result = (globalThis as any).wasmCompleter.initWithBinaryData(
           chunks
         );
-
-        if (!result?.success) {
+        if (!result?.success)
           throw new Error(result?.error || "Failed to load dictionary");
-        }
-
+        await browser.storage.local.set({
+          wordserveDictMeta: { words: result.wordCount, chunks: result.chunks },
+        });
         console.log(
           `WordServe loaded ${result.wordCount} words from ${result.chunks} chunks`
         );
-      } else {
-        throw new Error("WASM completer not available");
-      }
-    } catch (error) {
-      console.warn(
-        "Failed to load binary dictionary, trying text fallback:",
-        error
-      );
-
+      } else throw new Error("WASM completer not available");
+    } catch (err) {
+      await recordError(`Binary dictionary load failed: ${String(err)}`);
       try {
         const response = await fetch(
           browser.runtime.getURL("data/words.txt" as any)
         );
+        if (!response.ok)
+          throw new Error(`words.txt status ${response.status}`);
         const text = await response.text();
-
-        // Use initWithData for text format
         const encoder = new TextEncoder();
         const data = encoder.encode(text);
         const result = (globalThis as any).wasmCompleter.initWithData(data);
-
-        if (!result.success) {
+        if (!result.success)
           throw new Error(result.error || "Failed to load text dictionary");
-        }
-
+        await browser.storage.local.set({
+          wordserveDictMeta: { words: result.wordCount, chunks: 0 },
+        });
         console.log(
           `WordServe loaded ${result.wordCount} words from text file`
         );
-      } catch (textError) {
-        throw new Error(`Failed to load any dictionary data: ${textError}`);
+      } catch (fallbackErr) {
+        await recordError(`Dictionary fallback failed: ${String(fallbackErr)}`);
       }
     }
   }
 
-  // Handle messages (both settings and WASM)
+  async function initializeWASM() {
+    try {
+      wasmInstance = new BackgroundWordServeWASM();
+      await wasmInstance.initialize();
+      await loadDictionaryData();
+      broadcast("wordserve-ready");
+      console.log("WordServe WASM initialized in background");
+    } catch (e) {
+      await recordError(`Initialization failed: ${String(e)}`);
+    }
+  }
+
+  // Update onMessage listener to fix TypeScript typing errors
   browser.runtime.onMessage.addListener(
-    (message, sender, sendResponse) => {
-      // Handle WASM completion messages
+    (
+      message: any,
+      sender: browser.Runtime.MessageSender,
+      sendResponse: (response: any) => void
+    ): true => {
+      if (message.type === "wordserve-status") {
+        sendResponse({ ready: !!(wasmInstance && wasmInstance.ready) });
+        return true;
+      }
+      if (message.type === "wordserve-last-error") {
+        (async () => {
+          const data = await browser.storage.local.get("wordserveLastError");
+          sendResponse(data.wordserveLastError || null);
+        })();
+        return true;
+      }
+      if (message.type === "wordserve-dict-meta") {
+        (async () => {
+          const data = await browser.storage.local.get("wordserveDictMeta");
+          sendResponse(data.wordserveDictMeta || null);
+        })();
+        return true;
+      }
+      if (message.type === "wordserve-complete-msgpack") {
+        (async () => {
+          try {
+            if (!wasmInstance?.ready) {
+              sendResponse({ error: "WASM not ready" });
+              return;
+            }
+            // Accept base64 payload (preferred) or legacy forms
+            let packed: Uint8Array | null = null;
+            if (typeof message.payloadB64 === "string") {
+              try {
+                const bin = atob(message.payloadB64);
+                const arr = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+                packed = arr;
+              } catch (e) {
+                console.error("[WordServe] Failed to decode base64 payload", e);
+              }
+            } else if (message.payload instanceof Uint8Array) {
+              packed = message.payload;
+            } else if (
+              message.payload &&
+              typeof message.payload === "object" &&
+              "length" in message.payload
+            ) {
+              const len = message.payload.length >>> 0;
+              const arr = new Uint8Array(len);
+              for (let i = 0; i < len; i++) arr[i] = message.payload[i] & 0xff;
+              packed = arr;
+            }
+            if (!packed) {
+              console.error(
+                "[WordServe] Invalid payload format",
+                message.payloadB64?.length,
+                typeof message.payload
+              );
+              sendResponse({ error: "Invalid payload format" });
+              return;
+            }
+
+            console.debug(
+              "[WordServe] Background calling wasmCompleter.complete with packed bytes len:",
+              packed.byteLength
+            );
+
+            const result = await wasmInstance.completeMsgPack(packed);
+            console.debug(
+              "[WordServe] Background received WASM result type:",
+              typeof result,
+              "isUint8",
+              result instanceof Uint8Array
+            );
+
+            let payloadB64: string | undefined;
+            if (result instanceof Uint8Array) {
+              let binary = "";
+              for (let i = 0; i < result.length; i++) binary += String.fromCharCode(result[i]);
+              payloadB64 = btoa(binary);
+            }
+            sendResponse({ payloadB64 });
+          } catch (e) {
+            console.error("[WordServe] Background WASM error:", e);
+            sendResponse({ error: String(e) });
+          }
+        })();
+        return true;
+      }
       if (message.type === "wordserve-complete") {
         (async () => {
           try {
-            if (!wasmInstance || !wasmInstance.ready) {
+            if (!wasmInstance?.ready) {
               sendResponse({ error: "WASM not ready" });
               return;
             }
-
             const { prefix, limit } = message;
-            const suggestions = await wasmInstance.complete(prefix, limit || 20);
+            const clamped = Math.max(1, Math.min(limit || 20, 128));
+            const suggestions = await wasmInstance.completeRaw(prefix, clamped);
             sendResponse({ suggestions });
-          } catch (error) {
-            sendResponse({ error: (error as Error).message });
+          } catch (e) {
+            sendResponse({ error: String(e) });
           }
         })();
         return true;
       }
-
       if (message.type === "wordserve-stats") {
         (async () => {
           try {
-            if (!wasmInstance || !wasmInstance.ready) {
+            if (!wasmInstance?.ready) {
               sendResponse({ error: "WASM not ready" });
               return;
             }
-
             const stats = await wasmInstance.getStats();
             sendResponse({ stats });
-          } catch (error) {
-            sendResponse({ error: (error as Error).message });
+          } catch (e) {
+            sendResponse({ error: String(e) });
           }
         })();
         return true;
       }
-
-      // Handle settings updates
-      if (message.type === 'updateSettings') {
+      if (message.type === "updateSettings") {
         (async () => {
           try {
-            await browser.storage.sync.set({ wordserveSettings: message.settings });
-            
-            // Notify all content scripts about the update
+            await browser.storage.sync.set({
+              wordserveSettings: message.settings,
+            });
             const tabs = await browser.tabs.query({});
-            for (const tab of tabs) {
-              if (tab.id && tab.id !== sender.tab?.id) {
-                try {
-                  await browser.tabs.sendMessage(tab.id, {
-                    type: 'settingsUpdated',
+            for (const tab of tabs)
+              if (tab.id && tab.id !== sender.tab?.id)
+                browser.tabs
+                  .sendMessage(tab.id, {
+                    type: "settingsUpdated",
                     settings: message.settings,
+                  })
+                  .catch(() => {});
+            sendResponse({ success: true });
+          } catch (e) {
+            sendResponse({ success: false, error: String(e) });
+          }
+        })();
+        return true;
+      }
+      if (message.type === "domain-override") {
+        (async () => {
+          try {
+            if (message.mode === "allowAlways" && message.host) {
+              const data = await browser.storage.sync.get("wordserveSettings");
+              const settings = data.wordserveSettings as any;
+              if (settings && settings.domains) {
+                const { whitelist } = settings.domains;
+                if (!whitelist.includes(message.host)) {
+                  whitelist.push(message.host);
+                  await browser.storage.sync.set({
+                    wordserveSettings: settings,
                   });
-                } catch (error) {
-                  // Ignore errors for tabs without content script
+                  broadcast("domainSettingsChanged", {
+                    settings: settings.domains,
+                  });
                 }
               }
             }
-            
             sendResponse({ success: true });
-          } catch (error) {
-            console.error('Failed to update settings:', error);
-            sendResponse({ success: false, error: String(error) });
+          } catch (e) {
+            sendResponse({ success: false, error: String(e) });
           }
         })();
         return true;
       }
+      return true;
     }
   );
 
-  // Initialize default settings on extension install
   browser.runtime.onInstalled.addListener(async (details) => {
-    if (details.reason === 'install') {
-      const defaultSettings = {
-        minWordLength: 3,
-        maxSuggestions: 64,
-        debounceTime: 100,
-        numberSelection: true,
-        showRankingOverride: false,
-        compactMode: false,
-        ghostTextEnabled: true,
-        fontSize: "editor",
-        fontWeight: "normal",
-        debugMode: false,
-        abbreviationsEnabled: true,
-        autoInsertion: true,
-        autoInsertionCommitMode: "space-commits",
-        smartBackspace: true,
-        accessibility: {
-          boldSuffix: false,
-          uppercaseSuggestions: false,
-          prefixColorIntensity: "normal",
-          ghostTextColorIntensity: "muted",
-        },
-        domains: {
-          blacklistMode: true,
-          blacklist: [
-            "*.paypal.com",
-            "*.stripe.com",
-            "*.checkout.com",
-            "*.square.com",
-            "*.braintreepayments.com",
-            "*.authorize.net",
-            "*.payment.*",
-            "*checkout*",
-            "*payment*",
-            "*billing*",
-            "*.bank.*",
-            "*banking*",
-            "online.chase.com",
-            "www.wellsfargo.com",
-            "www.bankofamerica.com",
-            "secure.*",
-            "login.*",
-            "auth.*",
-            "*signin*",
-            "*signup*",
-          ],
-          whitelist: [],
-        },
-      };
-
+    if (details.reason === "install") {
       try {
-        await browser.storage.sync.set({ wordserveSettings: defaultSettings });
-        console.log('WordServe: Default settings initialized');
-      } catch (error) {
-        console.error('WordServe: Failed to initialize default settings:', error);
+        await browser.storage.sync.set({ wordserveSettings: DEFAULT_SETTINGS });
+      } catch (e) {
+        await recordError(`Default settings init failed: ${String(e)}`);
       }
     }
   });
 
-  // Handle context menu actions (future feature)
-  browser.contextMenus?.onClicked?.addListener((info, tab) => {
-    if (info.menuItemId === 'wordserve-toggle' && tab?.id) {
-      browser.tabs.sendMessage(tab.id, { type: 'toggleWordServe' });
-    }
-  });
-
-  // Initialize WASM when background script starts
   initializeWASM();
 });

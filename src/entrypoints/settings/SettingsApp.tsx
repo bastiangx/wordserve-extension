@@ -48,6 +48,79 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
+
+// Interactive modifier key input component
+function KeyBindingInput({
+  value,
+  onChange,
+  className,
+}: {
+  value: string[];
+  onChange: (modifiers: string[]) => void;
+  className?: string;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [currentKeys, setCurrentKeys] = useState<string[]>([]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    e.preventDefault();
+
+    const modifiers: string[] = [];
+    if (e.ctrlKey || e.metaKey) modifiers.push("ctrl");
+    if (e.shiftKey) modifiers.push("shift");
+    if (e.altKey) modifiers.push("alt");
+
+    setCurrentKeys(modifiers);
+  };
+
+  const handleKeyUp = (e: React.KeyboardEvent) => {
+    e.preventDefault();
+
+    // Only apply the change when all keys are released
+    const modifiers: string[] = [];
+    if (e.ctrlKey || e.metaKey) modifiers.push("ctrl");
+    if (e.shiftKey) modifiers.push("shift");
+    if (e.altKey) modifiers.push("alt");
+
+    if (modifiers.length === 0 && currentKeys.length > 0) {
+      onChange(currentKeys);
+      setCurrentKeys([]);
+    }
+  };
+  const handleBlur = () => {
+    setFocused(false);
+    setCurrentKeys([]);
+  };
+  const displayKeys = focused ? currentKeys : value;
+  const displayText = displayKeys.length > 0 ? displayKeys.join("+") : "none";
+
+  return (
+    <div
+      className={`flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      onKeyUp={handleKeyUp}
+      onFocus={() => setFocused(true)}
+      onBlur={handleBlur}
+    >
+      <span className={`self-center ${focused ? "text-muted-foreground" : ""}`}>
+        {focused ? "Press modifier keys..." : displayText}
+      </span>
+      {value.length > 0 && !focused && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onChange([]);
+          }}
+          className="ml-auto self-center text-muted-foreground hover:text-foreground"
+          type="button"
+        >
+          ×
+        </button>
+      )}
+    </div>
+  );
+}
 import { FaGithub } from "react-icons/fa";
 import { SiKofi } from "react-icons/si";
 import {
@@ -64,93 +137,9 @@ import {
   Save,
   Minus,
 } from "lucide-react";
-
-interface WordServeSettings {
-  minWordLength: number;
-  maxSuggestions: number;
-  debounceTime: number;
-  numberSelection: boolean;
-  showRankingOverride: boolean;
-  compactMode: boolean;
-  ghostTextEnabled: boolean;
-  fontSize: number;
-  fontWeight:
-  | "thin"
-  | "extralight"
-  | "light"
-  | "normal"
-  | "medium"
-  | "semibold"
-  | "bold"
-  | "extrabold"
-  | "black";
-  abbreviationsEnabled: boolean;
-  autoInsertion: boolean;
-  autoInsertionCommitMode: "space-commits" | "enter-only";
-  smartBackspace: boolean;
-  accessibility: {
-    boldSuffix: boolean;
-    uppercaseSuggestions: boolean;
-    prefixColorIntensity: "normal" | "muted" | "faint" | "accent";
-    ghostTextColorIntensity: "normal" | "muted" | "faint" | "accent";
-    customColor?: string;
-    customFontFamily?: string;
-    customFontSize?: number;
-  };
-  domains: {
-    blacklistMode: boolean;
-    blacklist: string[];
-    whitelist: string[];
-  };
-}
-
-const DEFAULT_SETTINGS: WordServeSettings = {
-  minWordLength: 3,
-  maxSuggestions: 64,
-  debounceTime: 100,
-  numberSelection: true,
-  showRankingOverride: false,
-  compactMode: false,
-  ghostTextEnabled: true,
-  fontSize: 14,
-  fontWeight: "normal",
-  abbreviationsEnabled: true,
-  autoInsertion: true,
-  autoInsertionCommitMode: "space-commits",
-  smartBackspace: true,
-  accessibility: {
-    boldSuffix: false,
-    uppercaseSuggestions: false,
-    prefixColorIntensity: "normal",
-    ghostTextColorIntensity: "muted",
-  },
-  domains: {
-    blacklistMode: true,
-    blacklist: [
-      "*.paypal.com",
-      "*.stripe.com",
-      "*.checkout.com",
-      "*.square.com",
-      "*.braintreepayments.com",
-      "*.authorize.net",
-      "*.payment.*",
-      "*checkout*",
-      "*payment*",
-      "*billing*",
-      "*.bank.*",
-      "*banking*",
-      "online.chase.com",
-      "www.wellsfargo.com",
-      "www.bankofamerica.com",
-      "secure.*",
-      "login.*",
-      "auth.*",
-      "*signin*",
-      "*signup*",
-    ],
-    whitelist: [],
-  },
-};
+import type { DomainSettings } from "@/lib/domains";
+import type { WordServeSettings } from "@/types";
+import { DEFAULT_SETTINGS } from "@/lib/defaults";
 
 const navigationItems = [
   {
@@ -574,34 +563,123 @@ function SettingsApp() {
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Compact mode</Label>
-                <p className="text-sm text-muted-foreground">
-                  Reduce spacing and padding in suggestions
-                </p>
+            <div className="space-y-4">
+              <h3 className="font-medium">Keyboard bindings</h3>
+
+              <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
+                <div className="space-y-2">
+                  <Label>Insert without space</Label>
+                  <div className="flex gap-2">
+                    <KeyBindingInput
+                      value={
+                        pendingSettings.keyBindings.insertWithoutSpace.modifiers
+                      }
+                      onChange={(modifiers) =>
+                        updatePendingSetting("keyBindings", {
+                          ...pendingSettings.keyBindings,
+                          insertWithoutSpace: {
+                            ...pendingSettings.keyBindings.insertWithoutSpace,
+                            modifiers,
+                          },
+                        })
+                      }
+                      className="max-w-32"
+                    />
+                    <Select
+                      value={pendingSettings.keyBindings.insertWithoutSpace.key}
+                      onValueChange={(value: "enter" | "tab" | "space") =>
+                        updatePendingSetting("keyBindings", {
+                          ...pendingSettings.keyBindings,
+                          insertWithoutSpace: {
+                            ...pendingSettings.keyBindings.insertWithoutSpace,
+                            key: value,
+                          },
+                        })
+                      }
+                    >
+                      <SelectTrigger className="w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="enter">Enter</SelectItem>
+                        <SelectItem value="tab">Tab</SelectItem>
+                        <SelectItem value="space">Space</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Key combination to insert suggestion without adding a space
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Insert with space</Label>
+                  <div className="flex gap-2">
+                    <KeyBindingInput
+                      value={
+                        pendingSettings.keyBindings.insertWithSpace.modifiers
+                      }
+                      onChange={(modifiers) =>
+                        updatePendingSetting("keyBindings", {
+                          ...pendingSettings.keyBindings,
+                          insertWithSpace: {
+                            ...pendingSettings.keyBindings.insertWithSpace,
+                            modifiers,
+                          },
+                        })
+                      }
+                      className="max-w-32"
+                    />
+                    <Select
+                      value={pendingSettings.keyBindings.insertWithSpace.key}
+                      onValueChange={(value: "enter" | "tab" | "space") =>
+                        updatePendingSetting("keyBindings", {
+                          ...pendingSettings.keyBindings,
+                          insertWithSpace: {
+                            ...pendingSettings.keyBindings.insertWithSpace,
+                            key: value,
+                          },
+                        })
+                      }
+                    >
+                      <SelectTrigger className="w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="enter">Enter</SelectItem>
+                        <SelectItem value="tab">Tab</SelectItem>
+                        <SelectItem value="space">Space</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Key combination to insert suggestion and add a space
+                  </p>
+                </div>
               </div>
-              <Switch
-                checked={pendingSettings.compactMode}
-                onCheckedChange={(checked) =>
-                  updatePendingSetting("compactMode", checked)
-                }
-              />
             </div>
 
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label>Ghost text</Label>
+                <Label>Theme mode</Label>
                 <p className="text-sm text-muted-foreground">
-                  Show preview text inline with typing
+                  Adapt to website colors or use isolated theme
                 </p>
               </div>
-              <Switch
-                checked={pendingSettings.ghostTextEnabled}
-                onCheckedChange={(checked) =>
-                  updatePendingSetting("ghostTextEnabled", checked)
+              <Select
+                value={pendingSettings.themeMode}
+                onValueChange={(value: "adaptive" | "isolated") =>
+                  updatePendingSetting("themeMode", value)
                 }
-              />
+              >
+                <SelectTrigger className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="isolated">Isolated</SelectItem>
+                  <SelectItem value="adaptive">Adaptive</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
@@ -699,7 +777,10 @@ function SettingsApp() {
                   variant="outline"
                   size="sm"
                   onClick={() => adjustNumber("fontSize", -1, 8, 32)}
-                  disabled={pendingSettings.fontSize <= 8}
+                  disabled={
+                    typeof pendingSettings.fontSize === "number" &&
+                    pendingSettings.fontSize <= 8
+                  }
                   className="h-8 w-8 p-0"
                 >
                   <Minus className="h-4 w-4" />
@@ -737,7 +818,10 @@ function SettingsApp() {
                   variant="outline"
                   size="sm"
                   onClick={() => adjustNumber("fontSize", 1, 8, 32)}
-                  disabled={pendingSettings.fontSize >= 32}
+                  disabled={
+                    typeof pendingSettings.fontSize === "number" &&
+                    pendingSettings.fontSize >= 32
+                  }
                   className="h-8 w-8 p-0"
                 >
                   <Plus className="h-4 w-4" />
@@ -774,6 +858,118 @@ function SettingsApp() {
               <p className="text-sm text-muted-foreground">
                 Weight of text in suggestions
               </p>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="font-medium">Layout & Visual</h3>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label>Compact mode</Label>
+                <p className="text-sm text-muted-foreground">
+                  Reduce spacing and padding in suggestions
+                </p>
+              </div>
+              <Switch
+                checked={pendingSettings.compactMode}
+                onCheckedChange={(checked) =>
+                  updatePendingSetting("compactMode", checked)
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label>Ghost text</Label>
+                <p className="text-sm text-muted-foreground">
+                  Show preview text inline with typing
+                </p>
+              </div>
+              <Switch
+                checked={pendingSettings.ghostTextEnabled}
+                onCheckedChange={(checked) =>
+                  updatePendingSetting("ghostTextEnabled", checked)
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label>Ranking position</Label>
+                <p className="text-sm text-muted-foreground">
+                  Position of ranking numbers in suggestion menu
+                </p>
+              </div>
+              <Select
+                value={pendingSettings.rankingPosition}
+                onValueChange={(value: "left" | "right") =>
+                  updatePendingSetting("rankingPosition", value)
+                }
+              >
+                <SelectTrigger className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="left">Left</SelectItem>
+                  <SelectItem value="right">Right</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label>Menu border</Label>
+                <p className="text-sm text-muted-foreground">
+                  Show border around the suggestion menu
+                </p>
+              </div>
+              <Switch
+                checked={pendingSettings.menuBorder}
+                onCheckedChange={(checked) =>
+                  updatePendingSetting("menuBorder", checked)
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label>Rounded borders</Label>
+                <p className="text-sm text-muted-foreground">
+                  Use rounded corners for the suggestion menu
+                </p>
+              </div>
+              <Switch
+                checked={pendingSettings.menuBorderRadius}
+                onCheckedChange={(checked) =>
+                  updatePendingSetting("menuBorderRadius", checked)
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label>Theme mode</Label>
+                <p className="text-sm text-muted-foreground">
+                  How the menu integrates with page themes
+                </p>
+              </div>
+              <Select
+                value={pendingSettings.themeMode}
+                onValueChange={(value: "adaptive" | "isolated") =>
+                  updatePendingSetting("themeMode", value)
+                }
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="adaptive">Adaptive</SelectItem>
+                  <SelectItem value="isolated">Isolated</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>

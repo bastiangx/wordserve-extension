@@ -1,17 +1,10 @@
-import type { InputState } from "./dom";
+import type {
+  InputState,
+  KeyboardHandlerCallbacks,
+  KeyboardHandlerSettings,
+} from "@/types";
 
-export interface KeyboardHandlerCallbacks {
-  onNavigate: (direction: number) => void;
-  onCommit: (addSpace: boolean) => void;
-  onHide: () => void;
-  onSelectByNumber: (index: number) => void;
-}
-
-export interface KeyboardHandlerSettings {
-  numberSelection: boolean;
-  autoInsertionCommitMode: "enter-only" | "space-commits" | "disabled";
-  smartBackspace: boolean;
-}
+// Interfaces now sourced from central types
 
 export class KeyboardHandler {
   private element: HTMLElement;
@@ -118,7 +111,7 @@ export class KeyboardHandler {
    */
   public getManagedKeys(): string[] {
     const keys = ["ArrowUp", "ArrowDown", "Tab", "Escape"];
-    
+
     if (this.settings.numberSelection) {
       keys.push(...["1", "2", "3", "4", "5", "6", "7", "8", "9"]);
     }

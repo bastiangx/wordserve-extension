@@ -1,64 +1,21 @@
-import {
-  WordServeWASMProxy,
-  type Suggestion as WASMSuggestion,
-  type WASMCompleterStats,
-} from "./wasm/ws-wasm";
-import {
-  ReactSuggestionMenuRenderer,
-  type Suggestion,
-} from "@/components/wordserve";
-import { 
-  KeyboardHandler,
-  type KeyboardHandlerCallbacks,
-  type KeyboardHandlerSettings 
-} from "./kbd";
+import type {
+  RawSuggestion as WASMSuggestion,
+  WASMCompleterStats,
+  WordServeSettings,
+  InputState,
+  KeyboardHandlerSettings,
+  KeyboardHandlerCallbacks,
+} from "@/types";
+import { KeyboardHandler } from "./kbd";
 import { shouldActivateForDomain, type DomainSettings } from "./domains";
+import { buildWordServeScopedVars, WS_RADIUS_VAR } from "./theme";
+import { ReactSuggestionMenuRenderer } from "../components/wordserve/render";
 
 interface WordServeEngine {
   waitForReady(): Promise<void>;
   complete(prefix: string, limit?: number): Promise<WASMSuggestion[]>;
   getStats(): Promise<WASMCompleterStats>;
   readonly ready: boolean;
-}
-
-export interface WordServeSettings {
-  minWordLength: number;
-  maxSuggestions: number;
-  debounceTime: number;
-  numberSelection: boolean;
-  showRankingOverride: boolean;
-  compactMode: boolean;
-  ghostTextEnabled: boolean;
-  fontSize: string;
-  fontWeight: string;
-  debugMode: boolean;
-  abbreviationsEnabled: boolean;
-  autoInsertion: boolean;
-  autoInsertionCommitMode: "space-commits" | "enter-only";
-  smartBackspace: boolean;
-  accessibility: {
-    boldSuffix: boolean;
-    uppercaseSuggestions: boolean;
-    prefixColorIntensity: "normal" | "muted" | "faint" | "accent";
-    ghostTextColorIntensity: "normal" | "muted" | "faint" | "accent";
-    customColor?: string;
-    customFontFamily?: string;
-    customFontSize?: number;
-  };
-  domains: DomainSettings;
-}
-
-export interface InputState {
-  currentWord: string;
-  wordStart: number;
-  wordEnd: number;
-  suggestions: Array<{ word: string; rank: number }>;
-  selectedIndex: number;
-  isActive: boolean;
-  position?: { x: number; y: number }; // Store initial position to prevent shifting
-  currentValue: string;
-  caretPosition: number;
-  keyboardHandler?: KeyboardHandler;
 }
 
 export class DOMManager {
@@ -69,146 +26,137 @@ export class DOMManager {
   private menuRenderer: ReactSuggestionMenuRenderer | null = null;
   private debounceTimers = new Map<HTMLElement, number>();
   private observers: MutationObserver[] = [];
+  private mutationObserver: MutationObserver | null = null;
+
+  private readonly INPUT_SELECTORS = "textarea, input, [contentEditable]";
 
   constructor(wordserve: WordServeEngine, settings: WordServeSettings) {
     this.wordserve = wordserve;
     this.settings = settings;
 
-    if (shouldActivateForDomain(window.location.hostname, this.settings.domains)) {
+    console.debug("[WordServe] DOMManager constructor", {
+      hostname: window.location.hostname,
+      shouldActivate: shouldActivateForDomain(
+        window.location.hostname,
+        this.settings.domains
+      ),
+      debugMode: this.settings.debugMode,
+    });
+
+    if (
+      shouldActivateForDomain(window.location.hostname, this.settings.domains)
+    ) {
       this.init();
     }
   }
 
   private init() {
+    console.debug("[WordServe] DOMManager init starting");
     this.setupMutationObserver();
     this.attachToExistingInputs();
     this.createGlobalStyles();
+    console.debug("[WordServe] DOMManager init completed");
+  }
+
+  private setupMutationObserver() {
+    this.mutationObserver = new MutationObserver((mutations) => {
+      // Use setTimeout to avoid blocking the main thread
+      setTimeout(() => this.processMutations(mutations), 0);
+    });
+
+    this.mutationObserver.observe(document.documentElement, {
+      childList: true,
+      attributes: true,
+      attributeFilter: ["contenteditable", "type", "name", "id", "style"],
+      subtree: true,
+    });
+  }
+
+  private processMutations(mutations: MutationRecord[]) {
+    for (const mutation of mutations) {
+      // Handle added nodes
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          const element = node as Element;
+          this.attachToInputsInElement(element);
+        }
+      });
+
+      // Handle attribute changes that might affect input detection
+      if (
+        mutation.type === "attributes" &&
+        mutation.target.nodeType === Node.ELEMENT_NODE
+      ) {
+        const element = mutation.target as Element;
+        this.attachToInputsInElement(element);
+      }
+    }
   }
 
   private createGlobalStyles() {
     const style = document.createElement("style");
     style.id = "ws-styles";
     style.textContent = `
-      /* Rose Pine theme colors for WordServe suggestion menu */
-      .ws-suggestion-menu {
-        position: fixed;
-        background: #191724;
-        border: 1px solid #26233a;
-        border-radius: 8px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-        z-index: 999999;
-        max-height: 300px;
-        overflow-y: auto;
-        min-width: 200px;
-        max-width: 400px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        font-size: ${this.getFontSize()}px;
-        font-weight: ${this.settings.fontWeight};
-        backdrop-filter: blur(8px);
-        animation: ws-fade-in 0.15s ease-out;
-      }
-      
-      @keyframes ws-fade-in {
-        from {
-          opacity: 0;
-          transform: scale(0.95) translateY(-4px);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1) translateY(0);
-        }
-      }
-      
-      .ws-suggestion-menu.compact {
-        font-size: ${this.getFontSize() * 0.9}px;
-      }
-      
-      .ws-suggestion-item {
-        padding: ${this.settings.compactMode ? "6px 12px" : "8px 12px"};
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        transition: background-color 0.1s ease;
-        color: #e0def4;
-        border-radius: 4px;
-        margin: 2px 4px;
-      }
-      
-      .ws-suggestion-item:hover {
-        background: #1f1d2e;
-      }
-      
-      .ws-suggestion-item.selected {
-        background: #31748f;
-        color: #e0def4;
-      }
-      
-      .ws-suggestion-word {
-        flex: 1;
-        display: flex;
-        align-items: center;
-      }
-      
-      .ws-suggestion-prefix {
-        color: #908caa;
-        font-weight: 500;
-        ${this.settings.accessibility.boldSuffix ? "font-weight: bold;" : ""}
-      }
-      
-      .ws-suggestion-suffix {
-        color: #e0def4;
-        ${this.settings.accessibility.boldSuffix ? "font-weight: bold;" : ""}
-        ${
-          this.settings.accessibility.uppercaseSuggestions
-            ? "text-transform: uppercase;"
-            : ""
-        }
-      }
-      
-      .ws-suggestion-meta {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        margin-left: 8px;
-      }
-      
-      .ws-suggestion-number,
-      .ws-suggestion-rank {
-        font-size: 0.75rem;
-        color: #6e6a86;
-        font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-      }
-      
-      .ws-suggestion-item.selected .ws-suggestion-number,
-      .ws-suggestion-item.selected .ws-suggestion-rank {
-        color: #e0def4;
-        opacity: 0.8;
-      }
-      
-      .ws-suggestion-menu::-webkit-scrollbar {
-        width: 6px;
-      }
-      
-      .ws-suggestion-menu::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      
-      .ws-suggestion-menu::-webkit-scrollbar-thumb {
-        background: #26233a;
-        border-radius: 3px;
-      }
-      
-      .ws-suggestion-menu::-webkit-scrollbar-thumb:hover {
-        background: #403d52;
-      }
+      /* WordServe scoped tokens */
+      :root, .ws-root-scope { ${buildWordServeScopedVars()} }
+
+      @keyframes ws-fade-in { from {opacity:0;transform:scale(.95) translateY(-4px);} to {opacity:1;transform:scale(1) translateY(0);} }
+
+  .ws-suggestion-menu { all:revert-layer; position:fixed; background:hsl(var(--ws-bg)); ${
+    this.settings.menuBorder
+      ? "border:1px solid hsl(var(--ws-border));"
+      : "border:none;"
+  } border-radius:${
+      this.settings.menuBorderRadius ? "var(" + WS_RADIUS_VAR + ",6px)" : "0"
+    }; box-shadow:0 10px 15px -3px rgba(0,0,0,.35),0 4px 6px -2px rgba(0,0,0,.25); z-index:2147483646; max-height:300px; overflow-y:auto; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; font-size:${this.getFontSize()}px; font-weight:${
+      this.settings.fontWeight
+    }; backdrop-filter:blur(8px); animation:ws-fade-in .15s ease-out; }
+      .ws-suggestion-menu.compact { font-size:${this.getFontSize() * 0.9}px; }
+  .ws-suggestion-item { padding:${
+    this.settings.compactMode ? "6px 12px" : "8px 12px"
+  }; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:background-color .12s ease, color .12s ease; color:hsl(var(--ws-text)); border-radius:${
+      this.settings.menuBorderRadius ? "6px" : "0"
+    }; margin:2px 4px; }
+  .ws-suggestion-item:hover { background:hsl(var(--ws-bgAlt)); }
+  .ws-suggestion-item.selected { background:hsl(var(--ws-accent)); color:hsl(var(--ws-accentFg)); }
+      .ws-suggestion-word { flex:1; display:flex; align-items:center; }
+  .ws-suggestion-prefix { color:hsl(var(--ws-textMuted)); font-weight:500; ${
+    this.settings.accessibility.boldSuffix ? "font-weight:bold;" : ""
+  } }
+      .ws-suggestion-suffix { color:currentColor; ${
+        this.settings.accessibility.boldSuffix ? "font-weight:bold;" : ""
+      } ${
+      this.settings.accessibility.uppercaseSuggestions
+        ? "text-transform:uppercase;"
+        : ""
+    } }
+      .ws-suggestion-meta { display:flex; align-items:center; gap:4px; margin-left:8px; }
+  .ws-suggestion-number, .ws-suggestion-rank { font-size:0.7rem; color:hsl(var(--ws-textMuted)); font-family:'SF Mono',Monaco,'Cascadia Code','Roboto Mono',Consolas,'Courier New',monospace; }
+  .ws-suggestion-item.selected .ws-suggestion-number, .ws-suggestion-item.selected .ws-suggestion-rank { color:hsl(var(--ws-accentFg)); opacity:.85; }
+      .ws-suggestion-menu::-webkit-scrollbar { width:6px; }
+      .ws-suggestion-menu::-webkit-scrollbar-track { background:transparent; }
+  .ws-suggestion-menu::-webkit-scrollbar-thumb { background:hsl(var(--ws-scrollbar)); border-radius:3px; }
+  .ws-suggestion-menu::-webkit-scrollbar-thumb:hover { background:hsl(var(--ws-scrollbarHover)); }
+
+      /* Alerts / Toasts */
+  .ws-alert-stack { position:fixed; top:12px; right:12px; z-index:2147483647; display:flex; flex-direction:column; gap:8px; width:320px; }
+  .ws-alert { background:hsl(var(--ws-bg)); border:1px solid hsl(var(--ws-border)); border-radius:6px; padding:10px 12px; color:hsl(var(--ws-text)); font-size:13px; line-height:1.3; box-shadow:0 6px 14px -4px rgba(0,0,0,.4); display:flex; flex-direction:column; gap:4px; }
+  .ws-alert.ws-error { border-color:hsl(var(--ws-danger)); }
+      .ws-alert-title { font-weight:600; }
+      .ws-alert-desc { font-size:12px; opacity:.85; }
+
+      /* Sensitivity override pill */
+  .ws-override-pill { position:fixed; bottom:16px; right:16px; background:hsl(var(--ws-bg)); color:hsl(var(--ws-text)); border:1px solid hsl(var(--ws-border)); padding:12px 14px; border-radius:10px; max-width:360px; box-shadow:0 6px 18px -6px rgba(0,0,0,.45); font-size:13px; display:flex; flex-direction:column; gap:10px; }
+      .ws-override-pill-buttons { display:flex; gap:8px; flex-wrap:wrap; }
+  .ws-btn { background:hsl(var(--ws-bgAlt)); color:hsl(var(--ws-text)); border:1px solid hsl(var(--ws-border)); padding:6px 10px; font-size:12px; border-radius:6px; cursor:pointer; transition:background .12s ease, border-color .12s ease; }
+  .ws-btn:hover { background:hsl(var(--ws-bgAlt)); border-color:hsl(var(--ws-accent)); }
+  .ws-btn-primary { background:hsl(var(--ws-accent)); color:hsl(var(--ws-accentFg)); border-color:hsl(var(--ws-accent)); }
+      .ws-btn-primary:hover { filter:brightness(1.05); }
     `;
 
     if (this.settings.accessibility.customColor) {
       style.textContent += `
-        .ws-suggestion-item.selected {
-          background: ${this.settings.accessibility.customColor} !important;
-        }
+  .ws-suggestion-item.selected { background: ${this.settings.accessibility.customColor} !important; }
       `;
     }
 
@@ -228,6 +176,12 @@ export class DOMManager {
       return this.settings.accessibility.customFontSize;
     }
 
+    // If fontSize is a number, use it directly
+    if (typeof this.settings.fontSize === 'number') {
+      return this.settings.fontSize;
+    }
+
+    // If fontSize is a string preset, convert it
     const sizeMap = {
       smallest: 10,
       smaller: 12,
@@ -252,7 +206,7 @@ export class DOMManager {
     return colorMap[intensity as keyof typeof colorMap] || colorMap.normal;
   }
 
-  private setupMutationObserver() {
+  private setupMutationObserverOld() {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
@@ -272,25 +226,129 @@ export class DOMManager {
   }
 
   private attachToExistingInputs() {
+    console.debug("[WordServe] attachToExistingInputs starting");
     this.attachToInputsInElement(document.documentElement);
   }
 
   private attachToInputsInElement(element: Element) {
-    const inputs = element.querySelectorAll(
-      'input[type="text"], input[type="search"], input[type="email"], input[type="url"], textarea, [contenteditable="true"]'
+    // Use simple selectors like FluentTyper
+    const inputs = element.querySelectorAll(this.INPUT_SELECTORS);
+
+    console.debug(
+      "[WordServe] found inputs",
+      inputs.length,
+      Array.from(inputs).map((i) => ({
+        tag: i.tagName,
+        type: (i as any).type,
+        id: i.id,
+        class: i.className,
+      }))
     );
 
     inputs.forEach((input) => {
       if (!this.inputStates.has(input as HTMLElement)) {
-        this.attachToInput(input as HTMLElement);
+        if (this.shouldAttachToElement(input as HTMLElement)) {
+          console.debug("[WordServe] attaching to input", {
+            tag: input.tagName,
+            type: (input as any).type,
+            id: input.id,
+          });
+          this.attachToInput(input as HTMLElement);
+        }
       }
     });
   }
 
+  private shouldAttachToElement(element: HTMLElement): boolean {
+    // Skip if element is not visible (like ChatGPT's hidden fallback textarea)
+    const computedStyle = window.getComputedStyle(element);
+    if (
+      computedStyle.display === "none" ||
+      computedStyle.visibility === "hidden" ||
+      element.offsetHeight === 0 ||
+      element.offsetWidth === 0
+    ) {
+      console.debug("[WordServe] skipping hidden element", element);
+      return false;
+    }
+
+    // Handle input elements - only allow text-like types
+    if (element.tagName === "INPUT") {
+      const inputType = (element as HTMLInputElement).type.toLowerCase();
+      if (!["text", "search", ""].includes(inputType)) {
+        console.debug("[WordServe] skipping non-text input type:", inputType);
+        return false;
+      }
+    }
+
+    // Check for sensitive attributes (similar to FluentTyper filtering)
+    const sensitiveChecks = [
+      {
+        property: "name",
+        sensitiveValues: ["username", "password", "email"],
+        reverse: true,
+      },
+      {
+        property: "id",
+        sensitiveValues: ["username", "password", "email"],
+        reverse: true,
+      },
+      {
+        property: "type",
+        sensitiveValues: ["password", "email"],
+        reverse: true,
+      },
+      {
+        property: "contentEditable",
+        sensitiveValues: ["false"],
+        reverse: true,
+      },
+    ];
+
+    for (const check of sensitiveChecks) {
+      const value = this.getElementProperty(element, check.property);
+      const isSensitive = check.sensitiveValues.some((sensitive) =>
+        value.toLowerCase().includes(sensitive.toLowerCase())
+      );
+
+      if (check.reverse ? isSensitive : !isSensitive) {
+        console.debug(
+          `[WordServe] skipping element due to ${check.property}:`,
+          value
+        );
+        return false;
+      }
+    }
+
+    // Use the existing shouldActivateForInput for additional checks
+    return this.shouldActivateForInput(element);
+  }
+
+  private getElementProperty(element: HTMLElement, property: string): string {
+    switch (property) {
+      case "contentEditable":
+        return element.contentEditable || "false";
+      case "type":
+        return (element as HTMLInputElement).type || "";
+      case "name":
+        return (element as HTMLInputElement).name || "";
+      case "id":
+        return element.id || "";
+      default:
+        return element.getAttribute(property) || "";
+    }
+  }
+
   private attachToInput(element: HTMLElement) {
     if (!this.shouldActivateForInput(element)) {
+      console.debug(
+        "[WordServe] skipping input (shouldActivateForInput=false)",
+        element
+      );
       return;
     }
+
+    console.debug("[WordServe] creating input state for", element);
 
     const inputState: InputState = {
       currentValue: this.getInputValue(element),
@@ -305,10 +363,12 @@ export class DOMManager {
 
     // Create keyboard handler callbacks
     const keyboardCallbacks: KeyboardHandlerCallbacks = {
-      onNavigate: (direction: number) => this.navigateSuggestions(element, direction),
+      onNavigate: (direction: number) =>
+        this.navigateSuggestions(element, direction),
       onCommit: (addSpace: boolean) => this.commitSuggestion(element, addSpace),
       onHide: () => this.hideSuggestions(element),
-      onSelectByNumber: (index: number) => this.selectSuggestion(element, index),
+      onSelectByNumber: (index: number) =>
+        this.selectSuggestion(element, index),
     };
 
     // Create keyboard handler settings from our settings
@@ -330,39 +390,93 @@ export class DOMManager {
 
     // Event listeners (keyboard handler manages menu navigation, but we need backspace)
     element.addEventListener("input", this.handleInput.bind(this, element));
-    element.addEventListener("keydown", this.handleGlobalKeys.bind(this, element));
+    element.addEventListener(
+      "keydown",
+      this.handleGlobalKeys.bind(this, element)
+    );
     element.addEventListener("focus", this.handleFocus.bind(this, element));
     element.addEventListener("blur", this.handleBlur.bind(this, element));
     element.addEventListener("click", this.handleClick.bind(this, element));
   }
 
   private shouldActivateForInput(element: HTMLElement): boolean {
-    // Check if element is password field
     if (
       element.tagName === "INPUT" &&
       (element as HTMLInputElement).type === "password"
     ) {
+      console.debug("[WordServe] skipping password input");
       return false;
     }
 
-    // Check for data attributes that indicate sensitive fields
-    const sensitiveAttributes = [
+    const attr = (name: string) =>
+      (element.getAttribute(name) || "").toLowerCase();
+    const joined = [
+      attr("name"),
+      attr("id"),
+      attr("autocomplete"),
+      attr("aria-label"),
+      attr("placeholder"),
+      attr("data-type"),
+    ].join(" ");
+
+    console.debug("[WordServe] checking input activation", {
+      element,
+      tagName: element.tagName,
+      type: (element as HTMLInputElement).type,
+      attributes: {
+        name: attr("name"),
+        id: attr("id"),
+        autocomplete: attr("autocomplete"),
+        "aria-label": attr("aria-label"),
+        placeholder: attr("placeholder"),
+        "data-type": attr("data-type"),
+      },
+      joined,
+    });
+
+    const sensitiveHints = [
       "password",
-      "cc-number",
-      "cc-exp",
-      "cc-csc",
-      "cc-name",
+      "passcode",
+      "otp",
+      "one-time",
+      "2fa",
+      "cvv",
+      "cvc",
+      "card",
+      "credit",
+      "debit",
+      "iban",
+      "account",
+      "routing",
+      "ssn",
+      "social security",
+      "tax id",
+      "pin",
+      "security answer",
+      "secret",
+      "license",
+      "passport",
     ];
-    for (const attr of sensitiveAttributes) {
-      if (
-        element.getAttribute("autocomplete")?.includes(attr) ||
-        element.getAttribute("data-stripe") ||
-        element.getAttribute("data-payment")
-      ) {
-        return false;
-      }
+
+    if (sensitiveHints.some((k) => joined.includes(k))) {
+      console.debug(
+        "[WordServe] skipping sensitive input, found hints:",
+        sensitiveHints.filter((k) => joined.includes(k))
+      );
+      return false;
     }
 
+    if (attr("data-stripe") || attr("data-payment")) {
+      console.debug("[WordServe] skipping payment input");
+      return false;
+    }
+
+    if (location.protocol !== "https:" && element.isContentEditable) {
+      console.debug("[WordServe] skipping contentEditable on HTTP");
+      return false;
+    }
+
+    console.debug("[WordServe] input activation allowed");
     return true;
   }
 
@@ -370,10 +484,22 @@ export class DOMManager {
     const inputState = this.inputStates.get(element);
     if (!inputState) return;
 
+    console.debug("[WordServe] handleInput triggered", {
+      element,
+      value: this.getInputValue(element),
+    });
+
     inputState.currentValue = this.getInputValue(element);
     inputState.caretPosition = this.getCaretPosition(element);
 
     this.updateCurrentWord(inputState);
+    console.debug("[WordServe] after updateCurrentWord", {
+      currentWord: inputState.currentWord,
+      wordStart: inputState.wordStart,
+      wordEnd: inputState.wordEnd,
+      minLength: this.settings.minWordLength,
+    });
+
     this.debounceSearch(element);
   }
 
@@ -402,10 +528,10 @@ export class DOMManager {
   }
 
   private handleBlur(element: HTMLElement, event: FocusEvent) {
-    // Delay hiding to allow for suggestion clicks
+    // Reduced delay since we have click-outside handling now
     setTimeout(() => {
       this.hideSuggestions(element);
-    }, 150);
+    }, 50);
   }
 
   private handleClick(element: HTMLElement, event: MouseEvent) {
@@ -422,7 +548,13 @@ export class DOMManager {
       clearTimeout(existingTimer);
     }
 
+    console.debug(
+      "[WordServe] debounceSearch scheduled",
+      this.settings.debounceTime
+    );
+
     const timer = window.setTimeout(() => {
+      console.debug("[WordServe] debounce timer fired, calling performSearch");
       this.performSearch(element);
     }, this.settings.debounceTime);
 
@@ -430,20 +562,77 @@ export class DOMManager {
   }
 
   private async performSearch(element: HTMLElement) {
+    console.debug("[WordServe] performSearch called");
     const inputState = this.inputStates.get(element);
+    console.debug(
+      "[WordServe] inputState exists:",
+      !!inputState,
+      "currentWord:",
+      inputState?.currentWord,
+      "minLength:",
+      this.settings.minWordLength
+    );
+
     if (
       !inputState ||
       inputState.currentWord.length < this.settings.minWordLength
     ) {
+      console.debug(
+        "[WordServe] performSearch: skip (min length)",
+        inputState?.currentWord
+      );
       this.hideSuggestions(element);
       return;
     }
 
+    console.debug(
+      "[WordServe] checking wordserve.ready:",
+      this.wordserve.ready
+    );
+    if (!this.wordserve.ready) {
+      // retry shortly after if engine not yet ready
+      console.debug("[WordServe] performSearch: engine not ready, retry");
+      setTimeout(() => this.performSearch(element), 200);
+      return;
+    }
+
+    console.debug(
+      "[WordServe] proceeding with completion for:",
+      inputState.currentWord
+    );
+    const limit = Math.max(1, Math.min(this.settings.maxSuggestions, 128));
     try {
+      // Check WASM stats first
+      const stats = await this.wordserve.getStats();
+      console.debug("[WordServe] WASM stats:", stats);
+
+      // Try a simple test first
+      console.debug(
+        "[WordServe] calling complete with word:",
+        inputState.currentWord,
+        "limit:",
+        limit
+      );
+
       const result = await this.wordserve.complete(
         inputState.currentWord,
-        this.settings.maxSuggestions
+        limit
       );
+      console.debug(
+        "[WordServe] raw completion result:",
+        result,
+        "type:",
+        typeof result,
+        "length:",
+        result?.length
+      );
+
+      // Test with a known common prefix
+      if (result.length === 0 && inputState.currentWord === "test") {
+        console.debug('[WordServe] Testing with prefix "th"');
+        const testResult = await this.wordserve.complete("th", 5);
+        console.debug('[WordServe] "th" test result:', testResult);
+      }
 
       if (result.length > 0) {
         inputState.suggestions = result.map((s: any, i: number) => ({
@@ -452,15 +641,13 @@ export class DOMManager {
         }));
         inputState.selectedIndex = 0;
         inputState.isActive = true;
-
         this.showSuggestions(element);
       } else {
+        console.debug("[WordServe] no results, hiding suggestions");
         this.hideSuggestions(element);
       }
     } catch (error) {
-      if (this.settings.debugMode) {
-        console.error("WordServe search error:", error);
-      }
+      console.debug("[WordServe] performSearch error:", error);
       this.hideSuggestions(element);
     }
   }
@@ -469,39 +656,52 @@ export class DOMManager {
     const inputState = this.inputStates.get(element);
     if (!inputState) return;
 
-    // Only hide old-style menu, not React menu to avoid flicker
-    if (this.suggestionMenu) {
-      this.suggestionMenu.remove();
-      this.suggestionMenu = null;
-    }
-
-    // Initialize React menu renderer if not exists
+    // Initialize React renderer if needed
     if (!this.menuRenderer) {
       this.menuRenderer = new ReactSuggestionMenuRenderer();
     }
 
-    // Convert suggestions to the format expected by the React component
-    const suggestions: Suggestion[] = inputState.suggestions.map((s) => ({
-      word: s.word,
-      rank: s.rank,
-    }));
-
+    // Calculate position
+    inputState.position = undefined;
     const position = this.calculateMenuPosition(element, inputState);
+    const suggestions = inputState.suggestions;
 
+    if (this.settings.debugMode) {
+      console.debug(
+        "[WordServe] showSuggestions (React) at",
+        position,
+        "count",
+        suggestions.length
+      );
+    }
+
+    // Render with React
     this.menuRenderer.render({
       suggestions,
       selectedIndex: inputState.selectedIndex,
       currentWord: inputState.currentWord,
       position,
-      onSelect: (index: number) => {
-        this.selectSuggestion(element, index);
+      onSelect: (index: number) => this.selectSuggestion(element, index),
+      onNavigate: (direction: number) =>
+        this.navigateSuggestions(element, direction),
+      onSetIndex: (index: number) => {
+        const st = this.inputStates.get(element);
+        if (!st) return;
+        if (index >= 0 && index < st.suggestions.length) {
+          st.selectedIndex = index;
+          this.updateSuggestionSelection(element);
+        }
       },
-      onClose: () => {
-        this.hideSuggestions(element);
-      },
+      onCommit: (addSpace: boolean) => this.commitSuggestion(element, addSpace),
+      onClose: () => this.hideSuggestions(element),
       showRanking: this.settings.showRankingOverride,
-      showNumbers: this.settings.numberSelection,
+      showNumbers: this.settings.numberSelection, // only show if numeric selection enabled
       compactMode: this.settings.compactMode,
+      rankingPosition: this.settings.rankingPosition,
+      borderRadius: this.settings.menuBorderRadius,
+      menuBorder: this.settings.menuBorder,
+      themeMode: this.settings.themeMode,
+      keyBindings: this.settings.keyBindings,
     });
   }
 
@@ -509,10 +709,7 @@ export class DOMManager {
     element: HTMLElement,
     inputState: InputState
   ): { x: number; y: number } {
-    // If position is already stored, reuse it to prevent shifting during navigation
-    if (inputState.position) {
-      return inputState.position;
-    }
+    // Recalculate every time to avoid stale positions when page scrolls
 
     const isContentEditable =
       element.isContentEditable || element.tagName === "DIV";
@@ -524,7 +721,6 @@ export class DOMManager {
       position = this.getInputCaretPosition(element, inputState.caretPosition);
     }
 
-    // Store the position to prevent shifting during navigation
     inputState.position = position;
     return position;
   }
@@ -556,9 +752,17 @@ export class DOMManager {
 
     const scrollLeft = input.scrollLeft || 0;
     const x = rect.left + textWidth - scrollLeft;
-    const y = rect.bottom + window.scrollY;
+    const y = rect.bottom; // viewport coordinate for fixed menu
 
-    return this.adjustPositionForViewport({ x, y });
+    const adjusted = this.adjustPositionForViewport({ x, y });
+    if (this.settings.debugMode)
+      console.debug(
+        "[WordServe] caret position raw",
+        { x, y },
+        "adjusted",
+        adjusted
+      );
+    return adjusted;
   }
 
   private getContentEditableCaretPosition(element: HTMLElement): {
@@ -568,18 +772,29 @@ export class DOMManager {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) {
       const rect = element.getBoundingClientRect();
-      return this.adjustPositionForViewport({
-        x: rect.left,
-        y: rect.bottom + window.scrollY,
-      });
+      return this.adjustPositionForViewport({ x: rect.left, y: rect.bottom });
     }
-
     const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-
+    if (!element.contains(range.startContainer)) {
+      const rect = element.getBoundingClientRect();
+      return this.adjustPositionForViewport({ x: rect.left, y: rect.bottom });
+    }
+    let rect = range.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) {
+      // Create a temporary range expanding by one char if possible
+      const temp = range.cloneRange();
+      if (range.startContainer.nodeType === Node.TEXT_NODE) {
+        const text = range.startContainer as Text;
+        if (range.startOffset < text.data.length) {
+          temp.setEnd(range.startContainer, range.startOffset + 1);
+        } else if (range.startOffset > 0) {
+          temp.setStart(range.startContainer, range.startOffset - 1);
+        }
+        rect = temp.getBoundingClientRect();
+      }
+    }
     const x = rect.left;
-    const y = rect.bottom + window.scrollY;
-
+    const y = rect.bottom;
     return this.adjustPositionForViewport({ x, y });
   }
 
@@ -587,7 +802,7 @@ export class DOMManager {
     x: number;
     y: number;
   } {
-    const menuWidth = 300; // estimated menu width
+    const menuWidth = 300; // default fallback - actual width will be calculated dynamically
     const menuHeight = 200; // estimated menu height
     const padding = 10;
 
@@ -600,15 +815,13 @@ export class DOMManager {
     }
 
     // Adjust vertical position if menu would go off screen
-    const availableSpaceBottom = window.innerHeight - (y - window.scrollY);
+    const availableSpaceBottom = window.innerHeight - y;
     if (availableSpaceBottom < menuHeight + padding) {
       // Try to place above the caret
       y = position.y - menuHeight - 10;
 
       // If still not enough space, clamp to viewport
-      if (y < window.scrollY + padding) {
-        y = window.scrollY + padding;
-      }
+      if (y < padding) y = padding;
     }
 
     return { x: Math.max(padding, x), y };
@@ -616,6 +829,7 @@ export class DOMManager {
 
   private hideSuggestions(element: HTMLElement) {
     const inputState = this.inputStates.get(element);
+    if (this.settings.debugMode) console.debug("[WordServe] hideSuggestions");
     if (inputState) {
       inputState.isActive = false;
       // Clear stored position so it gets recalculated next time
@@ -647,42 +861,34 @@ export class DOMManager {
 
   private updateSuggestionSelection(element: HTMLElement) {
     const inputState = this.inputStates.get(element);
-    if (!inputState || !this.menuRenderer) return;
+    if (!inputState) return;
 
-    // Update React menu selection
-    const suggestions: Suggestion[] = inputState.suggestions.map((s) => ({
-      word: s.word,
-      rank: s.rank,
-    }));
-
-    // Use stored position to prevent shifting during navigation
-    const position = this.calculateMenuPosition(element, inputState);
-
-    this.menuRenderer.updateSelection(
-      inputState.selectedIndex,
-      suggestions,
-      inputState.currentWord,
-      position,
-      (index: number) => {
-        this.selectSuggestion(element, index);
-      },
-      () => {
-        this.hideSuggestions(element);
-      },
-      {
-        showRanking: this.settings.showRankingOverride,
-        showNumbers: this.settings.numberSelection,
-        compactMode: this.settings.compactMode,
-      }
-    );
-
-    // Fallback: update old-style menu if it exists
-    if (this.suggestionMenu) {
-      const items = this.suggestionMenu.querySelectorAll(
-        ".ws-suggestion-item"
+    // Re-render with new selection if using React renderer
+    if (this.menuRenderer && inputState.isActive) {
+      const position = this.calculateMenuPosition(element, inputState);
+      this.menuRenderer.updateSelection(
+        inputState.selectedIndex,
+        inputState.suggestions,
+        inputState.currentWord,
+        position,
+        (index: number) => this.selectSuggestion(element, index),
+        () => this.hideSuggestions(element),
+        {
+          showRanking: this.settings.showRankingOverride,
+          showNumbers: this.settings.numberSelection,
+          compactMode: this.settings.compactMode,
+          rankingPosition: this.settings.rankingPosition,
+          borderRadius: this.settings.menuBorderRadius,
+          menuBorder: this.settings.menuBorder,
+          themeMode: this.settings.themeMode,
+          keyBindings: this.settings.keyBindings,
+        }
       );
-      items.forEach((item, index) => {
-        item.classList.toggle("selected", index === inputState.selectedIndex);
+    } else if (this.suggestionMenu) {
+      // Fallback for DOM-based menu
+      const items = this.suggestionMenu.querySelectorAll(".ws-suggestion-item");
+      items.forEach((item, idx) => {
+        item.classList.toggle("selected", idx === inputState.selectedIndex);
       });
     }
   }
@@ -758,24 +964,90 @@ export class DOMManager {
   }
 
   private updateCurrentWord(inputState: InputState) {
-    const value = inputState.currentValue;
-    const caretPos = inputState.caretPosition;
-
+    const activeEl = [...this.inputStates.entries()].find(
+      ([, s]) => s === inputState
+    )?.[0];
+    let full = inputState.currentValue;
+    let caretPos = inputState.caretPosition;
+    if (
+      activeEl &&
+      !(activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")
+    ) {
+      const data = this.getContentEditableTextAndCaret(activeEl);
+      full = data.text;
+      caretPos = data.caret;
+      inputState.currentValue = full;
+      inputState.caretPosition = caretPos;
+    }
     let wordStart = caretPos;
     let wordEnd = caretPos;
-
-    // Find word boundaries
-    while (wordStart > 0 && /\w/.test(value[wordStart - 1])) {
+    while (wordStart > 0 && /[A-Za-z0-9_]/.test(full[wordStart - 1]))
       wordStart--;
-    }
-
-    while (wordEnd < value.length && /\w/.test(value[wordEnd])) {
+    while (wordEnd < full.length && /[A-Za-z0-9_]/.test(full[wordEnd]))
       wordEnd++;
-    }
-
-    inputState.currentWord = value.substring(wordStart, caretPos);
+    inputState.currentWord = full.substring(wordStart, caretPos);
     inputState.wordStart = wordStart;
     inputState.wordEnd = wordEnd;
+  }
+
+  private getContentEditableTextAndCaret(root: HTMLElement): {
+    text: string;
+    caret: number;
+  } {
+    const sel = window.getSelection();
+    const anchorNode = sel && sel.rangeCount ? sel.anchorNode : null;
+    const anchorOffset = sel && sel.rangeCount ? sel.anchorOffset : 0;
+    let caret = 0;
+    // Simple cache: reuse if text unchanged
+    const textNow = root.innerText;
+    if (
+      (root as any).__wsLastText === textNow &&
+      (root as any).__wsLastCaret != null
+    ) {
+      return { text: textNow, caret: (root as any).__wsLastCaret as number };
+    }
+    const parts: string[] = [];
+    // Pre-allocate an array of node segments with start positions for faster mapping
+    interface Segment {
+      node: Text;
+      start: number;
+      end: number;
+    }
+    const segments: Segment[] = [];
+
+    function walk(node: Node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const data = (node as Text).data;
+        if (!data) return;
+        const start = parts.join("").length;
+        parts.push(data);
+        const end = start + data.length;
+        segments.push({ node: node as Text, start, end });
+        if (node === anchorNode) {
+          caret = start + Math.min(anchorOffset, data.length);
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as HTMLElement;
+        if (el.tagName === "BR") {
+          const start = parts.join("").length;
+          parts.push("\n");
+          const end = start + 1;
+          // No caret inside BR
+          return;
+        }
+        for (let i = 0; i < node.childNodes.length; i++)
+          walk(node.childNodes[i]);
+        if (el.tagName === "DIV" && el !== root) {
+          parts.push("\n");
+        }
+      }
+    }
+    walk(root);
+    const full = parts.join("");
+    if (caret > full.length) caret = full.length;
+    (root as any).__wsLastText = full;
+    (root as any).__wsLastCaret = caret;
+    return { text: full, caret };
   }
 
   private getInputValue(element: HTMLElement): string {
@@ -800,34 +1072,43 @@ export class DOMManager {
   private getCaretPosition(element: HTMLElement): number {
     if (element.tagName === "INPUT" || element.tagName === "TEXTAREA") {
       return (element as HTMLInputElement).selectionStart || 0;
-    } else {
-      const selection = window.getSelection();
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        return range.startOffset;
-      }
-      return 0;
     }
+    const data = this.getContentEditableTextAndCaret(element);
+    return data.caret;
   }
 
   private setCaretPosition(element: HTMLElement, position: number) {
     if (element.tagName === "INPUT" || element.tagName === "TEXTAREA") {
       const input = element as HTMLInputElement;
       input.setSelectionRange(position, position);
-    } else {
-      const range = document.createRange();
-      const sel = window.getSelection();
-
-      if (element.firstChild) {
-        range.setStart(
-          element.firstChild,
-          Math.min(position, element.textContent?.length || 0)
-        );
-        range.collapse(true);
-        sel?.removeAllRanges();
-        sel?.addRange(range);
+      return;
+    }
+    const range = document.createRange();
+    const sel = window.getSelection();
+    let remaining = position;
+    let found = false;
+    function walk(node: Node) {
+      if (found) return;
+      if (node.nodeType === Node.TEXT_NODE) {
+        const t = (node as Text).data || "";
+        if (remaining <= t.length) {
+          range.setStart(node, remaining);
+          found = true;
+          return;
+        }
+        remaining -= t.length;
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        for (let i = 0; i < node.childNodes.length; i++) {
+          walk(node.childNodes[i]);
+          if (found) return;
+        }
       }
     }
+    walk(element);
+    if (!found) range.selectNodeContents(element);
+    range.collapse(true);
+    sel?.removeAllRanges();
+    sel?.addRange(range);
   }
 
   public updateSettings(newSettings: WordServeSettings) {
@@ -860,6 +1141,12 @@ export class DOMManager {
   }
 
   public destroy() {
+    // Clean up mutation observer
+    if (this.mutationObserver) {
+      this.mutationObserver.disconnect();
+      this.mutationObserver = null;
+    }
+
     // Clean up observers
     this.observers.forEach((observer) => observer.disconnect());
     this.observers = [];
@@ -873,7 +1160,7 @@ export class DOMManager {
       this.suggestionMenu.remove();
     }
 
-    // Clean up React menu renderer
+    // Clean up React renderer
     if (this.menuRenderer) {
       this.menuRenderer.hide();
       this.menuRenderer = null;

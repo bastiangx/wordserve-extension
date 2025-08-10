@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/binary"
 	"io"
+	"strconv"
 	"syscall/js"
 	"unsafe"
 
@@ -33,6 +34,9 @@ type CompletionSuggestion struct {
 }
 
 var globalCompleter *WASMCompleter
+
+const maxSuggestionLimit = 128
+const defaultSuggestionLimit = 20
 
 func main() {
 	c := make(chan struct{}, 0)
@@ -118,7 +122,7 @@ func initWithBinaryData(this js.Value, args []js.Value) interface{} {
 		words, err := parseBinaryChunk(data)
 		if err != nil {
 			return js.ValueOf(map[string]interface{}{
-				"error": "failed to parse binary chunk " + string(rune(i)) + ": " + err.Error(),
+				"error": "failed to parse binary chunk " + strconv.Itoa(i) + ": " + err.Error(),
 			})
 		}
 
@@ -184,9 +188,20 @@ func complete(this js.Value, args []js.Value) interface{} {
 		return js.ValueOf(map[string]interface{}{"error": "missing request data"})
 	}
 
+	if globalCompleter == nil || globalCompleter.completer == nil {
+		return js.ValueOf(map[string]interface{}{"error": "completer not initialized"})
+	}
+
 	// Get Uint8Array from JavaScript
 	uint8Array := args[0]
+	if !uint8Array.Truthy() {
+		return js.ValueOf(map[string]interface{}{"error": "invalid request data"})
+	}
+
 	length := uint8Array.Get("length").Int()
+	if length <= 0 {
+		return js.ValueOf(map[string]interface{}{"error": "empty request data"})
+	}
 
 	// Convert to Go byte slice
 	requestData := make([]byte, length)
@@ -196,6 +211,18 @@ func complete(this js.Value, args []js.Value) interface{} {
 	var request CompletionRequest
 	if err := msgpack.Unmarshal(requestData, &request); err != nil {
 		return js.ValueOf(map[string]interface{}{"error": "failed to decode request: " + err.Error()})
+	}
+
+	// Validate prefix
+	if request.Prefix == "" {
+		return js.ValueOf(map[string]interface{}{"error": "empty prefix"})
+	}
+
+	// Clamp and validate limit
+	if request.Limit <= 0 {
+		request.Limit = defaultSuggestionLimit
+	} else if request.Limit > maxSuggestionLimit {
+		request.Limit = maxSuggestionLimit
 	}
 
 	// Get suggestions
