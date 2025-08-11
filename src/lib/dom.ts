@@ -55,7 +55,27 @@ export class DOMManager {
     this.setupMutationObserver();
     this.attachToExistingInputs();
     this.createGlobalStyles();
+    
+    // Pre-warm WASM engine with a common prefix
+    this.preWarmWASM();
+    
     console.debug("[WordServe] DOMManager init completed");
+  }
+
+  private async preWarmWASM() {
+    // Pre-warm WASM engine after a short delay to avoid blocking initialization
+    setTimeout(async () => {
+      try {
+        if (this.wordserve.ready) {
+          // Use common prefixes to warm up the engine
+          await this.wordserve.complete("the", 5);
+          await this.wordserve.complete("and", 5);
+          console.debug("[WordServe] WASM pre-warming completed");
+        }
+      } catch (error) {
+        console.debug("[WordServe] WASM pre-warming failed:", error);
+      }
+    }, 1000);
   }
 
   private setupMutationObserver() {
@@ -336,7 +356,6 @@ export class DOMManager {
     // Create keyboard handler settings from our settings
     const keyboardSettings: KeyboardHandlerSettings = {
       numberSelection: this.settings.numberSelection,
-      autoInsertionCommitMode: this.settings.autoInsertionCommitMode,
       smartBackspace: this.settings.smartBackspace,
     };
 
@@ -577,6 +596,7 @@ export class DOMManager {
         inputState.currentWord,
         limit
       );
+      
       console.debug(
         "[WordServe] raw completion result:",
         result,
@@ -599,6 +619,7 @@ export class DOMManager {
         }));
         inputState.selectedIndex = 0;
         inputState.isActive = true;
+        
         this.showSuggestions(element);
       } else {
         console.debug("[WordServe] no results, hiding suggestions");
@@ -619,7 +640,7 @@ export class DOMManager {
       this.menuRenderer = new ReactSuggestionMenuRenderer();
     }
 
-    // Calculate position
+    // Calculate position (already viewport-adjusted)
     inputState.position = undefined;
     const position = this.calculateMenuPosition(element, inputState);
     const suggestions = inputState.suggestions;
@@ -762,6 +783,7 @@ export class DOMManager {
     const menuWidth = 300; // default fallback - actual width will be calculated dynamically
     const menuHeight = 200; // estimated menu height
     const padding = 10;
+    const caretOffset = 20; // Space between caret and menu when positioned above
 
     let { x, y } = position;
 
@@ -774,11 +796,13 @@ export class DOMManager {
     // Adjust vertical position if menu would go off screen
     const availableSpaceBottom = window.innerHeight - y;
     if (availableSpaceBottom < menuHeight + padding) {
-      // Try to place above the caret
-      y = position.y - menuHeight - 10;
+      // Try to place above the caret with proper spacing
+      y = y - menuHeight - caretOffset;
 
-      // If still not enough space, clamp to viewport
-      if (y < padding) y = padding;
+      // If still not enough space above, clamp to viewport
+      if (y < padding) {
+        y = padding;
+      }
     }
 
     return { x: Math.max(padding, x), y };
@@ -1078,7 +1102,6 @@ export class DOMManager {
     // Update keyboard handler settings for all inputs
     const keyboardSettings: KeyboardHandlerSettings = {
       numberSelection: newSettings.numberSelection,
-      autoInsertionCommitMode: newSettings.autoInsertionCommitMode,
       smartBackspace: newSettings.smartBackspace,
     };
 

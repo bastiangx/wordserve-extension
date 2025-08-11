@@ -25,7 +25,6 @@ export interface KeyboardHandlerCallbacks {
 }
 export interface KeyboardHandlerSettings {
   numberSelection: boolean;
-  autoInsertionCommitMode: "enter-only" | "space-commits" | "disabled";
   smartBackspace: boolean;
 }
 
@@ -48,7 +47,6 @@ export interface WordServeSettings {
   debugMode?: boolean;
   abbreviationsEnabled: boolean;
   autoInsertion: boolean;
-  autoInsertionCommitMode: "space-commits" | "enter-only" | "disabled";
   smartBackspace: boolean;
   rankingPosition: "left" | "right";
   menuBorderRadius: boolean;

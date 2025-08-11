@@ -113,11 +113,21 @@ export class ReactSuggestionMenuRenderer {
   private host: HTMLElement | null = null;
   private shadow: ShadowRoot | null = null;
   private mountEl: HTMLDivElement | null = null;
+  private widthCache: Map<string, number> = new Map();
 
   private calculateMenuWidth(
     suggestions: Suggestion[],
     compactMode: boolean = false
   ): number {
+    // Create cache key based on suggestions and mode
+    const cacheKey = `${compactMode ? 'c' : 'n'}:${suggestions.map(s => s.word).join(',')}`;
+    
+    // Check cache first
+    const cached = this.widthCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     // Create a temporary element to measure text width
     const tempDiv = document.createElement("div");
     tempDiv.style.cssText = `
@@ -141,12 +151,14 @@ export class ReactSuggestionMenuRenderer {
 
     document.body.removeChild(tempDiv);
 
+    let calculatedWidth: number;
+
     if (compactMode) {
       // Ultra-compact: minimal spacing - just 2px on each side + menu container minimal padding
       const minimalPadding = 2 * 2; // 2px left + 2px right around text
       const menuContainerPadding = 4 * 2; // minimal menu padding
-      const calculatedWidth = maxWidth + minimalPadding + menuContainerPadding;
-      return Math.max(120, Math.min(350, calculatedWidth)); // Tighter bounds for compact
+      calculatedWidth = maxWidth + minimalPadding + menuContainerPadding;
+      calculatedWidth = Math.max(120, Math.min(350, calculatedWidth)); // Tighter bounds for compact
     } else {
       // Normal mode: comfortable spacing as before
       const itemPadding = 8 * 2 + 12 * 2; // top/bottom + left/right padding
@@ -154,10 +166,22 @@ export class ReactSuggestionMenuRenderer {
       const margin = 4 * 2; // item margins
       const scrollbarWidth = 6; // potential scrollbar
 
-      const calculatedWidth =
-        maxWidth + itemPadding + menuPadding + margin + scrollbarWidth;
-      return Math.max(200, Math.min(400, calculatedWidth)); // Standard bounds
+      calculatedWidth = maxWidth + itemPadding + menuPadding + margin + scrollbarWidth;
+      calculatedWidth = Math.max(200, Math.min(400, calculatedWidth)); // Standard bounds
     }
+
+    // Cache the result
+    this.widthCache.set(cacheKey, calculatedWidth);
+    
+    // Limit cache size to prevent memory leaks
+    if (this.widthCache.size > 50) {
+      const firstKey = this.widthCache.keys().next().value;
+      if (firstKey) {
+        this.widthCache.delete(firstKey);
+      }
+    }
+
+    return calculatedWidth;
   }
 
   render(props: SuggestionMenuProps) {
@@ -189,6 +213,8 @@ export class ReactSuggestionMenuRenderer {
         props.suggestions,
         props.compactMode
       );
+      
+      // Render React component
       this.root.render(<SuggestionMenu {...props} menuWidth={menuWidth} />);
     }
   }

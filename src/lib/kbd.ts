@@ -68,14 +68,9 @@ export class KeyboardHandler {
         break;
 
       case "Enter":
-        if (
-          this.settings.autoInsertionCommitMode === "enter-only" ||
-          this.settings.autoInsertionCommitMode === "space-commits"
-        ) {
-          event.preventDefault();
-          event.stopPropagation();
-          this.callbacks.onCommit(false);
-        }
+        event.preventDefault();
+        event.stopPropagation();
+        this.callbacks.onCommit(false);
         break;
 
       case "Tab":
@@ -90,14 +85,6 @@ export class KeyboardHandler {
         this.callbacks.onHide();
         break;
 
-      case " ":
-        if (this.settings.autoInsertionCommitMode === "space-commits") {
-          event.preventDefault();
-          event.stopPropagation();
-          this.callbacks.onCommit(true);
-        }
-        break;
-
       // Let other keys pass through (like Backspace, letters, etc.)
       default:
         break;
@@ -109,22 +96,12 @@ export class KeyboardHandler {
    * This is useful for other systems to know which keys are being handled
    */
   public getManagedKeys(): string[] {
-    const keys = ["ArrowUp", "ArrowDown", "Tab", "Escape"];
+    const keys = ["ArrowUp", "ArrowDown", "Enter", "Tab", "Escape"];
 
     if (this.settings.numberSelection) {
       keys.push(...["1", "2", "3", "4", "5", "6", "7", "8", "9"]);
     }
 
-    if (
-      this.settings.autoInsertionCommitMode === "enter-only" ||
-      this.settings.autoInsertionCommitMode === "space-commits"
-    ) {
-      keys.push("Enter");
-    }
-
-    if (this.settings.autoInsertionCommitMode === "space-commits") {
-      keys.push(" ");
-    }
     return keys;
   }
 }

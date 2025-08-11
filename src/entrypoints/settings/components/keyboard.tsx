@@ -1,9 +1,15 @@
-import React from 'react';
-import {Card, CardContent} from "@/components/ui/card";
-import {Switch} from "@/components/ui/switch";
-import {Label} from "@/components/ui/label";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import type {WordServeSettings} from "@/types";
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { WordServeSettings } from "@/types";
 
 export interface KeyboardSettingsProps {
   pendingSettings: WordServeSettings;
@@ -57,13 +63,16 @@ export function KeyboardSettings({
                   <Label>Insert without space</Label>
                   <div className="flex gap-2">
                     <Select
-                      value={pendingSettings.keyBindings.insertWithoutSpace.modifiers[0] || ''}
+                      value={
+                        pendingSettings.keyBindings.insertWithoutSpace
+                          .modifiers[0] || "none"
+                      }
                       onValueChange={(value) =>
                         updatePendingSetting("keyBindings", {
                           ...pendingSettings.keyBindings,
                           insertWithoutSpace: {
                             ...pendingSettings.keyBindings.insertWithoutSpace,
-                            modifiers: value ? [value] : [],
+                            modifiers: value === "none" ? [] : [value],
                           },
                         })
                       }
@@ -72,7 +81,7 @@ export function KeyboardSettings({
                         <SelectValue placeholder="None" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         <SelectItem value="ctrl">Ctrl</SelectItem>
                         <SelectItem value="cmd">Cmd</SelectItem>
                         <SelectItem value="alt">Alt</SelectItem>
@@ -110,13 +119,16 @@ export function KeyboardSettings({
                   <Label>Insert with space</Label>
                   <div className="flex gap-2">
                     <Select
-                      value={pendingSettings.keyBindings.insertWithSpace.modifiers[0] || ''}
+                      value={
+                        pendingSettings.keyBindings.insertWithSpace
+                          .modifiers[0] || "none"
+                      }
                       onValueChange={(value) =>
                         updatePendingSetting("keyBindings", {
                           ...pendingSettings.keyBindings,
                           insertWithSpace: {
                             ...pendingSettings.keyBindings.insertWithSpace,
-                            modifiers: value ? [value] : [],
+                            modifiers: value === "none" ? [] : [value],
                           },
                         })
                       }
@@ -125,7 +137,7 @@ export function KeyboardSettings({
                         <SelectValue placeholder="None" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         <SelectItem value="ctrl">Ctrl</SelectItem>
                         <SelectItem value="cmd">Cmd</SelectItem>
                         <SelectItem value="alt">Alt</SelectItem>

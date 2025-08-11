@@ -27,7 +27,7 @@ export interface SuggestionMenuProps {
   keyBindings?: WordServeSettings["keyBindings"];
 }
 
-export const SuggestionMenu: React.FC<SuggestionMenuProps> = ({
+export const SuggestionMenu: React.FC<SuggestionMenuProps> = React.memo(({
   suggestions,
   selectedIndex,
   currentWord,
@@ -344,4 +344,4 @@ export const SuggestionMenu: React.FC<SuggestionMenuProps> = ({
         </div>
       </div>
   );
-};
+});

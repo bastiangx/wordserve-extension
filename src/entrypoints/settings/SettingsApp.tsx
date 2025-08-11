@@ -138,7 +138,12 @@ function SettingsApp() {
     try {
       await browser.storage.sync.set({ wordserveSettings: pendingSettings });
 
-      const tabs = await browser.tabs.query({});
+      // Only send messages to tabs that might have content scripts
+      const tabs = await browser.tabs.query({
+        url: ["http://*/*", "https://*/*"]
+      });
+
+      let successfulUpdates = 0;
       for (const tab of tabs) {
         if (tab.id) {
           try {
@@ -146,17 +151,19 @@ function SettingsApp() {
               type: "settingsUpdated",
               settings: pendingSettings,
             });
+            successfulUpdates++;
           } catch (error) {
-            console.error("Failed to send settings update to tab:", error);
+            // Silently ignore tabs without content scripts
+            // This is expected behavior for tabs that don't support the extension
           }
         }
       }
 
       setSettings(pendingSettings);
-      showNotification("success", "Preference saved successfully!");
+      showNotification("success", "Preference saved!");
     } catch (error) {
       console.error("Failed to save settings:", error);
-      showNotification("error", "Failed to save Preferences");
+      showNotification("error", "Failed to save preference");
     }
   };
 
@@ -165,11 +172,14 @@ function SettingsApp() {
   };
 
   const showNotification = (type: "success" | "error", message: string) => {
-    if (type === "success") {
-      toast.success(message);
-    } else {
-      toast.error(message);
-    }
+    // Use setTimeout to defer toast rendering and avoid blocking the main thread
+    setTimeout(() => {
+      if (type === "success") {
+        toast.success(message, { duration: 2000 });
+      } else {
+        toast.error(message, { duration: 3000 });
+      }
+    }, 0);
   };
 
   const updatePendingSetting = <K extends keyof WordServeSettings>(
@@ -442,7 +452,14 @@ export default function SettingsAppWithToast() {
   return (
     <>
       <SettingsApp />
-      <Toaster />
+      <Toaster
+        position="top-right"
+        // toastOptions={{
+        //   style: { pointerEvents: 'auto' },
+        //   className: 'toaster-toast',
+        // }}
+        visibleToasts={3}
+      />
     </>
   );
 }
