@@ -6,10 +6,10 @@ import type {
   WASMCompleterStats,
   WordServeSettings,
 } from "@/types";
-import {KeyboardHandler} from "./kbd";
-import {shouldActivateForDomain} from "./domains";
-import {buildWordServeScopedVars, WS_RADIUS_VAR} from "./theme";
-import {ReactSuggestionMenuRenderer} from "@/components/wordserve/render";
+import { KeyboardHandler } from "./kbd";
+import { shouldActivateForDomain } from "./domains";
+import { buildWordServeScopedVars, WS_RADIUS_VAR } from "./theme";
+import { ReactSuggestionMenuRenderer } from "@/components/wordserve/menu-renderer";
 
 interface WordServeEngine {
   waitForReady(): Promise<void>;
@@ -55,10 +55,10 @@ export class DOMManager {
     this.setupMutationObserver();
     this.attachToExistingInputs();
     this.createGlobalStyles();
-    
+
     // Pre-warm WASM engine with a common prefix
     this.preWarmWASM();
-    
+
     console.debug("[WordServe] DOMManager init completed");
   }
 
@@ -122,26 +122,34 @@ export class DOMManager {
 
       @keyframes ws-fade-in { from {opacity:0;transform:scale(.95) translateY(-4px);} to {opacity:1;transform:scale(1) translateY(0);} }
 
-  .ws-suggestion-menu { all:revert-layer; position:fixed; background:hsl(var(--ws-bg)); ${this.settings.menuBorder
-        ? "border:1px solid hsl(var(--ws-border));"
-        : "border:none;"
-      } border-radius:${this.settings.menuBorderRadius ? "var(" + WS_RADIUS_VAR + ",6px)" : "0"
-      }; box-shadow:0 10px 15px -3px rgba(0,0,0,.35),0 4px 6px -2px rgba(0,0,0,.25); z-index:2147483646; max-height:300px; overflow-y:auto; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; font-size:${this.getFontSize()}px; font-weight:${this.settings.fontWeight
-      }; backdrop-filter:blur(8px); animation:ws-fade-in .15s ease-out; }
+  .ws-suggestion-menu { all:revert-layer; position:fixed; background:hsl(var(--ws-bg)); ${
+    this.settings.menuBorder
+      ? "border:1px solid hsl(var(--ws-border));"
+      : "border:none;"
+  } border-radius:${
+      this.settings.menuBorderRadius ? "var(" + WS_RADIUS_VAR + ",6px)" : "0"
+    }; box-shadow:0 10px 15px -3px rgba(0,0,0,.35),0 4px 6px -2px rgba(0,0,0,.25); z-index:2147483646; max-height:300px; overflow-y:auto; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; font-size:${this.getFontSize()}px; font-weight:${
+      this.settings.fontWeight
+    }; backdrop-filter:blur(8px); animation:ws-fade-in .15s ease-out; }
       .ws-suggestion-menu.compact { font-size:${this.getFontSize() * 0.9}px; }
-  .ws-suggestion-item { padding:${this.settings.compactMode ? "6px 12px" : "8px 12px"
-      }; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:background-color .12s ease, color .12s ease; color:hsl(var(--ws-text)); border-radius:${this.settings.menuBorderRadius ? "6px" : "0"
-      }; margin:2px 4px; }
+  .ws-suggestion-item { padding:${
+    this.settings.compactMode ? "6px 12px" : "8px 12px"
+  }; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:background-color .12s ease, color .12s ease; color:hsl(var(--ws-text)); border-radius:${
+      this.settings.menuBorderRadius ? "6px" : "0"
+    }; margin:2px 4px; }
   .ws-suggestion-item:hover { background:hsl(var(--ws-bgAlt)); }
   .ws-suggestion-item.selected { background:hsl(var(--ws-accent)); color:hsl(var(--ws-accentFg)); }
       .ws-suggestion-word { flex:1; display:flex; align-items:center; }
-  .ws-suggestion-prefix { color:hsl(var(--ws-textMuted)); font-weight:500; ${this.settings.accessibility.boldSuffix ? "font-weight:bold;" : ""
-      } }
-      .ws-suggestion-suffix { color:currentColor; ${this.settings.accessibility.boldSuffix ? "font-weight:bold;" : ""
-      } ${this.settings.accessibility.uppercaseSuggestions
+  .ws-suggestion-prefix { color:hsl(var(--ws-textMuted)); font-weight:500; ${
+    this.settings.accessibility.boldSuffix ? "font-weight:bold;" : ""
+  } }
+      .ws-suggestion-suffix { color:currentColor; ${
+        this.settings.accessibility.boldSuffix ? "font-weight:bold;" : ""
+      } ${
+      this.settings.accessibility.uppercaseSuggestions
         ? "text-transform:uppercase;"
         : ""
-      } }
+    } }
       .ws-suggestion-meta { display:flex; align-items:center; gap:4px; margin-left:8px; }
   .ws-suggestion-number, .ws-suggestion-rank { font-size:0.7rem; color:hsl(var(--ws-textMuted)); font-family:'SF Mono',Monaco,'Cascadia Code','Roboto Mono',Consolas,'Courier New',monospace; }
   .ws-suggestion-item.selected .ws-suggestion-number, .ws-suggestion-item.selected .ws-suggestion-rank { color:hsl(var(--ws-accentFg)); opacity:.85; }
@@ -189,7 +197,7 @@ export class DOMManager {
     }
 
     // If fontSize is a number, use it directly
-    if (typeof this.settings.fontSize === 'number') {
+    if (typeof this.settings.fontSize === "number") {
       return this.settings.fontSize;
     }
 
@@ -596,7 +604,7 @@ export class DOMManager {
         inputState.currentWord,
         limit
       );
-      
+
       console.debug(
         "[WordServe] raw completion result:",
         result,
@@ -619,7 +627,7 @@ export class DOMManager {
         }));
         inputState.selectedIndex = 0;
         inputState.isActive = true;
-        
+
         this.showSuggestions(element);
       } else {
         console.debug("[WordServe] no results, hiding suggestions");
@@ -858,11 +866,6 @@ export class DOMManager {
           showRanking: this.settings.showRankingOverride,
           showNumbers: this.settings.numberSelection,
           compactMode: this.settings.compactMode,
-          rankingPosition: this.settings.rankingPosition,
-          borderRadius: this.settings.menuBorderRadius,
-          menuBorder: this.settings.menuBorder,
-          themeMode: this.settings.themeMode,
-          keyBindings: this.settings.keyBindings,
         }
       );
     } else if (this.suggestionMenu) {

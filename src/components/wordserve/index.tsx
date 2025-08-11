@@ -2,5 +2,15 @@ export {
   SuggestionMenu,
   type Suggestion,
   type SuggestionMenuProps,
-} from "./menu";
-export { ReactSuggestionMenuRenderer } from "./render";
+  ReactSuggestionMenuRenderer,
+  getRenderer,
+  render,
+  mount,
+  update,
+  unmount,
+  hide,
+  show,
+  type WSMountConfig,
+  type WSRenderAction,
+  type WSMouseInfo
+} from "./menu-renderer";

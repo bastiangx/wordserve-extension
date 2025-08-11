@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill";
-import {DEFAULT_SETTINGS} from "@/lib/defaults";
+import { DEFAULT_SETTINGS } from "@/lib/defaults";
 
 async function cryptoDigestSHA256(data: Uint8Array): Promise<string> {
   try {
@@ -126,7 +126,7 @@ export default defineBackground(() => {
         if (tab.id)
           browser.tabs
             .sendMessage(tab.id, { type, ...payload })
-            .catch(() => {});
+            .catch(() => { });
     });
   }
 
@@ -135,7 +135,7 @@ export default defineBackground(() => {
       await browser.storage.local.set({
         wordserveLastError: { message, ts: Date.now() },
       });
-    } catch {}
+    } catch { }
     console.error("WordServe error:", message);
     broadcast("wordserve-error", { message });
   }
@@ -159,7 +159,7 @@ export default defineBackground(() => {
             manifest[a.path] = { sha256: a.sha256 };
           }
         }
-      } catch {}
+      } catch { }
       const chunkPromises: Promise<Uint8Array>[] = [];
       for (let i = 1; i <= EXPECTED_CHUNKS; i++) {
         const chunkNum = String(i).padStart(4, "0");
@@ -432,7 +432,7 @@ export default defineBackground(() => {
                     type: "settingsUpdated",
                     settings: message.settings,
                   })
-                  .catch(() => {});
+                  .catch(() => { });
             sendResponse({ success: true });
           } catch (e) {
             sendResponse({ success: false, error: String(e) });
