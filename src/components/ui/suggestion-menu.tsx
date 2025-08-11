@@ -28,6 +28,8 @@ export interface SuggestionMenuProps {
   compactMode?: boolean;
   className?: string;
   onMouseEnter?: (index: number) => void;
+  style?: React.CSSProperties;
+  tooltipContainer?: Element | null;
 }
 
 export const SuggestionMenu = React.forwardRef<
@@ -46,6 +48,8 @@ export const SuggestionMenu = React.forwardRef<
       compactMode = false,
       className,
       onMouseEnter,
+      style,
+      tooltipContainer,
       ...props
     },
     ref
@@ -71,6 +75,7 @@ export const SuggestionMenu = React.forwardRef<
             "w-72 max-h-80",
             className
           )}
+          style={style}
           {...props}
         >
           {/* Close button */}
@@ -106,6 +111,7 @@ export const SuggestionMenu = React.forwardRef<
                       onClick={() => onSelect(index)}
                       onMouseEnter={() => onMouseEnter?.(index)}
                       role="option"
+                      id={`suggestion-${index}`}
                       aria-selected={isSelected}
                       aria-label={suggestion.word}
                     >
@@ -119,7 +125,7 @@ export const SuggestionMenu = React.forwardRef<
                             <span className="font-medium">{suffix}</span>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent>
+                        <TooltipContent container={tooltipContainer}>
                           <p>Press [Enter] or [Tab] to insert this</p>
                         </TooltipContent>
                       </Tooltip>
@@ -136,7 +142,7 @@ export const SuggestionMenu = React.forwardRef<
                                 {index + 1}
                               </Badge>
                             </TooltipTrigger>
-                            <TooltipContent>
+                            <TooltipContent container={tooltipContainer}>
                               <p>
                                 Press digit {index + 1} to insert it quickly
                               </p>
