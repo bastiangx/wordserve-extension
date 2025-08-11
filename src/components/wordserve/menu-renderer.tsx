@@ -142,7 +142,9 @@ const minimalMenuCSS = `
 .py-1\.5 { padding-top: 0.375rem !important; padding-bottom: 0.375rem !important; }
 `;
 
-function buildShadowCSS(themeMode: "adaptive" | "isolated" = "isolated"): string {
+function buildShadowCSS(
+  themeMode: "adaptive" | "isolated" = "isolated"
+): string {
   const rs = getComputedStyle(document.documentElement);
   const tokenLines = WS_TOKEN_KEYS.map((k) => {
     const v = rs.getPropertyValue(k).trim();
@@ -490,6 +492,8 @@ class WSRenderer {
   }
 
   mount(config: WSMountConfig = {}) {
+    console.debug("[WordServe] WSRenderer.mount called with:", config);
+
     if (this.shadowHost) {
       this.update(config);
       return;
@@ -505,10 +509,13 @@ class WSRenderer {
     `;
 
     const isDev = (import.meta as any)?.env?.DEV ?? false;
-    this.shadowRoot = this.shadowHost.attachShadow({ mode: isDev ? "open" : "closed" });
+    this.shadowRoot = this.shadowHost.attachShadow({
+      mode: isDev ? "open" : "closed",
+    });
 
     this.styleEl = document.createElement("style");
-    const initialThemeMode = (config.themeMode === "adaptive" ? "adaptive" : "isolated");
+    const initialThemeMode =
+      config.themeMode === "adaptive" ? "adaptive" : "isolated";
     this.lastThemeMode = initialThemeMode;
     this.styleEl.textContent = buildShadowCSS(initialThemeMode);
     this.shadowRoot.appendChild(this.styleEl);
@@ -525,6 +532,8 @@ class WSRenderer {
   }
 
   update(config: WSMountConfig) {
+    console.debug("[WordServe] WSRenderer.update called with:", config);
+
     this.currentConfig = { ...this.currentConfig, ...config };
 
     if (!this.root || !this.mountEl) return;
@@ -556,7 +565,7 @@ class WSRenderer {
       menuWidth,
     } = this.currentConfig;
 
-  // Visibility only; positioning is handled inside the component wrapper
+    // Visibility only; positioning is handled inside the component wrapper
     this.mountEl.style.display = visible ? "block" : "none";
 
     this.isVisible = visible;
@@ -575,7 +584,9 @@ class WSRenderer {
     const menuClassName = [
       borderRadius === false ? "rounded-none" : "",
       menuBorder === false ? "border-0" : "",
-    ].filter(Boolean).join(" ");
+    ]
+      .filter(Boolean)
+      .join(" ");
 
     const menuProps: SuggestionMenuProps = {
       suggestions,
@@ -596,7 +607,7 @@ class WSRenderer {
       showNumbers,
       compactMode: mode === "compact",
       className: menuClassName || undefined,
-      autoFocus: true,
+      autoFocus: false,
       style: menuWidth ? { width: `${menuWidth}px` } : undefined,
       tooltipContainer: this.shadowRoot as Element | null,
     };
@@ -742,8 +753,14 @@ export class ReactSuggestionMenuRenderer extends WSRenderer {
 
   // Override render method to handle legacy format
   render(config: any) {
+    console.debug(
+      "[WordServe] ReactSuggestionMenuRenderer.render called with:",
+      config
+    );
+
     // Handle legacy render format
     if (config.suggestions && config.selectedIndex !== undefined) {
+      console.debug("[WordServe] Using legacy render format");
       const wsConfig: WSMountConfig = {
         visible: true,
         suggestions: config.suggestions,
@@ -756,12 +773,19 @@ export class ReactSuggestionMenuRenderer extends WSRenderer {
         onClose: config.onClose || (() => {}),
         showRankings: config.showRanking ?? false,
         mode: config.compactMode ? "compact" : "normal",
+        themeMode: config.themeMode,
+        showNumbers: config.showNumbers,
+        rankingPosition: config.rankingPosition,
+        borderRadius: config.borderRadius,
+        menuBorder: config.menuBorder,
       };
 
+      console.debug("[WordServe] Mounting with wsConfig:", wsConfig);
       super.render({ type: "mount", config: wsConfig });
       return;
     }
 
+    console.debug("[WordServe] Using WSRenderAction format");
     // Handle WSRenderAction format
     super.render(config);
   }

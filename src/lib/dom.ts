@@ -516,14 +516,47 @@ export class DOMManager {
     this.updateCurrentWord(inputState);
   }
 
-  private handleBlur(element: HTMLElement, _event: FocusEvent) {
-    // Reduced delay since we have click-outside handling now
+  private handleBlur(element: HTMLElement, event: FocusEvent) {
+    const related = event.relatedTarget as Node | null;
+    // If focus moved into our shadow-root menu, don't hide
+    if (related) {
+      const isInWSMenu = (node: Node | null): boolean => {
+        let n: Node | null = node;
+        while (n) {
+          if (
+            n instanceof Element &&
+            (n as Element).getAttribute?.("data-ws-suggestion-menu") === "true"
+          ) {
+            return true;
+          }
+          // Step through shadow DOM boundaries
+          const root = (n as any).getRootNode?.();
+          if (root && (root as ShadowRoot).host) {
+            n = (root as ShadowRoot).host as Node;
+          } else {
+            n = (n as Node).parentNode;
+          }
+        }
+        return false;
+      };
+      if (isInWSMenu(related)) return;
+    }
+    // Small grace to prevent flicker when clicking into the menu
     setTimeout(() => {
       this.hideSuggestions(element);
-    }, 50);
+    }, 120);
   }
 
-  private handleClick(element: HTMLElement, _event: MouseEvent) {
+  private handleClick(element: HTMLElement, event: MouseEvent) {
+    // If the click is inside our suggestion menu in shadow DOM, ignore
+    const path = (event.composedPath && event.composedPath()) || [];
+    const insideMenu = path.some(
+      (n) =>
+        n instanceof Element &&
+        (n as Element).getAttribute?.("data-ws-suggestion-menu") === "true"
+    );
+    if (insideMenu) return;
+
     const inputState = this.inputStates.get(element);
     if (!inputState) return;
 
@@ -566,11 +599,16 @@ export class DOMManager {
       !inputState ||
       inputState.currentWord.length < this.settings.minWordLength
     ) {
-      console.debug(
-        "[WordServe] performSearch: skip (min length)",
-        inputState?.currentWord
-      );
-      this.hideSuggestions(element);
+      // Don't hide immediately - give user time to see suggestions
+      setTimeout(() => {
+        const currentState = this.inputStates.get(element);
+        if (
+          currentState &&
+          currentState.currentWord.length < this.settings.minWordLength
+        ) {
+          this.hideSuggestions(element);
+        }
+      }, 150);
       return;
     }
 
@@ -614,13 +652,23 @@ export class DOMManager {
         result?.length
       );
 
+      if (!result || !Array.isArray(result)) {
+        console.debug("[WordServe] invalid result format, skipping");
+        return;
+      }
+
+      console.debug(
+        "[WordServe] checking result.length > 0:",
+        result.length > 0
+      );
+
       if (result.length === 0 && inputState.currentWord === "test") {
         console.debug('[WordServe] Testing with prefix "th"');
         const testResult = await this.wordserve.complete("th", 5);
         console.debug('[WordServe] "th" test result:', testResult);
       }
 
-      if (result.length > 0) {
+      if (result && result.length > 0) {
         inputState.suggestions = result.map((s: any, i: number) => ({
           word: s.word,
           rank: s.rank || i + 1,
@@ -630,7 +678,6 @@ export class DOMManager {
 
         this.showSuggestions(element);
       } else {
-        console.debug("[WordServe] no results, hiding suggestions");
         this.hideSuggestions(element);
       }
     } catch (error) {
@@ -640,8 +687,18 @@ export class DOMManager {
   }
 
   private showSuggestions(element: HTMLElement) {
+    console.debug("[WordServe] showSuggestions called with element:", element);
+
     const inputState = this.inputStates.get(element);
-    if (!inputState) return;
+    if (!inputState) {
+      console.debug("[WordServe] showSuggestions: no inputState found");
+      return;
+    }
+
+    console.debug(
+      "[WordServe] showSuggestions: inputState found, suggestions.length:",
+      inputState.suggestions.length
+    );
 
     // Initialize React renderer if needed
     if (!this.menuRenderer) {
@@ -818,7 +875,12 @@ export class DOMManager {
 
   private hideSuggestions(element: HTMLElement) {
     const inputState = this.inputStates.get(element);
-    if (this.settings.debugMode) console.debug("[WordServe] hideSuggestions");
+    console.debug(
+      "[WordServe] hideSuggestions called for element:",
+      element,
+      "stack:",
+      new Error().stack?.split("\n").slice(1, 4)
+    );
     if (inputState) {
       inputState.isActive = false;
       // Clear stored position so it gets recalculated next time
