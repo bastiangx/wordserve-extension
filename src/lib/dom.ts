@@ -1,15 +1,15 @@
 import type {
-    InputState,
-    KeyboardHandlerCallbacks,
-    KeyboardHandlerSettings,
-    RawSuggestion as WASMSuggestion,
-    WASMCompleterStats,
-    WordServeSettings,
+  InputState,
+  KeyboardHandlerCallbacks,
+  KeyboardHandlerSettings,
+  RawSuggestion as WASMSuggestion,
+  WASMCompleterStats,
+  WordServeSettings,
 } from "@/types";
 import {KeyboardHandler} from "./kbd";
 import {shouldActivateForDomain} from "./domains";
 import {buildWordServeScopedVars, WS_RADIUS_VAR} from "./theme";
-import {ReactSuggestionMenuRenderer} from "../components/wordserve/render";
+import {ReactSuggestionMenuRenderer} from "@/components/wordserve/render";
 
 interface WordServeEngine {
   waitForReady(): Promise<void>;
@@ -185,36 +185,6 @@ export class DOMManager {
     };
 
     return sizeMap[this.settings.fontSize as keyof typeof sizeMap] || 14;
-  }
-
-  private getColorIntensity(intensity: string): string {
-    const colorMap = {
-      normal: "rgba(107, 114, 128, 1)",
-      muted: "rgba(107, 114, 128, 0.7)",
-      faint: "rgba(107, 114, 128, 0.4)",
-      accent: "rgba(59, 130, 246, 0.8)",
-    };
-
-    return colorMap[intensity as keyof typeof colorMap] || colorMap.normal;
-  }
-
-  private setupMutationObserverOld() {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            this.attachToInputsInElement(node as Element);
-          }
-        });
-      });
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-
-    this.observers.push(observer);
   }
 
   private attachToExistingInputs() {
@@ -472,7 +442,7 @@ export class DOMManager {
     return true;
   }
 
-  private handleInput(element: HTMLElement, event: Event) {
+  private handleInput(element: HTMLElement, _event: Event) {
     const inputState = this.inputStates.get(element);
     if (!inputState) return;
 
@@ -511,7 +481,7 @@ export class DOMManager {
     }
   }
 
-  private handleFocus(element: HTMLElement, event: FocusEvent) {
+  private handleFocus(element: HTMLElement, _event: FocusEvent) {
     const inputState = this.inputStates.get(element);
     if (!inputState) return;
 
@@ -519,14 +489,14 @@ export class DOMManager {
     this.updateCurrentWord(inputState);
   }
 
-  private handleBlur(element: HTMLElement, event: FocusEvent) {
+  private handleBlur(element: HTMLElement, _event: FocusEvent) {
     // Reduced delay since we have click-outside handling now
     setTimeout(() => {
       this.hideSuggestions(element);
     }, 50);
   }
 
-  private handleClick(element: HTMLElement, event: MouseEvent) {
+  private handleClick(element: HTMLElement, _event: MouseEvent) {
     const inputState = this.inputStates.get(element);
     if (!inputState) return;
 
@@ -582,7 +552,6 @@ export class DOMManager {
       this.wordserve.ready
     );
     if (!this.wordserve.ready) {
-      // retry shortly after if engine not yet ready
       console.debug("[WordServe] performSearch: engine not ready, retry");
       setTimeout(() => this.performSearch(element), 200);
       return;
@@ -594,11 +563,9 @@ export class DOMManager {
     );
     const limit = Math.max(1, Math.min(this.settings.maxSuggestions, 128));
     try {
-      // Check WASM stats first
       const stats = await this.wordserve.getStats();
       console.debug("[WordServe] WASM stats:", stats);
 
-      // Try a simple test first
       console.debug(
         "[WordServe] calling complete with word:",
         inputState.currentWord,
@@ -619,7 +586,6 @@ export class DOMManager {
         result?.length
       );
 
-      // Test with a known common prefix
       if (result.length === 0 && inputState.currentWord === "test") {
         console.debug('[WordServe] Testing with prefix "th"');
         const testResult = await this.wordserve.complete("th", 5);
@@ -735,8 +701,7 @@ export class DOMManager {
       border: ${window.getComputedStyle(input).border};
     `;
 
-    const textBeforeCaret = input.value.substring(0, caretPosition);
-    tempDiv.textContent = textBeforeCaret;
+    tempDiv.textContent = input.value.substring(0, caretPosition);
     document.body.appendChild(tempDiv);
 
     const textWidth = tempDiv.getBoundingClientRect().width;
@@ -886,7 +851,7 @@ export class DOMManager {
   }
 
   private getSelectedIndex(): number {
-    for (const [element, state] of this.inputStates) {
+    for (const [_, state] of this.inputStates) {
       if (state.isActive) {
         return state.selectedIndex;
       }
@@ -951,10 +916,6 @@ export class DOMManager {
     }
   }
 
-  private updateGhostText(element: HTMLElement) {
-    // Ghost text functionality removed
-  }
-
   private updateCurrentWord(inputState: InputState) {
     const activeEl = [...this.inputStates.entries()].find(
       ([, s]) => s === inputState
@@ -1005,6 +966,7 @@ export class DOMManager {
       start: number;
       end: number;
     }
+    // segments array is created for potential future use in caret positioning
     const segments: Segment[] = [];
 
     function walk(node: Node) {
@@ -1013,17 +975,17 @@ export class DOMManager {
         if (!data) return;
         const start = parts.join("").length;
         parts.push(data);
-        const end = start + data.length;
-        segments.push({ node: node as Text, start, end });
+        // Keep end calculation for segments array completeness
+        const _end = start + data.length;
+        segments.push({ node: node as Text, start, end: _end });
         if (node === anchorNode) {
           caret = start + Math.min(anchorOffset, data.length);
         }
       } else if (node.nodeType === Node.ELEMENT_NODE) {
         const el = node as HTMLElement;
         if (el.tagName === "BR") {
-          const start = parts.join("").length;
+          const _start = parts.join("").length;
           parts.push("\n");
-          const end = start + 1;
           // No caret inside BR
           return;
         }
@@ -1120,16 +1082,13 @@ export class DOMManager {
       smartBackspace: newSettings.smartBackspace,
     };
 
-    for (const [element, inputState] of this.inputStates) {
+    for (const [_, inputState] of this.inputStates) {
       if (inputState.keyboardHandler) {
         inputState.keyboardHandler.updateSettings(keyboardSettings);
       }
     }
 
-    // Update ghost text for all inputs
-    for (const [element, inputState] of this.inputStates) {
-      // Ghost text functionality removed
-    }
+    // Ghost text functionality removed - no longer needed
   }
 
   public destroy() {

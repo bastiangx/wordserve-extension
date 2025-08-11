@@ -3,11 +3,11 @@
 // were breaking host site layouts (images resized, elements shifting).
 // The content script now relies solely on scoped inline styles injected
 // by DOMManager (ws-* prefixed classes) to avoid CSS collisions.
-import {getWASMInstance} from "@/lib/wasm/ws-wasm";
-import {DOMManager} from "@/lib/dom";
-import type {SensitivityResult, WordServeSettings} from "@/types";
-import {scanPageSensitivity, shouldActivateForDomain} from "@/lib/domains";
-import {DEFAULT_SETTINGS,} from "@/lib/defaults";
+import { getWASMInstance } from "@/lib/wasm/ws-wasm";
+import { DOMManager } from "@/lib/dom";
+import type { SensitivityResult, WordServeSettings } from "@/types";
+import { scanPageSensitivity, shouldActivateForDomain } from "@/lib/domains";
+import { DEFAULT_SETTINGS, } from "@/lib/defaults";
 import browser from "webextension-polyfill";
 
 // UI override pill for sensitivity blocks
@@ -30,9 +30,8 @@ function pushAlert(
   const stack = ensureAlertStack();
   const el = document.createElement("div");
   el.className = "ws-alert" + (variant === "error" ? " ws-error" : "");
-  el.innerHTML = `<div class="ws-alert-title">${title}</div>${
-    desc ? `<div class="ws-alert-desc">${desc}</div>` : ""
-  }`;
+  el.innerHTML = `<div class="ws-alert-title">${title}</div>${desc ? `<div class="ws-alert-desc">${desc}</div>` : ""
+    }`;
   stack.prepend(el);
   if (timeout > 0) setTimeout(() => el.remove(), timeout);
   return el;

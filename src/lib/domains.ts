@@ -77,10 +77,6 @@ function compilePattern(raw: string): CompiledPattern | null {
   }
 }
 
-export function isValidDomainPattern(pattern: string): boolean {
-  return sanitizePattern(pattern) !== null;
-}
-
 export function matchesDomainPattern(
   hostname: string,
   rawPattern: string
@@ -121,8 +117,7 @@ export function isProtectedPage(hostname: string): boolean {
     "view-source:",
   ];
   if (protectedSchemes.some((p) => url.startsWith(p))) return true;
-  const isExtensionId = /^[a-z]{32}$/.test(host) && !host.includes(".");
-  return isExtensionId;
+  return /^[a-z]{32}$/.test(host) && !host.includes(".");
 }
 
 export function shouldActivateForDomain(
@@ -133,18 +128,11 @@ export function shouldActivateForDomain(
   const host = normalizeHostname(hostname);
   const { blacklistMode, blacklist, whitelist } = settings;
   if (blacklistMode) {
-    if (matchesDomainList(host, blacklist)) return false;
-    return true;
+    return !matchesDomainList(host, blacklist);
+
   } else {
     return matchesDomainList(host, whitelist);
   }
-}
-
-export function describeDomainPattern(pattern: string): string {
-  const p = sanitizePattern(pattern);
-  if (!p) return "Invalid pattern";
-  if (p.startsWith("*.")) return `Subdomains of ${p.slice(2)}`;
-  return `Domain or subdomains of ${p}`;
 }
 
 // Heuristic weights for signals

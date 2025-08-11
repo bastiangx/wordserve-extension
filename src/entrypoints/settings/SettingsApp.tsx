@@ -1,46 +1,60 @@
 "use client";
-import {FaGithub} from "react-icons/fa";
-import {SiKofi} from "react-icons/si";
-import {Glasses, Globe, Keyboard, Palette, RotateCcw, Save, SettingsIcon, X,} from "lucide-react";
-import type {WordServeSettings} from "@/types";
-import {DEFAULT_SETTINGS} from "@/lib/defaults";
-import {GeneralSettings} from "./components/general";
-import {BehaviorSettings} from "./components/Behavior";
-import {KeyboardSettings} from "./components/keyboard";
-import {AppearanceSettings} from "./components/appearance";
-import {AccessibilitySettings} from "./components/accessibility";
-import {DomainSettingsComponent} from "./components/domain";
-import {useEffect, useState} from "react";
-import {Button} from "@/components/ui/button";
-import {Separator} from "@/components/ui/separator";
-import {Toaster} from "@/components/ui/sonner";
-import {toast} from "sonner";
+import { FaGithub } from "react-icons/fa";
+import { SiKofi } from "react-icons/si";
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
+  Glasses,
+  Globe,
+  Keyboard,
+  Palette,
+  RotateCcw,
+  Save,
+  SettingsIcon,
+  X,
+} from "lucide-react";
+import type { WordServeSettings } from "@/types";
+import { DEFAULT_SETTINGS } from "@/lib/defaults";
+import { GeneralSettings } from "@/entrypoints/settings/components/general";
+import { BehaviorSettings } from "@/entrypoints/settings/components/behavior.tsx";
+import { KeyboardSettings } from "@/entrypoints/settings/components/keyboard";
+import { AppearanceSettings } from "@/entrypoints/settings/components/appearance";
+import { AccessibilitySettings } from "@/entrypoints/settings/components/accessibility";
+import { DomainSettingsComponent } from "@/entrypoints/settings/components/domain";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarGroupLabel,
-    SidebarHeader,
-    SidebarInset,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarProvider,
-    SidebarTrigger,
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
-import {Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage,} from "@/components/ui/breadcrumb";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
 
 const navigationItems = [
   {
@@ -87,13 +101,15 @@ function SettingsApp() {
   const [settings, setSettings] = useState<WordServeSettings>(DEFAULT_SETTINGS);
   const [pendingSettings, setPendingSettings] =
     useState<WordServeSettings>(DEFAULT_SETTINGS);
-  const [newDomainInput, setNewDomainInput] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
   const [activeSection, setActiveSection] = useState("general");
 
   useEffect(() => {
-    loadSettings();
+    // Fix promise handling
+    (async () => {
+      await loadSettings();
+    })();
   }, []);
 
   useEffect(() => {

@@ -42,7 +42,7 @@ interface QueuedComplete {
 
 export class WordServeWASMProxy {
   private isReady = false;
-  private readyPromise: Promise<void> | null = null;
+  readonly readyPromise: Promise<void> | null = null;
   private readyResolve: (() => void) | null = null;
   private queue: QueuedComplete[] = [];
   private statusCheckTimer: number | null = null;
@@ -181,7 +181,10 @@ export class WordServeWASMProxy {
       const response = await browser.runtime.sendMessage({
         type: "wordserve-stats",
       });
-      if (response?.error) throw new Error(response.error);
+      if (response?.error) {
+        console.error("WASM stats error:", response.error);
+        throw new Error(response.error);
+      }
       return response?.stats || { totalWords: 0, maxFrequency: 0 };
     } catch (_e) {
       return { totalWords: 0, maxFrequency: 0 };
@@ -195,6 +198,11 @@ export class WordServeWASMProxy {
   public destroy() {
     this.destroyed = true;
     if (this.statusCheckTimer) window.clearTimeout(this.statusCheckTimer);
+    // Clear the queue and reject pending promises
+    for (const queued of this.queue) {
+      queued.reject(new Error("WASM instance destroyed"));
+    }
+    this.queue = [];
     // Cannot remove specific listener easily with bound method in MV3 polyfill, safe to leave.
   }
 }
@@ -208,5 +216,3 @@ export function getWASMInstance(): WordServeWASMProxy {
   }
   return wasmInstance;
 }
-
-export default WordServeWASMProxy;

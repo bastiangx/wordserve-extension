@@ -9,8 +9,6 @@ import {type DomainSettings, matchesDomainPattern} from "@/lib/domains";
 import "../../globals.css";
 import "./App.css";
 
-// DomainSettings now imported from lib/domains to avoid duplicate interface definition
-
 export default function App() {
   const [globalEnabled, setGlobalEnabled] = useState(true);
   const [currentHost, setCurrentHost] = useState("");
@@ -163,31 +161,6 @@ export default function App() {
           ...newDomainSettings.whitelist,
           currentHost,
         ];
-      }
-    }
-
-    setDomainSettings(newDomainSettings);
-
-    const result = await browser.storage.sync.get("wordserveSettings");
-    const settings = result.wordserveSettings || {};
-    await browser.storage.sync.set({
-      wordserveSettings: {
-        ...settings,
-        domains: newDomainSettings,
-      },
-    });
-    const tabs = await browser.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-    if (tabs[0]?.id) {
-      try {
-        await browser.tabs.sendMessage(tabs[0].id, {
-          type: "domainSettingsChanged",
-          settings: newDomainSettings,
-        });
-      } catch (error) {
-        console.warn("Failed to send domain settings update:", error);
       }
     }
   };

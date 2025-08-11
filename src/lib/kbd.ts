@@ -7,7 +7,7 @@ export class KeyboardHandler {
   private inputState: InputState;
   private callbacks: KeyboardHandlerCallbacks;
   private settings: KeyboardHandlerSettings;
-  private boundKeyDownHandler: (event: KeyboardEvent) => void;
+  readonly boundKeyDownHandler: (event: KeyboardEvent) => void;
 
   constructor(
     element: HTMLElement,
@@ -29,6 +29,9 @@ export class KeyboardHandler {
 
   public detach() {
     this.element.removeEventListener("keydown", this.boundKeyDownHandler);
+    // Clear any references to prevent memory leaks
+    this.inputState = null as any;
+    this.callbacks = null as any;
   }
 
   public updateSettings(newSettings: KeyboardHandlerSettings) {
@@ -123,12 +126,5 @@ export class KeyboardHandler {
       keys.push(" ");
     }
     return keys;
-  }
-
-  /**
-   * Check if a given key should be handled by this handler
-   */
-  public shouldHandleKey(key: string): boolean {
-    return this.getManagedKeys().includes(key);
   }
 }

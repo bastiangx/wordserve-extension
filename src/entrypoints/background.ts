@@ -12,6 +12,7 @@ async function cryptoDigestSHA256(data: Uint8Array): Promise<string> {
   }
 }
 
+// Remove unused default export and fix exception handling
 export default defineBackground(() => {
   console.log("WordServe background script loaded");
 
@@ -29,8 +30,11 @@ export default defineBackground(() => {
         const wasmResponse = await fetch(
           browser.runtime.getURL("wordserve.wasm" as any)
         );
-        if (!wasmResponse.ok)
+        if (!wasmResponse.ok) {
+          // Fix: Log error and return/re-throw properly
+          console.error(`WASM fetch failed with status ${wasmResponse.status}`);
           throw new Error(`wasm fetch ${wasmResponse.status}`);
+        }
         const wasmBytes = await wasmResponse.arrayBuffer();
         const go = new (globalThis as any).Go();
         const wasmModule = await WebAssembly.instantiate(
@@ -53,6 +57,7 @@ export default defineBackground(() => {
           });
         });
       } catch (e) {
+        console.error("WASM initialization failed:", e);
         this.isLoading = false;
         throw e;
       } finally {
@@ -60,7 +65,10 @@ export default defineBackground(() => {
       }
     }
     async completeMsgPack(packed: Uint8Array) {
-      if (!this.isInitialized) throw new Error("WASM not initialized");
+      if (!this.isInitialized) {
+        console.error("WASM not initialized for completeMsgPack");
+        throw new Error("WASM not initialized");
+      }
       console.debug(
         "[WordServe] WASM calling wasmCompleter.complete with:",
         packed
@@ -77,6 +85,7 @@ export default defineBackground(() => {
         console.debug("[WordServe] WASM completer result:", result);
 
         if (result && typeof result === "object" && result.error) {
+          console.error("WASM completer returned error:", result.error);
           throw new Error(result.error);
         }
         return result;
@@ -86,16 +95,25 @@ export default defineBackground(() => {
       }
     }
     async getStats() {
-      if (!this.isInitialized) throw new Error("WASM not initialized");
+      if (!this.isInitialized) {
+        console.error("WASM not initialized for getStats");
+        throw new Error("WASM not initialized");
+      }
       return (globalThis as any).wasmCompleter.stats();
     }
     async completeRaw(prefix: string, limit: number) {
-      if (!this.isInitialized) throw new Error("WASM not initialized");
+      if (!this.isInitialized) {
+        console.error("WASM not initialized for completeRaw");
+        throw new Error("WASM not initialized");
+      }
       const result = (globalThis as any).wasmCompleter.completeRaw(
         prefix,
         limit
       );
-      if (result.error) throw new Error(result.error);
+      if (result.error) {
+        console.error("Raw completion error:", result.error);
+        throw new Error(result.error);
+      }
       return result.suggestions;
     }
   }
@@ -148,17 +166,22 @@ export default defineBackground(() => {
         chunkPromises.push(
           fetch(browser.runtime.getURL(`data/dict_${chunkNum}.bin` as any))
             .then((r) => {
-              if (!r.ok) throw new Error(`dict_${chunkNum} status ${r.status}`);
+              if (!r.ok) {
+                console.error(`Failed to fetch dict_${chunkNum} with status ${r.status}`);
+                throw new Error(`dict_${chunkNum} status ${r.status}`);
+              }
               return r.arrayBuffer();
             })
             .then((b) => new Uint8Array(b))
         );
       }
       const chunks = await Promise.all(chunkPromises);
-      if (chunks.length !== EXPECTED_CHUNKS)
+      if (chunks.length !== EXPECTED_CHUNKS) {
+        console.error(`Expected ${EXPECTED_CHUNKS} chunks, got ${chunks.length}`);
         throw new Error(
           `expected ${EXPECTED_CHUNKS} chunks, got ${chunks.length}`
         );
+      }
       // Hash verify wasm + words.txt if manifest provides
       if (manifest) {
         try {
@@ -170,8 +193,10 @@ export default defineBackground(() => {
               ).arrayBuffer()
             );
             const wasmHash = await cryptoDigestSHA256(wasmBuf);
-            if (wasmHash !== wasmSpec.sha256)
+            if (wasmHash !== wasmSpec.sha256) {
+              console.error("Hash mismatch for wordserve.wasm");
               throw new Error("hash mismatch for wordserve.wasm");
+            }
           }
           const wordsSpec = manifest["data/words.txt"];
           if (wordsSpec?.sha256) {
@@ -181,8 +206,10 @@ export default defineBackground(() => {
               ).arrayBuffer()
             );
             const wordsHash = await cryptoDigestSHA256(wordsBuf);
-            if (wordsHash !== wordsSpec.sha256)
+            if (wordsHash !== wordsSpec.sha256) {
+              console.error("Hash mismatch for data/words.txt");
               throw new Error("hash mismatch for data/words.txt");
+            }
           }
         } catch (ihErr) {
           console.warn("Integrity check (non-fatal) failed:", ihErr);
@@ -190,8 +217,10 @@ export default defineBackground(() => {
       }
       for (let i = 0; i < chunks.length; i++) {
         const chk = chunks[i];
-        if (chk.byteLength < MIN_CHUNK_BYTES)
+        if (chk.byteLength < MIN_CHUNK_BYTES) {
+          console.error(`Chunk ${i} too small (${chk.byteLength} bytes)`);
           throw new Error(`chunk ${i} too small (${chk.byteLength} bytes)`);
+        }
         // Hash verification if manifest present
         if (manifest) {
           const path = `data/dict_${String(i + 1).padStart(4, "0")}.bin`;
@@ -199,6 +228,7 @@ export default defineBackground(() => {
           if (spec?.sha256) {
             const hash = await cryptoDigestSHA256(chk);
             if (hash !== spec.sha256) {
+              console.error(`Hash mismatch for ${path}`);
               throw new Error(`hash mismatch for ${path}`);
             }
           }
@@ -208,29 +238,38 @@ export default defineBackground(() => {
         const result = (globalThis as any).wasmCompleter.initWithBinaryData(
           chunks
         );
-        if (!result?.success)
+        if (!result?.success) {
+          console.error("Failed to load dictionary:", result?.error);
           throw new Error(result?.error || "Failed to load dictionary");
+        }
         await browser.storage.local.set({
           wordserveDictMeta: { words: result.wordCount, chunks: result.chunks },
         });
         console.log(
           `WordServe loaded ${result.wordCount} words from ${result.chunks} chunks`
         );
-      } else throw new Error("WASM completer not available");
+      } else {
+        console.error("WASM completer not available");
+        throw new Error("WASM completer not available");
+      }
     } catch (err) {
       await recordError(`Binary dictionary load failed: ${String(err)}`);
       try {
         const response = await fetch(
           browser.runtime.getURL("data/words.txt" as any)
         );
-        if (!response.ok)
+        if (!response.ok) {
+          console.error(`Failed to fetch words.txt with status ${response.status}`);
           throw new Error(`words.txt status ${response.status}`);
+        }
         const text = await response.text();
         const encoder = new TextEncoder();
         const data = encoder.encode(text);
         const result = (globalThis as any).wasmCompleter.initWithData(data);
-        if (!result.success)
+        if (!result.success) {
+          console.error("Failed to load text dictionary:", result.error);
           throw new Error(result.error || "Failed to load text dictionary");
+        }
         await browser.storage.local.set({
           wordserveDictMeta: { words: result.wordCount, chunks: 0 },
         });
@@ -441,5 +480,8 @@ export default defineBackground(() => {
     }
   });
 
-  initializeWASM();
+  // Fix promise handling for initializeWASM
+  (async () => {
+    await initializeWASM();
+  })();
 });
