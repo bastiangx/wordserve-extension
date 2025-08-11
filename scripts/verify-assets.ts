@@ -4,8 +4,8 @@
  * Verifies WASM + dictionary assets exist, sizes sane, optional hashing.
  */
 
-import { statSync, readFileSync, existsSync } from "fs";
-import { join } from "path";
+import {existsSync, readFileSync, statSync} from "fs";
+import {join} from "path";
 import crypto from "crypto";
 
 interface AssetSpec {

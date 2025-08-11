@@ -5,8 +5,8 @@
  * Checks if all defined settings are actually implemented and used
  */
 
-import { readFileSync } from "fs";
-import { join } from "path";
+import {readFileSync} from "fs";
+import {join} from "path";
 
 interface SettingDefinition {
   name: string;

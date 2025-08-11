@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import * as matchers from "@testing-library/jest-dom/matchers";
-import { JSDOM } from "jsdom";
+import {JSDOM} from "jsdom";
 
 // Establish jsdom environment manually (bun test jsdom flag may not auto-create globals yet)
 if (!(globalThis as any).window || !(globalThis as any).document) {

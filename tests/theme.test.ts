@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { buildThemeCSSVars } from "../src/lib/theme";
+import {buildThemeCSSVars} from "../src/lib/theme";
 
 describe("Theme CSS Vars", () => {
   it("buildThemeCSSVars returns correct CSS var string", () => {

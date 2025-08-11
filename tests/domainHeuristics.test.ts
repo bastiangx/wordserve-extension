@@ -1,13 +1,6 @@
 // @ts-nocheck
 
-import {
-  CREDIT_FIELD_REGEX,
-  BILLING_FIELD_REGEX,
-  GOV_ID_REGEX,
-  EMAIL_FIELD_REGEX,
-  scanPageSensitivity,
-} from "../src/lib/domains";
-import type { SensitivityResult } from "../src/types";
+import {BILLING_FIELD_REGEX, CREDIT_FIELD_REGEX, EMAIL_FIELD_REGEX, GOV_ID_REGEX,} from "../src/lib/domains";
 
 describe("Field Regex patterns", () => {
   it("should match common credit field names", () => {

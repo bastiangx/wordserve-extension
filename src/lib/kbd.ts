@@ -1,8 +1,4 @@
-import type {
-  InputState,
-  KeyboardHandlerCallbacks,
-  KeyboardHandlerSettings,
-} from "@/types";
+import type {InputState, KeyboardHandlerCallbacks, KeyboardHandlerSettings,} from "@/types";
 
 // Interfaces now sourced from central types
 

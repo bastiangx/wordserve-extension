@@ -1,9 +1,9 @@
 // @ts-nocheck
 
 import React from "react";
-import { render, screen, cleanup, within } from "@testing-library/react";
+import {cleanup, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SuggestionMenu } from "../../src/components/wordserve/menu";
+import {SuggestionMenu} from "../../src/components/wordserve/menu";
 
 Object.defineProperty(globalThis, "scrollY", { value: 0, writable: true });
 

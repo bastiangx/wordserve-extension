@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill";
-import { DOMAIN_BLACKLIST, DEFAULT_DOMAIN_WHITELIST, DEFAULT_SETTINGS } from "@/lib/defaults";
+import {DEFAULT_SETTINGS} from "@/lib/defaults";
 
 async function cryptoDigestSHA256(data: Uint8Array): Promise<string> {
   try {

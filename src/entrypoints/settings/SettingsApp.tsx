@@ -1,61 +1,46 @@
 "use client";
-import { FaGithub } from "react-icons/fa";
-import { SiKofi } from "react-icons/si";
+import {FaGithub} from "react-icons/fa";
+import {SiKofi} from "react-icons/si";
+import {Glasses, Globe, Keyboard, Palette, RotateCcw, Save, SettingsIcon, X,} from "lucide-react";
+import type {WordServeSettings} from "@/types";
+import {DEFAULT_SETTINGS} from "@/lib/defaults";
+import {GeneralSettings} from "./components/general";
+import {BehaviorSettings} from "./components/Behavior";
+import {KeyboardSettings} from "./components/keyboard";
+import {AppearanceSettings} from "./components/appearance";
+import {AccessibilitySettings} from "./components/accessibility";
+import {DomainSettingsComponent} from "./components/domain";
+import {useEffect, useState} from "react";
+import {Button} from "@/components/ui/button";
+import {Separator} from "@/components/ui/separator";
+import {Toaster} from "@/components/ui/sonner";
+import {toast} from "sonner";
 import {
-  Palette,
-  SettingsIcon,
-  Globe,
-  Keyboard,
-  X,
-  Glasses,
-  RotateCcw,
-  Save,
-} from "lucide-react";
-import type { DomainSettings } from "@/lib/domains";
-import type { WordServeSettings } from "@/types";
-import { DEFAULT_SETTINGS } from "@/lib/defaults";
-import { GeneralSettings } from "./components/general";
-import { BehaviorSettings } from "./components/Behavior";
-import { KeyboardSettings } from "./components/keyboard";
-import { AppearanceSettings } from "./components/appearance";
-import { AccessibilitySettings } from "./components/accessibility";
-import { DomainSettingsComponent } from "./components/domain";
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Toaster } from "@/components/ui/sonner";
-import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
+    Sidebar,
+    SidebarContent,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarInset,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarProvider,
+    SidebarTrigger,
 } from "@/components/ui/sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
+import {Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage,} from "@/components/ui/breadcrumb";
 
 const navigationItems = [
   {

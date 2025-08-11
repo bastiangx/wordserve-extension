@@ -3,16 +3,11 @@
 // were breaking host site layouts (images resized, elements shifting).
 // The content script now relies solely on scoped inline styles injected
 // by DOMManager (ws-* prefixed classes) to avoid CSS collisions.
-import { getWASMInstance } from "@/lib/wasm/ws-wasm";
-import { DOMManager } from "@/lib/dom";
-import type { WordServeSettings } from "@/types";
-import { shouldActivateForDomain, scanPageSensitivity } from "@/lib/domains";
-import type { SensitivityResult } from "@/types";
-import {
-  DOMAIN_BLACKLIST,
-  DEFAULT_DOMAIN_WHITELIST,
-  DEFAULT_SETTINGS,
-} from "@/lib/defaults";
+import {getWASMInstance} from "@/lib/wasm/ws-wasm";
+import {DOMManager} from "@/lib/dom";
+import type {SensitivityResult, WordServeSettings} from "@/types";
+import {scanPageSensitivity, shouldActivateForDomain} from "@/lib/domains";
+import {DEFAULT_SETTINGS,} from "@/lib/defaults";
 import browser from "webextension-polyfill";
 
 // UI override pill for sensitivity blocks

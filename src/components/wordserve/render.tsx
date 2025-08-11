@@ -1,6 +1,6 @@
-import { createRoot, Root } from "react-dom/client";
-import { SuggestionMenu, SuggestionMenuProps } from "./menu";
-import type { DisplaySuggestion as Suggestion } from "@/types";
+import {createRoot, Root} from "react-dom/client";
+import {SuggestionMenu, SuggestionMenuProps} from "./menu";
+import type {DisplaySuggestion as Suggestion} from "@/types";
 
 const WS_TOKEN_KEYS = [
   "--ws-bg",

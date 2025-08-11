@@ -5,8 +5,7 @@
  * This is used for build-time and runtime integrity verification.
  */
 
-import { statSync, readFileSync, writeFileSync } from "fs";
-import { join } from "path";
+import {readFileSync, statSync, writeFileSync} from "fs";
 import crypto from "crypto";
 
 interface ManifestEntry {

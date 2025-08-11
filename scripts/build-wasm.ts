@@ -3,10 +3,10 @@
 // Simple script to build WASM once and place it in public folder for bundling
 // Run this only when you need to rebuild the WASM module
 
-import { spawn } from "child_process";
-import { existsSync, mkdirSync, copyFileSync } from "fs";
-import { join, resolve, dirname } from "path";
-import { fileURLToPath } from "url";
+import {spawn} from "child_process";
+import {copyFileSync, existsSync, mkdirSync} from "fs";
+import {dirname, join, resolve} from "path";
+import {fileURLToPath} from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

@@ -1,9 +1,6 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
-import type {
-  DisplaySuggestion as Suggestion,
-  WordServeSettings,
-} from "@/types";
-import { cn } from "@/lib/utils";
+import React, {useCallback, useEffect, useRef, useState} from "react";
+import type {DisplaySuggestion as Suggestion, WordServeSettings,} from "@/types";
+import {cn} from "@/lib/utils";
 
 export type { DisplaySuggestion as Suggestion } from "@/types";
 

@@ -2,7 +2,7 @@
  * Shared default values for WordServe settings
  */
 
-import type { WordServeSettings } from "@/types";
+import type {WordServeSettings} from "@/types";
 
 // Minimal curated high-risk payment / financial endpoints; no broad wildcards
 export const DOMAIN_BLACKLIST = [

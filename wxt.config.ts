@@ -1,4 +1,4 @@
-import { defineConfig } from "wxt";
+import {defineConfig} from "wxt";
 
 export default defineConfig({
   modules: ["@wxt-dev/module-react"],

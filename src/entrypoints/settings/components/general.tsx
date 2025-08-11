@@ -1,10 +1,10 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Minus, Plus } from "lucide-react";
-import type { WordServeSettings } from "@/types";
+import {Card, CardContent} from "@/components/ui/card";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
+import {Minus, Plus} from "lucide-react";
+import type {WordServeSettings} from "@/types";
 
 export interface GeneralSettingsProps {
   pendingSettings: WordServeSettings;

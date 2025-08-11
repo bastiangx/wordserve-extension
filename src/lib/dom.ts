@@ -1,15 +1,15 @@
 import type {
-  RawSuggestion as WASMSuggestion,
-  WASMCompleterStats,
-  WordServeSettings,
-  InputState,
-  KeyboardHandlerSettings,
-  KeyboardHandlerCallbacks,
+    InputState,
+    KeyboardHandlerCallbacks,
+    KeyboardHandlerSettings,
+    RawSuggestion as WASMSuggestion,
+    WASMCompleterStats,
+    WordServeSettings,
 } from "@/types";
-import { KeyboardHandler } from "./kbd";
-import { shouldActivateForDomain, type DomainSettings } from "./domains";
-import { buildWordServeScopedVars, WS_RADIUS_VAR } from "./theme";
-import { ReactSuggestionMenuRenderer } from "../components/wordserve/render";
+import {KeyboardHandler} from "./kbd";
+import {shouldActivateForDomain} from "./domains";
+import {buildWordServeScopedVars, WS_RADIUS_VAR} from "./theme";
+import {ReactSuggestionMenuRenderer} from "../components/wordserve/render";
 
 interface WordServeEngine {
   waitForReady(): Promise<void>;

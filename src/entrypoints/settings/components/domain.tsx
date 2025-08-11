@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Trash2, Plus } from "lucide-react";
-import type { DomainSettings } from '@/lib/domains';
+import React, {useState} from 'react';
+import {Card, CardContent} from "@/components/ui/card";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
+import {Badge} from "@/components/ui/badge";
+import {Switch} from "@/components/ui/switch";
+import {Plus, Trash2} from "lucide-react";
+import type {DomainSettings} from '@/lib/domains';
 
 export interface DomainSettingsProps {
   pendingSettings: DomainSettings;

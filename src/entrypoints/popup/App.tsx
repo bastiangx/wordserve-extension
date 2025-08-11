@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Toggle } from "@/components/ui/toggle";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Plus, X, Power, Shield, ShieldOff } from "lucide-react";
-import { FaGithub } from "react-icons/fa";
-import { matchesDomainPattern, type DomainSettings } from "@/lib/domains";
+import {useEffect, useState} from "react";
+import {Button} from "@/components/ui/button";
+import {Toggle} from "@/components/ui/toggle";
+import {Label} from "@/components/ui/label";
+import {Input} from "@/components/ui/input";
+import {Plus, Power, Shield, ShieldOff, X} from "lucide-react";
+import {FaGithub} from "react-icons/fa";
+import {type DomainSettings, matchesDomainPattern} from "@/lib/domains";
 import "../../globals.css";
 import "./App.css";
 
