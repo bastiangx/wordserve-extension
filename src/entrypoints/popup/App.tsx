@@ -4,7 +4,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Power, Shield, ShieldOff, X } from "lucide-react";
+import { Plus, Power, Shield, ShieldOff, X, CheckCheck } from "lucide-react";
 import { FaGithub } from "react-icons/fa";
 import { type DomainSettings, matchesDomainPattern } from "@/lib/domains";
 import "../../globals.css";
@@ -104,6 +104,22 @@ export default function App() {
         domains: newDomainSettings,
       },
     });
+
+    // Inform the active tab so content scripts can react immediately
+    const tabs = await browser.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (tabs[0]?.id) {
+      try {
+        await browser.tabs.sendMessage(tabs[0].id, {
+          type: "domainSettingsChanged",
+          settings: newDomainSettings,
+        });
+      } catch (error) {
+        console.warn("Failed to send domain settings update:", error);
+      }
+    }
   };
 
   const removeDomain = async (domain: string) => {
@@ -123,6 +139,22 @@ export default function App() {
         domains: newDomainSettings,
       },
     });
+
+    // Inform the active tab so content scripts can react immediately
+    const tabs = await browser.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (tabs[0]?.id) {
+      try {
+        await browser.tabs.sendMessage(tabs[0].id, {
+          type: "domainSettingsChanged",
+          settings: newDomainSettings,
+        });
+      } catch (error) {
+        console.warn("Failed to send domain settings update:", error);
+      }
+    }
   };
 
   const addCurrentDomain = async () => {
@@ -162,6 +194,33 @@ export default function App() {
           ...newDomainSettings.whitelist,
           currentHost,
         ];
+      }
+    }
+
+    // Persist and propagate changes (this was previously missing)
+    setDomainSettings(newDomainSettings);
+
+    const result = await browser.storage.sync.get("wordserveSettings");
+    const settings = result.wordserveSettings || {};
+    await browser.storage.sync.set({
+      wordserveSettings: {
+        ...settings,
+        domains: newDomainSettings,
+      },
+    });
+
+    const tabs = await browser.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (tabs[0]?.id) {
+      try {
+        await browser.tabs.sendMessage(tabs[0].id, {
+          type: "domainSettingsChanged",
+          settings: newDomainSettings,
+        });
+      } catch (error) {
+        console.warn("Failed to send domain settings update:", error);
       }
     }
   };
@@ -254,20 +313,39 @@ export default function App() {
 
   return (
     <div className="w-72 p-3 bg-background text-foreground">
-      <div className="flex justify-between items-center mb-3">
-        <a
-          href="https://github.com/bastiangx/wordserve-plugin"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2"
+      <div className="flex gap-1 mb-2 w-full p-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex-1 hover:bg-secondary hover:text-secondary-foreground"
+          onClick={() =>
+            window.open(
+              "https://github.com/bastiangx/wordserve-plugin",
+              "_blank"
+            )
+          }
         >
-          <FaGithub className="h-6 w-6" />
-        </a>
+          <FaGithub className="h-8 w-8" />
+          Source
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex-1 hover:bg-secondary hover:text-secondary-foreground"
+          onClick={() => window.open("https://ko-fi.com/bastiangx", "_blank")}
+        >
+          <img
+            className="h-6 w-6 mr-2"
+            src="https://files.catbox.moe/f8y8k0.png"
+          />
+          Donate!
+        </Button>
       </div>
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label className="text-sm">Enable WordServe</Label>
+          <Label className="text-lg">WordServe</Label>
           <Toggle
             variant={"outline"}
             pressed={globalEnabled}
@@ -288,12 +366,17 @@ export default function App() {
             </div>
             <div className="flex items-center justify-between">
               <div
-                className={`text-xs px-1.5 py-0.5 rounded border ${
+                className={`flex items-center gap-1.5 text-xs px-1.5 py-0.5 rounded border ${
                   isDomainEnabled()
-                    ? "bg-success/10 text-success-foreground border-success/40"
-                    : "bg-error/10 text-error-foreground border-error/40"
+                    ? "bg-background text-success-foreground border-success"
+                    : "bg-background text-error-foreground border/10"
                 }`}
               >
+                {isDomainEnabled() ? (
+                  <CheckCheck className="h-3 w-3" />
+                ) : (
+                  <X className="h-3 w-3" />
+                )}
                 {isDomainEnabled() ? "Active" : "Inactive"}
               </div>
             </div>
@@ -310,7 +393,7 @@ export default function App() {
                   variant="outline"
                   className="
                       w-full h-7 text-xs 
-                      border-destructive text-destructive 
+                      text-destructive 
                       hover:bg-destructive hover:text-card"
                 >
                   {buttonState.buttonText}
@@ -342,14 +425,14 @@ export default function App() {
           </div>
           <div className="text-xs text-muted-foreground leading-tight">
             {domainSettings.blacklistMode
-              ? "WordServe works everywhere except blocked domains"
-              : "WordServe only works on allowed domains"}
+              ? "Plugin works everywhere except blocked domains"
+              : "Plugin only works on allowed domains"}
           </div>
 
           <div className="space-y-1.5">
             <div className="flex gap-1.5">
               <Input
-                placeholder={"example.com or *.site.com"}
+                placeholder={"new.website"}
                 value={newDomain}
                 onChange={(e) => setNewDomain(e.target.value)}
                 className="text-xs h-7"
@@ -361,19 +444,19 @@ export default function App() {
             </div>
 
             {currentList.length > 0 && (
-              <div className="max-h-16 overflow-y-auto space-y-1">
+              <div className="max-h-16 overflow-y-auto pr-2 space-y-1">
                 {currentList.map((domain, index) => (
                   <div
                     key={index}
                     className="
-                    flex items-center justify-between text-xs rounded px-1.5 py-0.5"
+                    flex items-center justify-between text-xs rounded px-1.5 py-0.5 gap-2"
                   >
                     <span className="truncate">{domain}</span>
                     <Button
                       onClick={() => removeDomain(domain)}
                       size="sm"
                       variant="ghost"
-                      className="h-3 w-3 p-0"
+                      className="h-3 w-3 p-0 ml-2 flex-none"
                     >
                       <X className="h-2.5 w-2.5" />
                     </Button>

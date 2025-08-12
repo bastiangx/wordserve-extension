@@ -7,6 +7,7 @@ import {
   Keyboard,
   Palette,
   RotateCcw,
+  BookType,
   Save,
   SettingsIcon,
   X,
@@ -55,6 +56,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
+import { Label } from "@radix-ui/react-label";
 
 const navigationItems = [
   {
@@ -66,32 +68,32 @@ const navigationItems = [
   {
     id: "behavior",
     title: "Behavior",
-    icon: Keyboard,
-    description: "Input behavior and keyboard shortcuts",
+    icon: BookType,
+    description: "Insertions & interactions",
   },
   {
     id: "keyboard",
     title: "Keyboard",
     icon: Keyboard,
-    description: "Keyboard shortcuts and bindings",
+    description: "Shortcuts & bindings",
   },
   {
     id: "appearance",
     title: "Appearance",
     icon: Palette,
-    description: "Visual appearance and styling",
+    description: "Visuals and styling",
   },
   {
     id: "accessibility",
     title: "Accessibility",
     icon: Glasses,
-    description: "Accessibility features and customization",
+    description: "Accessibility options",
   },
   {
     id: "domains",
     title: "Domains",
     icon: Globe,
-    description: "Domain management and security",
+    description: "Plugin usage per domain",
   },
 ];
 
@@ -153,8 +155,7 @@ function SettingsApp() {
             });
             successfulUpdates++;
           } catch (error) {
-            // Silently ignore tabs without content scripts
-            // This is expected behavior for tabs that don't support the extension
+            console.log(`Failed to update settings in tab ${tab.id}:`, error);
           }
         }
       }
@@ -348,7 +349,7 @@ function SettingsApp() {
                 <SidebarMenuItem>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <SidebarMenuButton className="text-destructive hover:text-destructive">
+                      <SidebarMenuButton className="text-destructive hover:text-destructive hover:bg-destructive/10 justify-start">
                         <RotateCcw className="h-4 w-4" />
                         <span>Reset Settings</span>
                       </SidebarMenuButton>
@@ -365,7 +366,7 @@ function SettingsApp() {
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={resetToDefaults}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          className="bg-destructive/10 text-destructive hover:bg-destructive/12"
                         >
                           Reset settings
                         </AlertDialogAction>
@@ -381,16 +382,32 @@ function SettingsApp() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <Button
-                    variant="ghost"
-                    className="px-2 py-2 h-auto justify-center gap-2 w-full hover:bg-secondary hover:text-secondary-foreground"
-                    onClick={() =>
-                      window.open("https://ko-fi.com/bastiangx", "_blank")
-                    }
-                  >
-                    <SiKofi className="h-4 w-4" />
-                    <span>Support us!</span>
-                  </Button>
+                  <div className="flex flex-col gap-6 w-full p-1 items-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="
+                        p-4 text-muted-foreground hover:bg-secondary hover:text-secondary-foreground"
+                      onClick={() =>
+                        window.open("https://ko-fi.com/bastiangx", "_blank")
+                      }
+                    >
+                      <img
+                        className="h-16 w-16 mb-6 "
+                        src="https://files.catbox.moe/aw4243.gif"
+                      />
+                      Donate!
+                    </Button>
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1 select-none pointer-events-none">
+                      Made with{" "}
+                      <img
+                        src="https://files.catbox.moe/acsv6z.svg"
+                        alt="heart"
+                        className="h-4 w-4 inline-block px-0.5 select-none"
+                      />{" "}
+                      by bastian
+                    </Label>
+                  </div>
                 </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
@@ -452,10 +469,7 @@ export default function SettingsAppWithToast() {
   return (
     <>
       <SettingsApp />
-      <Toaster
-        position="top-right"
-        visibleToasts={3}
-      />
+      <Toaster position="top-right" visibleToasts={3} />
     </>
   );
 }
