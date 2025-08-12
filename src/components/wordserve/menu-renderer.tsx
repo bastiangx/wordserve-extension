@@ -154,12 +154,8 @@ function buildShadowCSS(
 
   // Only inject our own extension styles and design tokens, not the page's CSS
   return `
-:host{
-  position:static!important;
-  pointer-events:none!important;
-  ${tokenLines}
-  ${themeVarLines}
-}
+:host{ position:static!important; pointer-events:none!important; }
+.ws-root-scope{ ${tokenLines} ${themeVarLines} }
 /* Minimal menu UI styles */
 ${minimalMenuCSS}
 `;
@@ -219,40 +215,8 @@ export const SuggestionMenu: React.FC<SuggestionMenuProps> = React.memo(
     style,
     tooltipContainer,
   }) => {
-    const menuRef = useRef<HTMLDivElement>(null);
-    const wrapperRef = useRef<HTMLDivElement>(null);
-    const [adjustedPos, setAdjustedPos] = useState(position);
-
-    // Adjust position for viewport
-    useEffect(() => {
-      const adjustPositionForViewport = (pos: { x: number; y: number }) => {
-        const padding = 10;
-        const estimatedHeight = 320; // Fixed height for our menu
-        const estimatedWidth = menuWidth;
-
-        let { x, y } = pos;
-
-        // Adjust horizontal position if menu would go off screen
-        const availableSpaceRight = window.innerWidth - x;
-        if (availableSpaceRight < estimatedWidth + padding) {
-          x = Math.max(padding, window.innerWidth - estimatedWidth - padding);
-        }
-
-        // Adjust vertical position if menu would go off screen
-        const availableSpaceBottom = window.innerHeight - y;
-        if (availableSpaceBottom < estimatedHeight + padding) {
-          // Try to place above the caret
-          y = pos.y - estimatedHeight - 10;
-
-          // If still not enough space, clamp to viewport
-          if (y < padding) y = padding;
-        }
-
-        return { x, y };
-      };
-
-      setAdjustedPos(adjustPositionForViewport(position));
-    }, [position, menuWidth]);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
     // Keyboard navigation
     const handleKeyDown = useCallback(
@@ -369,10 +333,9 @@ export const SuggestionMenu: React.FC<SuggestionMenuProps> = React.memo(
     // Focus the wrapper to capture keyboard events when visible
     useEffect(() => {
       if (autoFocus && wrapperRef.current) {
-        // Defer to next frame to ensure element is in the DOM
         requestAnimationFrame(() => wrapperRef.current?.focus());
       }
-    }, [autoFocus, adjustedPos.x, adjustedPos.y, suggestions.length]);
+    }, [autoFocus, position.x, position.y, suggestions.length]);
 
     if (suggestions.length === 0) return null;
 
@@ -385,12 +348,8 @@ export const SuggestionMenu: React.FC<SuggestionMenuProps> = React.memo(
     return (
       <div
         ref={wrapperRef}
-        style={{
-          position: "fixed",
-          left: `${adjustedPos.x}px`,
-          top: `${adjustedPos.y}px`,
-          zIndex: 2147483647,
-        }}
+  className="ws-root-scope"
+  style={{ position: "fixed", left: `${position.x}px`, top: `${position.y}px`, zIndex: 2147483647 }}
         onKeyDown={handleKeyDown}
         tabIndex={-1}
         role="listbox"
@@ -508,10 +467,7 @@ class WSRenderer {
       pointer-events: none !important;
     `;
 
-    const isDev = (import.meta as any)?.env?.DEV ?? false;
-    this.shadowRoot = this.shadowHost.attachShadow({
-      mode: isDev ? "open" : "closed",
-    });
+  this.shadowRoot = this.shadowHost.attachShadow({ mode: "open" });
 
     this.styleEl = document.createElement("style");
     const initialThemeMode =
@@ -582,11 +538,10 @@ class WSRenderer {
     }
 
     const menuClassName = [
-      borderRadius === false ? "rounded-none" : "",
-      menuBorder === false ? "border-0" : "",
-    ]
-      .filter(Boolean)
-      .join(" ");
+      borderRadius === false ? "rounded-none" : "rounded-md",
+      menuBorder === false ? "border-0" : "border",
+      "bg-popover text-popover-foreground shadow-lg",
+    ].filter(Boolean).join(" ");
 
     const menuProps: SuggestionMenuProps = {
       suggestions,
@@ -603,12 +558,12 @@ class WSRenderer {
         this.hide();
         onClose?.();
       },
-      showRanking: showRankings,
-      showNumbers,
-      compactMode: mode === "compact",
-      className: menuClassName || undefined,
+  showRanking: showRankings,
+  showNumbers,
+  compactMode: mode === "compact",
+  className: menuClassName,
       autoFocus: false,
-      style: menuWidth ? { width: `${menuWidth}px` } : undefined,
+  style: menuWidth ? { width: `${menuWidth}px` } : undefined,
       tooltipContainer: this.shadowRoot as Element | null,
     };
 
