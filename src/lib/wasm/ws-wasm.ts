@@ -1,6 +1,6 @@
-import {browser} from "wxt/browser";
-import {decode, encode} from "@msgpack/msgpack";
-import type {RawSuggestion, WASMCompleterStats} from "@/types";
+import { browser } from "wxt/browser";
+import { decode, encode } from "@msgpack/msgpack";
+import type { RawSuggestion, WASMCompleterStats } from "@/types";
 
 // Base64 helpers for safe message passing of binary msgpack payloads
 function bytesToBase64(bytes: Uint8Array): string {

@@ -49,8 +49,6 @@ export interface WordServeSettings {
   autoInsertion: boolean;
   smartBackspace: boolean;
   rankingPosition: "left" | "right";
-  menuBorderRadius: boolean;
-  menuBorder: boolean;
   themeMode: "adaptive" | "isolated";
   keyBindings: {
     insertWithoutSpace: {

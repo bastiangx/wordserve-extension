@@ -103,8 +103,6 @@ export const DEFAULT_SETTINGS: WordServeSettings = {
   autoInsertion: false,
   smartBackspace: true,
   rankingPosition: "right",
-  menuBorderRadius: true,
-  menuBorder: true,
   themeMode: "isolated",
   keyBindings: {
     insertWithoutSpace: {

@@ -1,4 +1,4 @@
-import type {SensitivityResult} from "@/types";
+import type { SensitivityResult } from "@/types";
 
 export interface DomainSettings {
   blacklistMode: boolean; // true => treat list as block list; false => treat as allow list
@@ -129,7 +129,6 @@ export function shouldActivateForDomain(
   const { blacklistMode, blacklist, whitelist } = settings;
   if (blacklistMode) {
     return !matchesDomainList(host, blacklist);
-
   } else {
     return matchesDomainList(host, whitelist);
   }

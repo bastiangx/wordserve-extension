@@ -7,9 +7,9 @@
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
-    "build": "bun run scripts/build-wasm.ts && bun run scripts/gen-asset-manifest.ts && wxt build && bun run scripts/verify-assets.ts ",
+    "build": "wxt build && bun run scripts/verify-assets.ts ",
     "build:firefox": "bun run scripts/build-wasm.ts && bun run scripts/gen-asset-manifest.ts && wxt build -b firefox && bun run scripts/verify-assets.ts",
-    "build:wasm": "bun run scripts/build-wasm.ts",
+    "build:wasm": "bun run scripts/build-wasm.ts && bun run scripts/gen-asset-manifest.ts",
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
