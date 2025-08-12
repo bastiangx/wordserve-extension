@@ -140,7 +140,7 @@ function SettingsApp() {
 
       // Only send messages to tabs that might have content scripts
       const tabs = await browser.tabs.query({
-        url: ["http://*/*", "https://*/*"]
+        url: ["http://*/*", "https://*/*"],
       });
 
       let successfulUpdates = 0;
@@ -454,10 +454,6 @@ export default function SettingsAppWithToast() {
       <SettingsApp />
       <Toaster
         position="top-right"
-        // toastOptions={{
-        //   style: { pointerEvents: 'auto' },
-        //   className: 'toaster-toast',
-        // }}
         visibleToasts={3}
       />
     </>

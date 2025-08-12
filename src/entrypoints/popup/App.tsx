@@ -1,11 +1,12 @@
-import {useEffect, useState} from "react";
-import {Button} from "@/components/ui/button";
-import {Toggle} from "@/components/ui/toggle";
-import {Label} from "@/components/ui/label";
-import {Input} from "@/components/ui/input";
-import {Plus, Power, Shield, ShieldOff, X} from "lucide-react";
-import {FaGithub} from "react-icons/fa";
-import {type DomainSettings, matchesDomainPattern} from "@/lib/domains";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Toggle } from "@/components/ui/toggle";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Power, Shield, ShieldOff, X } from "lucide-react";
+import { FaGithub } from "react-icons/fa";
+import { type DomainSettings, matchesDomainPattern } from "@/lib/domains";
 import "../../globals.css";
 import "./App.css";
 
@@ -280,14 +281,17 @@ export default function App() {
         {currentHost && (
           <div className="border rounded p-2 space-y-2 justify-items-center">
             <div className="text-xs text-muted-foreground">
-              Current: {currentHost}
+              current:{" "}
+              <Badge variant="outline" className="text-xs">
+                {currentHost}
+              </Badge>
             </div>
             <div className="flex items-center justify-between">
               <div
                 className={`text-xs px-1.5 py-0.5 rounded border ${
                   isDomainEnabled()
-                    ? "bg-success/10 text-success-foreground border-success/20"
-                    : "bg-error/10 text-error-foreground border-error/20"
+                    ? "bg-success/10 text-success-foreground border-success/40"
+                    : "bg-error/10 text-error-foreground border-error/40"
                 }`}
               >
                 {isDomainEnabled() ? "Active" : "Inactive"}
@@ -304,7 +308,10 @@ export default function App() {
                   }
                   size="sm"
                   variant="outline"
-                  className="w-full h-7 text-xs"
+                  className="
+                      w-full h-7 text-xs 
+                      border-destructive text-destructive 
+                      hover:bg-destructive hover:text-card"
                 >
                   {buttonState.buttonText}
                 </Button>

@@ -126,7 +126,7 @@ export default defineBackground(() => {
         if (tab.id)
           browser.tabs
             .sendMessage(tab.id, { type, ...payload })
-            .catch(() => { });
+            .catch(() => {});
     });
   }
 
@@ -135,7 +135,7 @@ export default defineBackground(() => {
       await browser.storage.local.set({
         wordserveLastError: { message, ts: Date.now() },
       });
-    } catch { }
+    } catch {}
     console.error("WordServe error:", message);
     broadcast("wordserve-error", { message });
   }
@@ -159,7 +159,7 @@ export default defineBackground(() => {
             manifest[a.path] = { sha256: a.sha256 };
           }
         }
-      } catch { }
+      } catch {}
       const chunkPromises: Promise<Uint8Array>[] = [];
       for (let i = 1; i <= EXPECTED_CHUNKS; i++) {
         const chunkNum = String(i).padStart(4, "0");
@@ -167,7 +167,9 @@ export default defineBackground(() => {
           fetch(browser.runtime.getURL(`data/dict_${chunkNum}.bin` as any))
             .then((r) => {
               if (!r.ok) {
-                console.error(`Failed to fetch dict_${chunkNum} with status ${r.status}`);
+                console.error(
+                  `Failed to fetch dict_${chunkNum} with status ${r.status}`
+                );
                 throw new Error(`dict_${chunkNum} status ${r.status}`);
               }
               return r.arrayBuffer();
@@ -177,7 +179,9 @@ export default defineBackground(() => {
       }
       const chunks = await Promise.all(chunkPromises);
       if (chunks.length !== EXPECTED_CHUNKS) {
-        console.error(`Expected ${EXPECTED_CHUNKS} chunks, got ${chunks.length}`);
+        console.error(
+          `Expected ${EXPECTED_CHUNKS} chunks, got ${chunks.length}`
+        );
         throw new Error(
           `expected ${EXPECTED_CHUNKS} chunks, got ${chunks.length}`
         );
@@ -259,7 +263,9 @@ export default defineBackground(() => {
           browser.runtime.getURL("data/words.txt" as any)
         );
         if (!response.ok) {
-          console.error(`Failed to fetch words.txt with status ${response.status}`);
+          console.error(
+            `Failed to fetch words.txt with status ${response.status}`
+          );
           throw new Error(`words.txt status ${response.status}`);
         }
         const text = await response.text();
@@ -375,7 +381,8 @@ export default defineBackground(() => {
             let payloadB64: string | undefined;
             if (result instanceof Uint8Array) {
               let binary = "";
-              for (let i = 0; i < result.length; i++) binary += String.fromCharCode(result[i]);
+              for (let i = 0; i < result.length; i++)
+                binary += String.fromCharCode(result[i]);
               payloadB64 = btoa(binary);
             }
             sendResponse({ payloadB64 });
@@ -432,7 +439,7 @@ export default defineBackground(() => {
                     type: "settingsUpdated",
                     settings: message.settings,
                   })
-                  .catch(() => { });
+                  .catch(() => {});
             sendResponse({ success: true });
           } catch (e) {
             sendResponse({ success: false, error: String(e) });
