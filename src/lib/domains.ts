@@ -87,6 +87,47 @@ export function matchesDomainPattern(
   return compiled.regex.test(host);
 }
 
+/**
+ * Validate and normalize user input for domain patterns.
+ * Accepts either:
+ * - exact domain: example.com
+ * - leading wildcard: *.example.com
+ * - full URLs like https://sub.example.com/path (extracts hostname)
+ * Returns a sanitized, lowercase pattern or a reason for rejection.
+ */
+export function validateUserDomainInput(
+  input: string
+): { ok: true; value: string } | { ok: false; reason: string } {
+  if (!input || typeof input !== "string") {
+    return { ok: false, reason: "Enter a domain" };
+  }
+  let raw = input.trim();
+  if (raw.length > 253) {
+    return { ok: false, reason: "Too long (max 253 chars)" };
+  }
+  // If it's a URL, extract hostname
+  if (/^\w+:\/\//i.test(raw)) {
+    try {
+      const u = new URL(raw);
+      raw = u.hostname || "";
+    } catch {
+      return { ok: false, reason: "Invalid URL" };
+    }
+  }
+  // Strip leading dots and trailing dots
+  raw = raw.replace(/^\.+/, "");
+  if (raw.endsWith(".")) raw = raw.slice(0, -1);
+
+  const sanitized = sanitizePattern(raw);
+  if (!sanitized) {
+    return {
+      ok: false,
+      reason: "Use example.com or *.example.com (letters, digits, dash)",
+    };
+  }
+  return { ok: true, value: sanitized };
+}
+
 export function matchesDomainList(
   hostname: string,
   domainList: string[]

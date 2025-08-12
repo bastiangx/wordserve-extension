@@ -5,8 +5,13 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Power, Shield, ShieldOff, X, CheckCheck } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { FaGithub } from "react-icons/fa";
-import { type DomainSettings, matchesDomainPattern } from "@/lib/domains";
+import {
+  type DomainSettings,
+  matchesDomainPattern,
+  validateUserDomainInput,
+} from "@/lib/domains";
 import "../../globals.css";
 import "./App.css";
 
@@ -19,6 +24,7 @@ export default function App() {
     whitelist: [],
   });
   const [newDomain, setNewDomain] = useState("");
+  const [newDomainError, setNewDomainError] = useState<string | null>(null);
 
   useEffect(() => {
     loadSettings();
@@ -86,15 +92,28 @@ export default function App() {
 
   const addDomain = async () => {
     if (!newDomain.trim()) return;
+    const res = validateUserDomainInput(newDomain);
+    if (!res.ok) {
+      setNewDomainError(res.reason);
+      return;
+    }
+    const cleaned = res.value;
 
     const list = domainSettings.blacklistMode ? "blacklist" : "whitelist";
+    // Prevent exact duplicates
+    if (domainSettings[list].some((d) => d.toLowerCase() === cleaned)) {
+      setNewDomainError("Already added");
+      return;
+    }
+    // Newest first: prepend
     const newDomainSettings = {
       ...domainSettings,
-      [list]: [...domainSettings[list], newDomain.trim()],
+      [list]: [cleaned, ...domainSettings[list]],
     };
 
     setDomainSettings(newDomainSettings);
     setNewDomain("");
+    setNewDomainError(null);
 
     const result = await browser.storage.sync.get("wordserveSettings");
     const settings = result.wordserveSettings || {};
@@ -174,9 +193,10 @@ export default function App() {
           matchesDomainPattern(currentHost, d)
         )
       ) {
+        // Newest first: prepend
         newDomainSettings.blacklist = [
-          ...newDomainSettings.blacklist,
           currentHost,
+          ...newDomainSettings.blacklist,
         ];
       }
     } else {
@@ -190,9 +210,10 @@ export default function App() {
           matchesDomainPattern(currentHost, d)
         )
       ) {
+        // Newest first: prepend
         newDomainSettings.whitelist = [
-          ...newDomainSettings.whitelist,
           currentHost,
+          ...newDomainSettings.whitelist,
         ];
       }
     }
@@ -432,37 +453,47 @@ export default function App() {
           <div className="space-y-1.5">
             <div className="flex gap-1.5">
               <Input
-                placeholder={"new.website"}
+                placeholder={"example.com"}
                 value={newDomain}
                 onChange={(e) => setNewDomain(e.target.value)}
                 className="text-xs h-7"
+                maxLength={253}
+                inputMode="url"
+                spellCheck={false}
+                aria-invalid={newDomainError ? true : undefined}
                 onKeyDown={(e) => e.key === "Enter" && addDomain()}
               />
               <Button onClick={addDomain} size="sm" className="h-7 px-2">
                 <Plus className="h-3 w-3" />
               </Button>
             </div>
+            {newDomainError && (
+              <div className="text-[10px] text-destructive">
+                {newDomainError}
+              </div>
+            )}
 
             {currentList.length > 0 && (
-              <div className="max-h-16 overflow-y-auto pr-2 space-y-1">
-                {currentList.map((domain, index) => (
-                  <div
-                    key={index}
-                    className="
-                    flex items-center justify-between text-xs rounded px-1.5 py-0.5 gap-2"
-                  >
-                    <span className="truncate">{domain}</span>
-                    <Button
-                      onClick={() => removeDomain(domain)}
-                      size="sm"
-                      variant="ghost"
-                      className="h-3 w-3 p-0 ml-2 flex-none"
+              <ScrollArea className="h-24">
+                <div className="pr-1 space-y-1">
+                  {currentList.map((domain, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between text-xs rounded-md border px-1.5 py-0.5 gap-2"
                     >
-                      <X className="h-2.5 w-2.5" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+                      <span className="truncate">{domain}</span>
+                      <Button
+                        onClick={() => removeDomain(domain)}
+                        size="sm"
+                        variant="ghost"
+                        className="h-3 w-3 p-0 ml-2 flex-none"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
             )}
           </div>
         </div>
