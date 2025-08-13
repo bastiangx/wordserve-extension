@@ -186,7 +186,7 @@ export default defineBackground(() => {
           `expected ${EXPECTED_CHUNKS} chunks, got ${chunks.length}`
         );
       }
-      // Hash verify wasm + words.txt if manifest provides
+      // Hash verify wasm if manifest provides
       if (manifest) {
         try {
           const wasmSpec = manifest["wordserve.wasm"];
@@ -200,19 +200,6 @@ export default defineBackground(() => {
             if (wasmHash !== wasmSpec.sha256) {
               console.error("Hash mismatch for wordserve.wasm");
               throw new Error("hash mismatch for wordserve.wasm");
-            }
-          }
-          const wordsSpec = manifest["data/words.txt"];
-          if (wordsSpec?.sha256) {
-            const wordsBuf = new Uint8Array(
-              await (
-                await fetch(browser.runtime.getURL("data/words.txt" as any))
-              ).arrayBuffer()
-            );
-            const wordsHash = await cryptoDigestSHA256(wordsBuf);
-            if (wordsHash !== wordsSpec.sha256) {
-              console.error("Hash mismatch for data/words.txt");
-              throw new Error("hash mismatch for data/words.txt");
             }
           }
         } catch (ihErr) {
@@ -258,33 +245,6 @@ export default defineBackground(() => {
       }
     } catch (err) {
       await recordError(`Binary dictionary load failed: ${String(err)}`);
-      try {
-        const response = await fetch(
-          browser.runtime.getURL("data/words.txt" as any)
-        );
-        if (!response.ok) {
-          console.error(
-            `Failed to fetch words.txt with status ${response.status}`
-          );
-          throw new Error(`words.txt status ${response.status}`);
-        }
-        const text = await response.text();
-        const encoder = new TextEncoder();
-        const data = encoder.encode(text);
-        const result = (globalThis as any).wasmCompleter.initWithData(data);
-        if (!result.success) {
-          console.error("Failed to load text dictionary:", result.error);
-          throw new Error(result.error || "Failed to load text dictionary");
-        }
-        await browser.storage.local.set({
-          wordserveDictMeta: { words: result.wordCount, chunks: 0 },
-        });
-        console.log(
-          `WordServe loaded ${result.wordCount} words from text file`
-        );
-      } catch (fallbackErr) {
-        await recordError(`Dictionary fallback failed: ${String(fallbackErr)}`);
-      }
     }
   }
 
