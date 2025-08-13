@@ -5,7 +5,7 @@
  * This is used for build-time and runtime integrity verification.
  */
 
-import {readFileSync, statSync, writeFileSync} from "fs";
+import { readFileSync, statSync, writeFileSync } from "fs";
 import crypto from "crypto";
 
 interface ManifestEntry {
@@ -51,4 +51,3 @@ writeFileSync(
     2
   )
 );
-console.log(`Generated ${outPath} with ${manifest.length} assets.`);

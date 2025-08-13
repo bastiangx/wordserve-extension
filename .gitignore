@@ -1,7 +1,7 @@
 public/data/
-
 public/wordserve.wasm
 public/wasm_exec.js
+wasm_exec.js
 
 public/asset-manifest.json
 stats.html

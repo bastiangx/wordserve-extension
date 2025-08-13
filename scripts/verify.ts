@@ -49,7 +49,6 @@ async function verifyAssetIntegrity(): Promise<{
       for (const entry of manifestData.assets || []) {
         manifest["public/" + entry.path] = { sha256: entry.sha256 };
       }
-      console.log("Using asset manifest for integrity verification");
     } catch (e) {
       console.warn("Failed to parse asset manifest:", e);
     }
@@ -175,8 +174,6 @@ async function main() {
     result.errors.forEach((err) => console.error(err));
     process.exit(1);
   }
-
-  console.log("\\n✅ All WordServe assets verified successfully");
   console.log(`Assets verified against version: ${TARGET_RELEASE_VERSION}`);
 }
 
