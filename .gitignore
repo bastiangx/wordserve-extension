@@ -1,8 +1,11 @@
-public/wordserve.wasm
+public/data/
 
+public/wordserve.wasm
+public/wasm_exec.js
+
+public/asset-manifest.json
 stats.html
 stats-*.json
 
 .wxt
 web-ext.config.ts
-public/asset-manifest.json

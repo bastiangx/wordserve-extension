@@ -7,10 +7,11 @@
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
-    "build": "bun run scripts/gen-asset-manifest.ts && bun run scripts/verify-assets.ts && wxt build",
-    "build:firefox": "bun run scripts/build-wasm.ts && bun run scripts/gen-asset-manifest.ts && wxt build -b firefox && bun run scripts/verify-assets.ts",
-    "build:wasm": "bun run scripts/build-wasm.ts && bun run scripts/gen-asset-manifest.ts",
-    "verify:assets": "bun run scripts/verify-assets.ts",
+    "build": "bun run scripts/verify.ts && bun run scripts/gen-manifest.ts && wxt build",
+    "build:firefox": "bun run scripts/build-wasm.ts && bun run scripts/verify.ts && bun run scripts/gen-manifest.ts && wxt build -b firefox",
+    "build:wasm": "bun run scripts/build-wasm.ts && bun run scripts/gen-manifest.ts",
+    "download:assets": "bun run scripts/dl-data.ts",
+    "verify:assets": "bun run scripts/verify.ts",
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
@@ -24,6 +25,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "fflate": "^0.8.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "webextension-polyfill": "^0.12.0"
