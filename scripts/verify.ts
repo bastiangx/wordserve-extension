@@ -20,10 +20,8 @@ interface AssetSpec {
 
 const root = process.cwd();
 const assets: AssetSpec[] = [
-  // These are built locally by build-wasm.ts
   { path: "public/wordserve.wasm", minBytes: 10_000, required: true },
   { path: "public/wasm_exec.js", minBytes: 1_000, required: true },
-  // These are downloaded from GitHub releases
   { path: "public/data/dict_0001.bin", minBytes: 200, required: true },
   { path: "public/data/dict_0002.bin", minBytes: 200, required: true },
   { path: "public/data/dict_0003.bin", minBytes: 200, required: true },
@@ -41,7 +39,7 @@ async function verifyAssetIntegrity(): Promise<{
   const errors: string[] = [];
   const missing: string[] = [];
 
-  // Load manifest if available for SHA256 verification
+  // SHA-256 hash manifest
   let manifest: Record<string, { sha256?: string }> | null = null;
   const manifestPath = "public/asset-manifest.json";
   if (existsSync(manifestPath)) {
