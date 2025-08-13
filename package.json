@@ -44,10 +44,6 @@
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-toggle": "^1.1.9",
     "@radix-ui/react-tooltip": "^1.2.7",
-    "@playwright/test": "^1.54.2",
-    "@testing-library/jest-dom": "^6.6.4",
-    "@testing-library/react": "^16.3.0",
-    "@testing-library/user-event": "^14.5.2",
     "@types/node": "^24.1.0",
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",
@@ -63,7 +59,7 @@
     "tailwindcss": "^3.4.3",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.9.2",
-    "wxt": "^0.20.7"
+    "wxt": "^0.20.8"
   },
   "trustedDependencies": [
     "spawn-sync"
