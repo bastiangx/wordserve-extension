@@ -5,3 +5,4 @@ stats-*.json
 
 .wxt
 web-ext.config.ts
+public/asset-manifest.json
