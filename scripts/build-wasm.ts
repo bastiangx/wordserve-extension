@@ -1,12 +1,11 @@
 #!/usr/bin/env bun
 
-// Simple script to build WASM once and place it in public folder for bundling
-// Run this only when you need to rebuild the WASM module
+// Script to build WASM once and place it in public folder for bundling
 
-import {spawn} from "child_process";
-import {copyFileSync, existsSync, mkdirSync} from "fs";
-import {dirname, join, resolve} from "path";
-import {fileURLToPath} from "url";
+import { spawn } from "child_process";
+import { copyFileSync, existsSync, mkdirSync } from "fs";
+import { dirname, join, resolve } from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -64,7 +63,6 @@ function buildWasm(): Promise<boolean> {
   return new Promise((resolve) => {
     console.log("Building WASM with TinyGo...");
 
-    // Ensure public directory exists
     const publicDir = dirname(wasmOutputFile);
     if (!existsSync(publicDir)) {
       mkdirSync(publicDir, { recursive: true });

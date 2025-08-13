@@ -150,16 +150,16 @@ async function main() {
           console.error("Failed to download data files:", downloadResult.error);
           process.exit(1);
         }
-
-        console.log("Data files downloaded successfully. Re-verifying...");
-
-        // Re-verify after download
         const reVerifyResult = await verifyAssetIntegrity();
         if (!reVerifyResult.ok) {
           console.error("\\nAsset verification failed after download:");
           reVerifyResult.errors.forEach((err) => console.error(err));
           process.exit(1);
         }
+        console.log(
+          `Assets verified against version: ${TARGET_RELEASE_VERSION}`
+        );
+        return;
       } catch (error) {
         console.error("Failed to auto-download data files:", error);
         console.error("Please run 'bun run scripts/dl-data.ts' manually");
