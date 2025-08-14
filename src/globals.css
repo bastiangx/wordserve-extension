@@ -30,6 +30,8 @@
     --border: 248 25% 18%; /* #26233a overlay */
     --input: 247 23% 15%; /* #1f1d2e surface */
     --ring: 189 43% 73%; /* #9ccfd8 foam */
+    --interaction: 253 12% 26%; /* #393552 Rose Pine interaction overlay */
+    --interaction-foreground: 245 50% 91%; /* #e0def4 text */
     --radius: 6px;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -61,7 +63,7 @@
 
   /* Custom button hover states with Rosépine colors */
   .hover\:text-primary\/80:hover {
-    color: hsl(189 43% 73% / 0.8);
+    color: hsl(var(--interaction-foreground) / 0.8);
   }
 
   /* Tab button hover states */
@@ -75,7 +77,7 @@
   }
 
   nav button:hover {
-    background-color: hsl(var(--muted) / 0.5);
+    background-color: hsl(var(--interaction));
   }
 
   nav button.active {
@@ -92,7 +94,7 @@
   }
 
   [data-sidebar="menu-button"][data-active="true"]:hover {
-    background-color: hsl(var(--primary) / 0.15) !important;
+    background-color: hsl(var(--interaction)) !important;
   }
 
   /* Remove number input arrows */
@@ -109,15 +111,15 @@
 
   /* Input hover states */
   input:hover:not(:focus):not(:disabled) {
-    border-color: hsl(var(--primary) / 0.4);
+    border-color: hsl(var(--interaction));
   }
 
   select:hover:not(:focus):not(:disabled) {
-    border-color: hsl(var(--primary) / 0.4);
+    border-color: hsl(var(--interaction));
   }
 
   textarea:hover:not(:focus):not(:disabled) {
-    border-color: hsl(var(--primary) / 0.4);
+    border-color: hsl(var(--interaction));
   }
 
   .dark {
@@ -215,5 +217,58 @@
   .card {
     background-color: hsl(var(--background));
     border-color: hsl(var(--border));
+  }
+
+  /* WordServe Autocomplete Menu Styles */
+  #wordserve-menu-container {
+    pointer-events: none;
+  }
+
+  #wordserve-menu-container [data-radix-popper-content-wrapper] {
+    pointer-events: auto;
+  }
+
+  .wordserve-menu-isolated {
+    background: var(--background);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  }
+
+  .wordserve-menu-adaptive {
+    background: var(--popover);
+    color: var(--popover-foreground);
+  }
+
+  /* Animation for menu appearance */
+  @keyframes wordserve-menu-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-5px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes wordserve-menu-out {
+    from {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.95) translateY(-5px);
+    }
+  }
+
+  .wordserve-menu-enter {
+    animation: wordserve-menu-in 0.15s ease-out;
+  }
+
+  .wordserve-menu-exit {
+    animation: wordserve-menu-out 0.1s ease-in;
   }
 }

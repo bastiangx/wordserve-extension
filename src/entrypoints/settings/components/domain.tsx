@@ -1,12 +1,12 @@
-import React, {useState} from 'react';
-import {Card, CardContent} from "@/components/ui/card";
-import {Button} from "@/components/ui/button";
-import {Input} from "@/components/ui/input";
-import {Label} from "@/components/ui/label";
-import {Badge} from "@/components/ui/badge";
-import {Switch} from "@/components/ui/switch";
-import {Plus, Trash2} from "lucide-react";
-import type {DomainSettings} from '@/lib/domains';
+import React, { useState } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Trash2 } from "lucide-react";
+import type { DomainSettings } from '@/lib/domains';
 
 export interface DomainSettingsProps {
   pendingSettings: DomainSettings;
@@ -15,10 +15,10 @@ export interface DomainSettingsProps {
 
 export function DomainSettingsComponent({ pendingSettings, updatePendingDomainSetting }: DomainSettingsProps) {
   const [newDomainInput, setNewDomainInput] = useState("");
-  
+
   const addDomain = (listType: "blacklist" | "whitelist") => {
     if (!newDomainInput.trim()) return;
-    
+
     const currentList = pendingSettings[listType];
     if (!currentList.includes(newDomainInput.trim())) {
       updatePendingDomainSetting(listType, [
@@ -90,11 +90,11 @@ export function DomainSettingsComponent({ pendingSettings, updatePendingDomainSe
 
               <div className="space-y-2">
                 <Label>
-                  {pendingSettings.blacklistMode 
-                    ? "Blocked domains (blacklist)" 
+                  {pendingSettings.blacklistMode
+                    ? "Blocked domains (blacklist)"
                     : "Allowed domains (whitelist)"}
                 </Label>
-                
+
                 {!pendingSettings.blacklistMode && (
                   <div className="flex flex-wrap gap-2">
                     {pendingSettings.whitelist.map((domain) => (
@@ -103,7 +103,7 @@ export function DomainSettingsComponent({ pendingSettings, updatePendingDomainSe
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-auto p-0 text-muted-foreground hover:text-foreground"
+                          className="h-auto p-0 text-muted-foreground hover:text-interaction-foreground"
                           onClick={() => removeDomain("whitelist", domain)}
                         >
                           <Trash2 className="h-3 w-3" />
@@ -126,7 +126,7 @@ export function DomainSettingsComponent({ pendingSettings, updatePendingDomainSe
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-auto p-0 text-muted-foreground hover:text-foreground"
+                          className="h-auto p-0 text-muted-foreground hover:text-interaction-foreground"
                           onClick={() => removeDomain("blacklist", domain)}
                         >
                           <Trash2 className="h-3 w-3" />

@@ -140,6 +140,11 @@ export function matchesDomainList(
   return false;
 }
 
+export function isExtensionId(hostname: string): boolean {
+  const host = normalizeHostname(hostname);
+  return /^[a-z]{32}$/.test(host) && !host.includes(".");
+}
+
 export function isProtectedPage(hostname: string): boolean {
   const url = window.location.href.toLowerCase();
   const host = normalizeHostname(hostname);
@@ -158,7 +163,7 @@ export function isProtectedPage(hostname: string): boolean {
     "view-source:",
   ];
   if (protectedSchemes.some((p) => url.startsWith(p))) return true;
-  return /^[a-z]{32}$/.test(host) && !host.includes(".");
+  return isExtensionId(host);
 }
 
 export function shouldActivateForDomain(

@@ -11,9 +11,12 @@ import {
   type DomainSettings,
   matchesDomainPattern,
   validateUserDomainInput,
+  isExtensionId,
 } from "@/lib/domains";
 import "../../globals.css";
 import "./App.css";
+
+const LOGO_URL = "icon/48.png";
 
 export default function App() {
   const [globalEnabled, setGlobalEnabled] = useState(true);
@@ -328,6 +331,12 @@ export default function App() {
     browser.runtime.openOptionsPage();
   };
 
+  const getDisplayHostname = (hostname: string): string => {
+    if (!hostname) return "empty";
+    if (isExtensionId(hostname)) return "N/A";
+    return hostname;
+  };
+
   const currentList = domainSettings.blacklistMode
     ? domainSettings.blacklist
     : domainSettings.whitelist;
@@ -338,7 +347,7 @@ export default function App() {
         <Button
           variant="ghost"
           size="sm"
-          className="flex-1 hover:bg-secondary hover:text-secondary-foreground"
+          className="flex-1 hover:bg-interaction hover:text-interaction-foreground"
           onClick={() =>
             window.open(
               "https://github.com/bastiangx/wordserve-plugin",
@@ -353,7 +362,7 @@ export default function App() {
         <Button
           variant="ghost"
           size="sm"
-          className="flex-1 hover:bg-secondary hover:text-secondary-foreground"
+          className="flex-1 hover:bg-interaction hover:text-interaction-foreground"
           onClick={() => window.open("https://ko-fi.com/bastiangx", "_blank")}
         >
           <img
@@ -366,7 +375,19 @@ export default function App() {
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label className="text-lg">WordServe</Label>
+          <Button
+            variant="ghost"
+            className="px-2 py-2 h-auto justify-start gap-2"
+            onClick={() =>
+              window.open(
+                "https://github.com/bastiangx/wordserve-plugin",
+                "_blank"
+              )
+            }
+          >
+            <img src={LOGO_URL} alt="WordServe" className="h-8 w-8" />
+            <h2 className="text-2xl font-semibold">WordServe</h2>
+          </Button>
           <Toggle
             variant={"outline"}
             pressed={globalEnabled}
@@ -382,45 +403,54 @@ export default function App() {
             <div className="text-xs text-muted-foreground">
               current:{" "}
               <Badge variant="outline" className="text-xs">
-                {currentHost}
+                {getDisplayHostname(currentHost)}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <div
                 className={`flex items-center gap-1.5 text-xs px-1.5 py-0.5 rounded border ${
-                  isDomainEnabled()
+                  isExtensionId(currentHost)
+                    ? "bg-background text-muted-foreground border-muted"
+                    : isDomainEnabled()
                     ? "bg-background text-success-foreground border-success"
                     : "bg-background text-error-foreground border/10"
                 }`}
               >
-                {isDomainEnabled() ? (
+                {isExtensionId(currentHost) ? (
+                  <Shield className="h-3 w-3" />
+                ) : isDomainEnabled() ? (
                   <CheckCheck className="h-3 w-3" />
                 ) : (
                   <X className="h-3 w-3" />
                 )}
-                {isDomainEnabled() ? "Active" : "Inactive"}
+                {isExtensionId(currentHost)
+                  ? "Extension"
+                  : isDomainEnabled()
+                  ? "Active"
+                  : "Inactive"}
               </div>
             </div>
-            {(() => {
-              const buttonState = getDomainButtonState();
-              return (
-                <Button
-                  onClick={
-                    buttonState.isListed
-                      ? removeCurrentDomain
-                      : addCurrentDomain
-                  }
-                  size="sm"
-                  variant="outline"
-                  className="
+            {!isExtensionId(currentHost) &&
+              (() => {
+                const buttonState = getDomainButtonState();
+                return (
+                  <Button
+                    onClick={
+                      buttonState.isListed
+                        ? removeCurrentDomain
+                        : addCurrentDomain
+                    }
+                    size="sm"
+                    variant="outline"
+                    className="
                       w-full h-7 text-xs 
                       text-destructive 
                       hover:bg-destructive hover:text-card"
-                >
-                  {buttonState.buttonText}
-                </Button>
-              );
-            })()}
+                  >
+                    {buttonState.buttonText}
+                  </Button>
+                );
+              })()}
           </div>
         )}
 

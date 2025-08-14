@@ -1,13 +1,13 @@
 import React from 'react';
-import {Card, CardContent} from "@/components/ui/card";
-import {Button} from "@/components/ui/button";
-import {Input} from "@/components/ui/input";
-import {Label} from "@/components/ui/label";
-import {Switch} from "@/components/ui/switch";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import {Separator} from "@/components/ui/separator";
-import {Minus, Plus} from "lucide-react";
-import type {WordServeSettings} from '@/types';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Minus, Plus } from "lucide-react";
+import type { WordServeSettings } from '@/types';
 
 export interface AppearanceSettingsProps {
   pendingSettings: WordServeSettings;

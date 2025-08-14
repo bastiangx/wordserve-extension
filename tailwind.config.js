@@ -61,6 +61,10 @@ export const theme = {
         DEFAULT: "hsl(var(--card))",
         foreground: "hsl(var(--card-foreground))",
       },
+      interaction: {
+        DEFAULT: "hsl(var(--interaction))",
+        foreground: "hsl(var(--interaction-foreground))",
+      },
     },
     borderRadius: {
       lg: "var(--radius)",

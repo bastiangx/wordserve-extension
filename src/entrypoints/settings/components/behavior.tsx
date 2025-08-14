@@ -1,8 +1,8 @@
 import React from 'react';
-import {Card, CardContent} from "@/components/ui/card";
-import {Switch} from "@/components/ui/switch";
-import {Label} from "@/components/ui/label";
-import type {WordServeSettings} from "@/types";
+import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import type { WordServeSettings } from "@/types";
 
 export interface BehaviorSettingsProps {
   pendingSettings: WordServeSettings;

@@ -2,7 +2,10 @@ import { getWASMInstance } from "@/lib/wasm/ws-wasm";
 import type { WordServeSettings } from "@/types";
 import { shouldActivateForDomain } from "@/lib/domains";
 import { DEFAULT_SETTINGS } from "@/lib/defaults";
+import { ContentScriptManager } from "@/lib/content-script-manager";
 import browser from "webextension-polyfill";
+
+let contentManager: ContentScriptManager | null = null;
 
 export default defineContentScript({
   matches: ["<all_urls>"],
@@ -18,14 +21,25 @@ export default defineContentScript({
 
       if (message.type === "settingsUpdated") {
         console.log("Settings updated");
+        if (contentManager) {
+          const newSettings = await loadSettings();
+          contentManager.updateSettings(newSettings);
+        }
         return;
       }
 
       if (message.type === "globalToggle") {
         if (message.enabled) {
           console.log("WordServe enabled globally");
+          if (!contentManager) {
+            await initializeWordServe();
+          }
         } else {
           console.log("WordServe disabled globally");
+          if (contentManager) {
+            contentManager.destroy();
+            contentManager = null;
+          }
         }
         return;
       }
@@ -39,36 +53,53 @@ export default defineContentScript({
           "Domain settings changed, should activate:",
           shouldActivate
         );
+        
+        if (shouldActivate && !contentManager) {
+          await initializeWordServe();
+        } else if (!shouldActivate && contentManager) {
+          contentManager.destroy();
+          contentManager = null;
+        }
         return;
       }
     });
 
-    try {
-      const settings = await loadSettings();
-      const globalSettings = await browser.storage.sync.get("globalEnabled");
-      const globalEnabled = globalSettings.globalEnabled !== false;
-
-      if (!globalEnabled) {
-        console.log("WordServe globally disabled");
-        return;
-      }
-
-      if (
-        !shouldActivateForDomain(window.location.hostname, settings.domains)
-      ) {
-        console.log("WordServe not activated for this domain");
-        return;
-      }
-
-      // Initialize WASM instance
-      const wordserve = getWASMInstance();
-      await wordserve.waitForReady();
-      console.log("WordServe WASM initialized successfully");
-    } catch (error) {
-      console.error("WordServe initialization error:", error);
-    }
+    await initializeWordServe();
   },
 });
+
+async function initializeWordServe(): Promise<void> {
+  try {
+    const settings = await loadSettings();
+    const globalSettings = await browser.storage.sync.get("globalEnabled");
+    const globalEnabled = globalSettings.globalEnabled !== false;
+
+    if (!globalEnabled) {
+      console.log("WordServe globally disabled");
+      return;
+    }
+
+    if (
+      !shouldActivateForDomain(window.location.hostname, settings.domains)
+    ) {
+      console.log("WordServe not activated for this domain");
+      return;
+    }
+
+    // Initialize WASM instance
+    const wordserve = getWASMInstance();
+    await wordserve.waitForReady();
+    console.log("WordServe WASM initialized successfully");
+
+    // Initialize content manager
+    if (!contentManager) {
+      contentManager = new ContentScriptManager(settings);
+      console.log("WordServe content manager initialized");
+    }
+  } catch (error) {
+    console.error("WordServe initialization error:", error);
+  }
+}
 
 async function loadSettings(): Promise<WordServeSettings> {
   try {

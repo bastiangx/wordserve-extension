@@ -88,6 +88,16 @@ export const DOMAIN_BLACKLIST = [
 
 export const DEFAULT_DOMAIN_WHITELIST: string[] = [];
 
+export const AUTOCOMPLETE_DEFAULTS = {
+  DEFAULT_VISIBLE_ITEMS: 10,
+  MAX_DIGIT_SELECTABLE: 9,
+  MAX_HEIGHT: 300,
+  POSITION_OFFSET: 4,
+  TOOLTIP_DELAY: 500,
+  MIN_WIDTH: 280,
+  MAX_WIDTH: 400,
+} as const;
+
 export const DEFAULT_SETTINGS: WordServeSettings = {
   minWordLength: 3,
   maxSuggestions: 32,

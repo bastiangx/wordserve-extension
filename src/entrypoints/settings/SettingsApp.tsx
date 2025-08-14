@@ -1,6 +1,5 @@
 "use client";
 import { FaGithub } from "react-icons/fa";
-import { SiKofi } from "react-icons/si";
 import {
   Glasses,
   Globe,
@@ -58,43 +57,13 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Label } from "@radix-ui/react-label";
 
-const navigationItems = [
-  {
-    id: "general",
-    title: "General",
-    icon: SettingsIcon,
-    description: "Basics & core functionality",
-  },
-  {
-    id: "behavior",
-    title: "Behavior",
-    icon: BookType,
-    description: "Insertions & interactions",
-  },
-  {
-    id: "keyboard",
-    title: "Keyboard",
-    icon: Keyboard,
-    description: "Shortcuts & bindings",
-  },
-  {
-    id: "appearance",
-    title: "Appearance",
-    icon: Palette,
-    description: "Visuals and styling",
-  },
-  {
-    id: "accessibility",
-    title: "Accessibility",
-    icon: Glasses,
-    description: "Accessibility options",
-  },
-  {
-    id: "domains",
-    title: "Domains",
-    icon: Globe,
-    description: "Plugin usage per domain",
-  },
+const menuItems = [
+  { id: "general", label: "General", icon: SettingsIcon },
+  { id: "behavior", label: "Behavior", icon: BookType },
+  { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "keyboard", label: "Keyboard", icon: Keyboard },
+  { id: "domain", label: "Domain", icon: Globe },
+  { id: "accessibility", label: "Accessibility", icon: Glasses },
 ];
 
 const LOGO_URL = "icon/48.png";
@@ -299,7 +268,7 @@ function SettingsApp() {
     }
   };
 
-  const currentSection = navigationItems.find(
+  const currentSection = menuItems.find(
     (item) => item.id === activeSection
   );
 
@@ -327,14 +296,14 @@ function SettingsApp() {
             <SidebarGroupLabel>Settings</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {navigationItems.map((item) => (
+                {menuItems.map((item) => (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
                       isActive={activeSection === item.id}
                       onClick={() => setActiveSection(item.id)}
                     >
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <span>{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -343,7 +312,6 @@ function SettingsApp() {
           </SidebarGroup>
 
           <SidebarGroup>
-            <SidebarGroupLabel>Danger Zone</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
@@ -387,7 +355,7 @@ function SettingsApp() {
                       variant="ghost"
                       size="sm"
                       className="
-                        p-4 text-muted-foreground hover:bg-secondary hover:text-secondary-foreground"
+                        p-4 text-muted-foreground hover:bg-interaction hover:text-interaction-foreground"
                       onClick={() =>
                         window.open("https://ko-fi.com/bastiangx", "_blank")
                       }
@@ -426,7 +394,7 @@ function SettingsApp() {
                   {currentSection && (
                     <currentSection.icon className="h-4 w-4" />
                   )}
-                  {currentSection?.title}
+                  {currentSection?.label}
                 </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
@@ -435,9 +403,9 @@ function SettingsApp() {
 
         <div className="flex flex-1 flex-col gap-4 p-4">
           <div className="mb-4">
-            <h1 className="text-2xl font-bold">{currentSection?.title}</h1>
+            <h1 className="text-2xl font-bold">{currentSection?.label}</h1>
             <p className="text-muted-foreground">
-              {currentSection?.description}
+              Configure {currentSection?.label.toLowerCase()} settings
             </p>
           </div>
 
