@@ -1,8 +1,8 @@
 import { getWASMInstance } from "@/lib/wasm/ws-wasm";
 import type { WordServeSettings } from "@/types";
 import { shouldActivateForDomain } from "@/lib/domains";
-import { DEFAULT_SETTINGS } from "@/lib/defaults";
-import { ContentScriptManager } from "@/lib/content-script-manager";
+import { normalizeSettings } from "@/lib/settings";
+import { ContentScriptManager } from "@/lib/script";
 import browser from "webextension-polyfill";
 
 let contentManager: ContentScriptManager | null = null;
@@ -107,9 +107,9 @@ async function loadSettings(): Promise<WordServeSettings> {
       wordserveSettings?: WordServeSettings;
     };
     const stored = result.wordserveSettings ?? {};
-    return { ...DEFAULT_SETTINGS, ...stored };
+    return normalizeSettings(stored);
   } catch (error) {
     console.warn("Failed to load settings, using defaults:", error);
-    return DEFAULT_SETTINGS;
+    return normalizeSettings({});
   }
 }

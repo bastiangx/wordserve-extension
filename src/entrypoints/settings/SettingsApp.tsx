@@ -12,7 +12,8 @@ import {
   X,
 } from "lucide-react";
 import type { WordServeSettings } from "@/types";
-import { DEFAULT_SETTINGS } from "@/lib/defaults";
+import { DEFAULT_SETTINGS } from "@/types";
+import { normalizeSettings } from "@/lib/settings";
 import { GeneralSettings } from "@/entrypoints/settings/components/general";
 import { BehaviorSettings } from "@/entrypoints/settings/components/behavior.tsx";
 import { KeyboardSettings } from "@/entrypoints/settings/components/keyboard";
@@ -93,8 +94,8 @@ function SettingsApp() {
     try {
       const result = await browser.storage.sync.get("wordserveSettings");
       const loadedSettings = result.wordserveSettings
-        ? { ...DEFAULT_SETTINGS, ...result.wordserveSettings }
-        : DEFAULT_SETTINGS;
+        ? normalizeSettings(result.wordserveSettings)
+        : normalizeSettings({});
       setSettings(loadedSettings);
       setPendingSettings(loadedSettings);
     } catch (error) {
@@ -107,7 +108,8 @@ function SettingsApp() {
 
   const saveSettings = async () => {
     try {
-      await browser.storage.sync.set({ wordserveSettings: pendingSettings });
+      const normalized = normalizeSettings(pendingSettings);
+      await browser.storage.sync.set({ wordserveSettings: normalized });
 
       // Only send messages to tabs that might have content scripts
       const tabs = await browser.tabs.query({

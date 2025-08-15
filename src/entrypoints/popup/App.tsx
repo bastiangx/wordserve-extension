@@ -13,6 +13,7 @@ import {
   validateUserDomainInput,
   isExtensionId,
 } from "@/lib/domains";
+import { normalizeSettings } from "@/lib/settings";
 import "../../globals.css";
 import "./App.css";
 
@@ -43,13 +44,8 @@ export default function App() {
       result.globalEnabled !== undefined ? result.globalEnabled : true
     );
 
-    const settings = result.wordserveSettings || {};
-    const domains = settings.domains || {
-      blacklistMode: true,
-      blacklist: [],
-      whitelist: [],
-    };
-    setDomainSettings(domains);
+    const normalized = normalizeSettings(result.wordserveSettings || {});
+    setDomainSettings(normalized.domains);
 
     const tabs = await browser.tabs.query({
       active: true,
@@ -84,13 +80,9 @@ export default function App() {
     setDomainSettings(newDomainSettings);
 
     const result = await browser.storage.sync.get("wordserveSettings");
-    const settings = result.wordserveSettings || {};
-    await browser.storage.sync.set({
-      wordserveSettings: {
-        ...settings,
-        domains: newDomainSettings,
-      },
-    });
+    const current = normalizeSettings(result.wordserveSettings || {});
+    const updated = normalizeSettings({ ...current, domains: newDomainSettings });
+    await browser.storage.sync.set({ wordserveSettings: updated });
   };
 
   const addDomain = async () => {
@@ -119,13 +111,9 @@ export default function App() {
     setNewDomainError(null);
 
     const result = await browser.storage.sync.get("wordserveSettings");
-    const settings = result.wordserveSettings || {};
-    await browser.storage.sync.set({
-      wordserveSettings: {
-        ...settings,
-        domains: newDomainSettings,
-      },
-    });
+    const current = normalizeSettings(result.wordserveSettings || {});
+    const updated = normalizeSettings({ ...current, domains: newDomainSettings });
+    await browser.storage.sync.set({ wordserveSettings: updated });
 
     // Inform the active tab so content scripts can react immediately
     const tabs = await browser.tabs.query({
@@ -154,13 +142,9 @@ export default function App() {
     setDomainSettings(newDomainSettings);
 
     const result = await browser.storage.sync.get("wordserveSettings");
-    const settings = result.wordserveSettings || {};
-    await browser.storage.sync.set({
-      wordserveSettings: {
-        ...settings,
-        domains: newDomainSettings,
-      },
-    });
+    const current = normalizeSettings(result.wordserveSettings || {});
+    const updated = normalizeSettings({ ...current, domains: newDomainSettings });
+    await browser.storage.sync.set({ wordserveSettings: updated });
 
     // Inform the active tab so content scripts can react immediately
     const tabs = await browser.tabs.query({
@@ -225,13 +209,9 @@ export default function App() {
     setDomainSettings(newDomainSettings);
 
     const result = await browser.storage.sync.get("wordserveSettings");
-    const settings = result.wordserveSettings || {};
-    await browser.storage.sync.set({
-      wordserveSettings: {
-        ...settings,
-        domains: newDomainSettings,
-      },
-    });
+    const current = normalizeSettings(result.wordserveSettings || {});
+    const updated = normalizeSettings({ ...current, domains: newDomainSettings });
+    await browser.storage.sync.set({ wordserveSettings: updated });
 
     const tabs = await browser.tabs.query({
       active: true,
@@ -279,13 +259,9 @@ export default function App() {
     setDomainSettings(newDomainSettings);
 
     const result = await browser.storage.sync.get("wordserveSettings");
-    const settings = result.wordserveSettings || {};
-    await browser.storage.sync.set({
-      wordserveSettings: {
-        ...settings,
-        domains: newDomainSettings,
-      },
-    });
+    const current = normalizeSettings(result.wordserveSettings || {});
+    const updated = normalizeSettings({ ...current, domains: newDomainSettings });
+    await browser.storage.sync.set({ wordserveSettings: updated });
 
     const tabs = await browser.tabs.query({
       active: true,

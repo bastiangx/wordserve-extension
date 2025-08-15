@@ -1,21 +1,74 @@
-import React from 'react';
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Minus, Plus } from "lucide-react";
-import type { WordServeSettings } from '@/types';
+import type { WordServeSettings } from "@/types";
 
 export interface AppearanceSettingsProps {
   pendingSettings: WordServeSettings;
   updatePendingSetting: (key: keyof WordServeSettings, value: any) => void;
-  adjustNumber: (key: keyof WordServeSettings, delta: number, min: number, max: number) => void;
+  adjustNumber: (
+    key: keyof WordServeSettings,
+    delta: number,
+    min: number,
+    max: number
+  ) => void;
 }
 
-export function AppearanceSettings({ pendingSettings, updatePendingSetting, adjustNumber }: AppearanceSettingsProps) {
+export function AppearanceSettings({
+  pendingSettings,
+  updatePendingSetting,
+  adjustNumber,
+}: AppearanceSettingsProps) {
+  const [inputValues, setInputValues] = useState({
+    fontSize:
+      typeof pendingSettings.fontSize === "number"
+        ? pendingSettings.fontSize.toString()
+        : pendingSettings.fontSize.toString(),
+  });
+
+  // Update input values when pendingSettings changes (from buttons or external updates)
+  useEffect(() => {
+    setInputValues({
+      fontSize:
+        typeof pendingSettings.fontSize === "number"
+          ? pendingSettings.fontSize.toString()
+          : pendingSettings.fontSize.toString(),
+    });
+  }, [pendingSettings.fontSize]);
+
+  const validateAndUpdateSetting = (
+    key: keyof WordServeSettings,
+    value: string,
+    min: number,
+    max: number,
+    defaultValue: number
+  ) => {
+    if (!value || value.trim() === "") {
+      updatePendingSetting(key, defaultValue);
+      return;
+    }
+    const numValue = parseInt(value);
+    if (isNaN(numValue) || numValue < min) {
+      updatePendingSetting(key, min);
+    } else if (numValue > max) {
+      updatePendingSetting(key, max);
+    } else {
+      updatePendingSetting(key, numValue);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="rounded-md card">
@@ -41,27 +94,21 @@ export function AppearanceSettings({ pendingSettings, updatePendingSetting, adju
                   type="number"
                   min="8"
                   max="32"
-                  value={pendingSettings.fontSize}
+                  value={inputValues.fontSize}
                   onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === "" || value === "0") return;
-                    const numValue = parseInt(value);
-                    if (!isNaN(numValue) && numValue >= 8 && numValue <= 32) {
-                      updatePendingSetting("fontSize", numValue);
-                    }
+                    setInputValues((prev) => ({
+                      ...prev,
+                      fontSize: e.target.value,
+                    }));
                   }}
                   onBlur={(e) => {
-                    const value = e.target.value;
-                    if (!value || value === "0") {
-                      updatePendingSetting("fontSize", 8);
-                      return;
-                    }
-                    const numValue = parseInt(value);
-                    if (isNaN(numValue) || numValue < 8) {
-                      updatePendingSetting("fontSize", 8);
-                    } else if (numValue > 32) {
-                      updatePendingSetting("fontSize", 32);
-                    }
+                    validateAndUpdateSetting(
+                      "fontSize",
+                      e.target.value,
+                      8,
+                      32,
+                      8
+                    );
                   }}
                   className="text-center max-w-20"
                 />

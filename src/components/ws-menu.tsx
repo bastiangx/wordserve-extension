@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { AUTOCOMPLETE_DEFAULTS } from "@/lib/defaults";
+import { AUTOCOMPLETE_DEFAULTS } from "@/types";
 import type { WordServeSettings, DisplaySuggestion } from "@/types";
 
 export interface AutocompleteSuggestion extends DisplaySuggestion {
@@ -87,14 +87,16 @@ export function AutocompleteMenu({
         case "Enter":
           event.preventDefault();
           if (visibleSuggestions[selectedIndex]) {
-            const isInsertWithSpace = settings.keyBindings.insertWithSpace.key === "enter";
+            const isInsertWithSpace =
+              settings.keyBindings.insertWithSpace.key === "enter";
             onSelect(visibleSuggestions[selectedIndex], isInsertWithSpace);
           }
           break;
         case "Tab":
           event.preventDefault();
           if (visibleSuggestions[selectedIndex]) {
-            const isInsertWithSpace = settings.keyBindings.insertWithSpace.key === "tab";
+            const isInsertWithSpace =
+              settings.keyBindings.insertWithSpace.key === "tab";
             onSelect(visibleSuggestions[selectedIndex], isInsertWithSpace);
           }
           break;
@@ -140,19 +142,29 @@ export function AutocompleteMenu({
   const visibleSuggestions = suggestions.slice(0, maxVisibleItems);
 
   const getTooltipContent = (index: number): string => {
-    if (settings.numberSelection && index < AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE) {
+    if (
+      settings.numberSelection &&
+      index < AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE
+    ) {
       return `Press ${index + 1} to insert`;
     }
     return "Press Enter to insert";
   };
 
-  const getRankingBadge = (suggestion: AutocompleteSuggestion, index: number) => {
-    const showRanking = settings.showRankingOverride || (!settings.compactMode && settings.numberSelection);
+  const getRankingBadge = (
+    suggestion: AutocompleteSuggestion,
+    index: number
+  ) => {
+    const showRanking =
+      settings.showRankingOverride ||
+      (!settings.compactMode && settings.numberSelection);
     if (!showRanking) return null;
 
-    const rankingValue = settings.numberSelection && index < AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE
-      ? index + 1
-      : suggestion.rank;
+    const rankingValue =
+      settings.numberSelection &&
+      index < AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE
+        ? index + 1
+        : suggestion.rank;
 
     return (
       <Badge
@@ -176,7 +188,9 @@ export function AutocompleteMenu({
         <PopoverContent
           className={cn(
             "p-0 border-0 shadow-lg",
-            settings.themeMode === "isolated" ? "wordserve-menu-isolated" : "wordserve-menu-adaptive",
+            settings.themeMode === "isolated"
+              ? "wordserve-menu-isolated"
+              : "wordserve-menu-adaptive",
             className
           )}
           style={{
@@ -198,7 +212,8 @@ export function AutocompleteMenu({
             ref={commandRef}
             className={cn(
               "rounded-lg border-0",
-              settings.themeMode === "adaptive" && "bg-popover text-popover-foreground"
+              settings.themeMode === "adaptive" &&
+                "bg-popover text-popover-foreground"
             )}
           >
             <ScrollArea className="max-h-full">
@@ -226,18 +241,22 @@ export function AutocompleteMenu({
                             className={cn(
                               "flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors",
                               "hover:bg-interaction hover:text-interaction-foreground",
-                              (isSelected || isHovered) && "bg-interaction text-interaction-foreground",
+                              (isSelected || isHovered) &&
+                                "bg-interaction text-interaction-foreground",
                               settings.compactMode ? "py-1" : "py-2"
                             )}
                           >
-                            {settings.rankingPosition === "left" && rankingBadge}
-                            
+                            {settings.rankingPosition === "left" &&
+                              rankingBadge}
+
                             <div className="flex-1 min-w-0">
                               <div
                                 className={cn(
                                   "truncate",
-                                  settings.accessibility.uppercaseSuggestions && "uppercase",
-                                  settings.accessibility.boldSuffix && "font-semibold"
+                                  settings.accessibility.uppercaseSuggestions &&
+                                    "uppercase",
+                                  settings.accessibility.boldSuffix &&
+                                    "font-semibold"
                                 )}
                                 style={{
                                   color: settings.accessibility.customColor,
@@ -245,14 +264,16 @@ export function AutocompleteMenu({
                               >
                                 {suggestion.word}
                               </div>
-                              {suggestion.description && !settings.compactMode && (
-                                <div className="text-xs text-muted-foreground truncate mt-0.5">
-                                  {suggestion.description}
-                                </div>
-                              )}
+                              {suggestion.description &&
+                                !settings.compactMode && (
+                                  <div className="text-xs text-muted-foreground truncate mt-0.5">
+                                    {suggestion.description}
+                                  </div>
+                                )}
                             </div>
 
-                            {settings.rankingPosition === "right" && rankingBadge}
+                            {settings.rankingPosition === "right" &&
+                              rankingBadge}
                           </CommandItem>
                         </TooltipTrigger>
                         <TooltipContent side="right" className="text-xs">

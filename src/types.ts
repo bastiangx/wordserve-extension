@@ -42,6 +42,8 @@ export interface WordServeSettings {
   showRankingOverride: boolean;
   compactMode: boolean;
   ghostTextEnabled: boolean;
+  menuBorder: boolean;
+  menuBorderRadius: boolean;
   fontSize: string | number;
   fontWeight: string;
   debugMode?: boolean;
@@ -71,6 +73,142 @@ export interface WordServeSettings {
   };
   domains: import("@/lib/domains").DomainSettings;
 }
+
+// Default data & settings (runtime defaults live here so other modules can import a single source)
+export const DOMAIN_BLACKLIST = [
+  "paypal.com",
+  "*.paypal.com",
+  "checkout.stripe.com",
+  "pay.google.com",
+  "payments.amazon.com",
+  "pay.amazon.com",
+  "secure.venmo.com",
+  "checkout.square.site",
+  "login.live.com",
+  "accounts.google.com",
+  "login.microsoftonline.com",
+  "id.apple.com",
+  "oauth.net",
+  "sso.mozilla.com",
+  "accounts.amazon.com",
+  "okta.com",
+  "auth0.com",
+  "duosecurity.com",
+  // Financial
+  "bankofamerica.com",
+  "wellsfargo.com",
+  "chase.com",
+  "citibank.com",
+  "fidelity.com",
+  "schwab.com",
+  "robinhood.com",
+  "coinbase.com",
+  "blockchain.com",
+  "binance.com",
+  "kraken.com",
+  "etrade.com",
+  "ameritrade.com",
+  "zellepay.com",
+  "cash.app",
+  "transferwise.com",
+  "wise.com",
+  // emails
+  "mail.google.com",
+  "outlook.live.com",
+  "outlook.office365.com",
+  "mail.yahoo.com",
+  "protonmail.com",
+  "tutanota.com",
+  "web.whatsapp.com",
+  "web.telegram.org",
+  "messages.google.com",
+  // cloud
+  "drive.google.com",
+  "onedrive.live.com",
+  "dropbox.com",
+  "box.com",
+  "docs.google.com",
+  "outlook.office.com",
+  // e-commerce
+  "checkout.shopify.com",
+  "secure.bigcommerce.com",
+  "woocommerce.com/checkout/",
+  // healthcare
+  "mychart.com",
+  "patientportal.com",
+  "epiccare.com",
+  // gov
+  "irs.gov",
+  "usa.gov",
+  "tax.gov",
+  "uscis.gov",
+  "dmv.org",
+  "socialsecurity.gov",
+  // password managers
+  "lastpass.com",
+  "1password.com",
+  "bitwarden.com",
+  "keepassxc.org",
+  // misc
+  "console.aws.amazon.com",
+  "portal.azure.com",
+  "console.cloud.google.com",
+  "github.com/settings/",
+  "gitlab.com/profile/personal_access_tokens",
+];
+
+export const DEFAULT_DOMAIN_WHITELIST: string[] = [];
+
+export const AUTOCOMPLETE_DEFAULTS = {
+  DEFAULT_VISIBLE_ITEMS: 10,
+  MAX_DIGIT_SELECTABLE: 9,
+  MAX_HEIGHT: 300,
+  POSITION_OFFSET: 4,
+  TOOLTIP_DELAY: 700,
+  MIN_WIDTH: 280,
+  MAX_WIDTH: 400,
+} as const;
+
+export const DEFAULT_SETTINGS: WordServeSettings = {
+  minWordLength: 3,
+  maxSuggestions: 32,
+  debounceTime: 10,
+  numberSelection: true,
+  showRankingOverride: false,
+  compactMode: false,
+  ghostTextEnabled: true,
+  menuBorder: true,
+  menuBorderRadius: true,
+  fontSize: 16,
+  fontWeight: "normal",
+  debugMode: false,
+  abbreviationsEnabled: false,
+  autoInsertion: false,
+  smartBackspace: true,
+  rankingPosition: "right",
+  themeMode: "isolated",
+  keyBindings: {
+    insertWithoutSpace: {
+      key: "enter",
+      modifiers: [],
+    },
+    insertWithSpace: {
+      key: "tab",
+      modifiers: [],
+    },
+  },
+  accessibility: {
+    boldSuffix: false,
+    uppercaseSuggestions: false,
+    prefixColorIntensity: "normal",
+    ghostTextColorIntensity: "muted",
+  },
+  domains: {
+    blacklistMode: true,
+    blacklist: DOMAIN_BLACKLIST,
+    whitelist: DEFAULT_DOMAIN_WHITELIST,
+  },
+};
 
 export interface InputState {
   currentWord: string;

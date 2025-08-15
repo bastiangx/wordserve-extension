@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { WordServeSettings } from "@/types";
-import type { AutocompleteSuggestion } from "@/components/autocomplete-menu";
+import type { AutocompleteSuggestion } from "@/components/ws-menu";
 
 export interface UseAutocompleteOptions {
   settings: WordServeSettings;
