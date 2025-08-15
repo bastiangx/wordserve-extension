@@ -74,7 +74,6 @@ export interface WordServeSettings {
   domains: import("@/lib/domains").DomainSettings;
 }
 
-// Default data & settings (runtime defaults live here so other modules can import a single source)
 export const DOMAIN_BLACKLIST = [
   "paypal.com",
   "*.paypal.com",

@@ -1,262 +1,396 @@
 import type { WordServeSettings, InputState } from "@/types";
-import type { AutocompleteSuggestion } from "@/lib/handle";
 import { AUTOCOMPLETE_DEFAULTS } from "@/types";
 
-type Callbacks = {
-  onSuggestionsRequested?: (
-    suggestions: AutocompleteSuggestion[],
-    element: HTMLInputElement | HTMLTextAreaElement
-  ) => void;
-  onMenuHide?: () => void;
-  onNavigateUp?: () => void;
-  onNavigateDown?: () => void;
-  onNavigatePageUp?: () => void;
-  onNavigatePageDown?: () => void;
-  onNavigateHome?: () => void;
-  onNavigateEnd?: () => void;
-  onSelectCurrent?: () => void;
-  onSelectByNumber?: (number: number) => void;
-};
+export interface InputContext {
+  element: HTMLElement;
+  currentWord: string;
+  wordStart: number;
+  wordEnd: number;
+  caretPosition: number;
+  currentValue: string;
+}
 
-// Tracks caret/word state and supports committing insertions.
+export interface KeyboardEvent {
+  key: string;
+  code: string;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  shiftKey: boolean;
+  altKey: boolean;
+  preventDefault: () => void;
+  stopPropagation: () => void;
+}
+
+export interface InputHandlerCallbacks {
+  onWordChange: (context: InputContext) => void;
+  onHideMenu: () => void;
+  onNavigate: (direction: "up" | "down") => void;
+  onSelect: (addSpace?: boolean) => void;
+  onSelectByNumber: (index: number) => void;
+}
+
 export class InputHandler {
+  private element: HTMLElement;
   private settings: WordServeSettings;
-  private callbacks: Callbacks;
-  private currentElement: HTMLInputElement | HTMLTextAreaElement | null = null;
-  private inputState: InputState = {
-    currentWord: "",
-    wordStart: 0,
-    wordEnd: 0,
-    suggestions: [],
-    selectedIndex: 0,
-    isActive: false,
-    currentValue: "",
-    caretPosition: 0,
-  };
+  private callbacks: InputHandlerCallbacks;
+  private isActive = false;
+  private lastWord = "";
+  private autocompleteSeparator: RegExp;
 
-  constructor(settings: WordServeSettings, callbacks: Callbacks = {}) {
+  constructor(
+    element: HTMLElement,
+    settings: WordServeSettings,
+    callbacks: InputHandlerCallbacks
+  ) {
+    this.element = element;
     this.settings = settings;
     this.callbacks = callbacks;
+    this.autocompleteSeparator = /\s+/;
+    this.attach();
   }
 
-  updateSettings(settings: WordServeSettings) {
-    this.settings = settings;
+  private attach() {
+    this.element.addEventListener("input", this.handleInput, true);
+    this.element.addEventListener("keydown", this.handleKeydown, true);
+    this.element.addEventListener("blur", this.handleBlur, true);
+    this.element.addEventListener("click", this.handleClick, true);
   }
 
-  attachToElement(el: HTMLInputElement | HTMLTextAreaElement) {
-    this.detachFromElement();
-    this.currentElement = el;
-    el.addEventListener("input", this.handleInput);
-    el.addEventListener("blur", this.handleBlur);
-    el.addEventListener("focus", this.handleFocus);
-    el.addEventListener("keydown", this.handleKeyDown);
-    this.recomputeStateFromElement(el);
+  public detach() {
+    this.element.removeEventListener("input", this.handleInput, true);
+    this.element.removeEventListener("keydown", this.handleKeydown, true);
+    this.element.removeEventListener("blur", this.handleBlur, true);
+    this.element.removeEventListener("click", this.handleClick, true);
   }
 
-  detachFromElement() {
-    if (!this.currentElement) return;
-    this.currentElement.removeEventListener("input", this.handleInput);
-    this.currentElement.removeEventListener("blur", this.handleBlur);
-    this.currentElement.removeEventListener("focus", this.handleFocus);
-    this.currentElement.removeEventListener("keydown", this.handleKeyDown);
-    this.currentElement = null;
-  }
+  private handleInput = (event: Event) => {
+    const context = this.getCurrentContext();
+    if (!context) return;
 
-  getInputState(): InputState {
-    return { ...this.inputState };
-  }
-
-  updateSuggestions(suggestions: AutocompleteSuggestion[]) {
-    // Convert AutocompleteSuggestion to the simpler type used in InputState
-    this.inputState.suggestions = suggestions.map((s) => ({
-      word: s.word,
-      rank: s.rank,
-    }));
-    this.inputState.selectedIndex = 0;
-    this.inputState.isActive = suggestions.length > 0;
-  }
-
-  getSelectedIndex(): number {
-    return this.inputState.selectedIndex;
-  }
-
-  getCurrentSuggestion(): { word: string; rank: number } | null {
-    if (this.inputState.suggestions.length === 0) return null;
-    return this.inputState.suggestions[this.inputState.selectedIndex] || null;
-  }
-
-  insertSuggestion(suggestion: AutocompleteSuggestion, addSpace = false) {
-    if (!this.currentElement) return;
-    const el = this.currentElement;
-    try {
-      const value = el.value;
-      const before = value.slice(0, this.inputState.wordStart);
-      const after = value.slice(this.inputState.wordEnd);
-      const insert = suggestion.word + (addSpace ? " " : "");
-      el.value = before + insert + after;
-      const caret = (before + insert).length;
-      // restore focus and caret
-      el.focus();
-      el.setSelectionRange(caret, caret);
-      // Notify other listeners
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-    } catch (e) {
-      // noop
-    }
-
-    // hide menu
-    this.inputState.isActive = false;
-    this.inputState.suggestions = [];
-    this.callbacks.onMenuHide?.();
-  }
-
-  // recompute input state (word, selection, position) from element
-  private recomputeStateFromElement(
-    el: HTMLInputElement | HTMLTextAreaElement
-  ) {
-    const caret = el.selectionStart ?? el.value.length;
-    const upto = el.value.slice(0, caret);
-    const match = upto.match(/([\w']+)$/);
-    const word = match ? match[0] : "";
-    const start = match ? caret - word.length : caret;
-
-    const rect = el.getBoundingClientRect();
-    const position = {
-      x: rect.left + window.scrollX,
-      y: rect.bottom + window.scrollY,
-    };
-
-    this.inputState = {
-      ...this.inputState,
-      currentWord: word,
-      wordStart: start,
-      wordEnd: caret,
-      currentValue: el.value,
-      caretPosition: caret,
-      position,
-    };
-  }
-
-  private handleInput = (e: Event) => {
-    const el = e.target as HTMLInputElement | HTMLTextAreaElement;
-    this.recomputeStateFromElement(el);
-
-    if (this.inputState.currentWord.length >= this.settings.minWordLength) {
-      this.inputState.isActive = true;
-      // fetching suggestions is handled by the content script
+    // Check if we should trigger autocomplete
+    if (context.currentWord.length >= this.settings.minWordLength) {
+      if (context.currentWord !== this.lastWord) {
+        this.lastWord = context.currentWord;
+        this.callbacks.onWordChange(context);
+      }
     } else {
-      this.inputState.isActive = false;
-      this.inputState.suggestions = [];
-      this.callbacks.onMenuHide?.();
+      this.lastWord = "";
+      this.callbacks.onHideMenu();
     }
   };
 
-  private handleBlur = () => {
-    // Hide suggestions shortly after blur to allow clicks on the menu
-    setTimeout(() => {
-      this.inputState.isActive = false;
-      this.inputState.suggestions = [];
-      this.callbacks.onMenuHide?.();
-    }, 150);
-  };
-
-  private handleFocus = (e?: Event) => {
-    const el = (e?.target || this.currentElement) as
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | null;
-    if (!el) return;
-    this.recomputeStateFromElement(el);
-    // content script will decide whether to fetch suggestions on focus
-  };
-
-  private handleKeyDown = (e: Event) => {
-    const keyEvent = e as KeyboardEvent;
-    // Only handle keys when menu is active and has suggestions
-    if (!this.inputState.isActive || this.inputState.suggestions.length === 0) {
+  private handleKeydown = (event: KeyboardEvent) => {
+    // Don't handle if modifier keys are pressed (except shift for special cases)
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      this.callbacks.onHideMenu();
       return;
     }
 
-    const totalItems = this.inputState.suggestions.length;
+    if (!this.isActive) return;
 
-    switch (keyEvent.key) {
+    const { key } = event;
+
+    switch (key) {
       case "ArrowDown":
-        keyEvent.preventDefault();
-        this.inputState.selectedIndex =
-          this.inputState.selectedIndex < totalItems - 1
-            ? this.inputState.selectedIndex + 1
-            : 0;
-        this.callbacks.onNavigateDown?.();
+        event.preventDefault();
+        event.stopPropagation();
+        this.callbacks.onNavigate("down");
         break;
-
       case "ArrowUp":
-        keyEvent.preventDefault();
-        this.inputState.selectedIndex =
-          this.inputState.selectedIndex > 0
-            ? this.inputState.selectedIndex - 1
-            : totalItems - 1;
-        this.callbacks.onNavigateUp?.();
+        event.preventDefault();
+        event.stopPropagation();
+        this.callbacks.onNavigate("up");
         break;
-
-      case "Enter":
-      case "Tab":
-        keyEvent.preventDefault();
-        this.callbacks.onSelectCurrent?.();
-        break;
-
       case "Escape":
-        keyEvent.preventDefault();
-        this.inputState.isActive = false;
-        this.inputState.suggestions = [];
-        this.callbacks.onMenuHide?.();
+        event.preventDefault();
+        event.stopPropagation();
+        this.callbacks.onHideMenu();
         break;
-
-      case "PageDown":
-        keyEvent.preventDefault();
-        this.inputState.selectedIndex = Math.min(
-          this.inputState.selectedIndex +
-            AUTOCOMPLETE_DEFAULTS.DEFAULT_VISIBLE_ITEMS,
-          totalItems - 1
-        );
-        this.callbacks.onNavigatePageDown?.();
+      case "Enter":
+        if (this.shouldHandleKey("enter")) {
+          event.preventDefault();
+          event.stopPropagation();
+          const addSpace =
+            this.settings.keyBindings.insertWithSpace.key === "enter";
+          this.callbacks.onSelect(addSpace);
+        }
         break;
-
-      case "PageUp":
-        keyEvent.preventDefault();
-        this.inputState.selectedIndex = Math.max(
-          this.inputState.selectedIndex -
-            AUTOCOMPLETE_DEFAULTS.DEFAULT_VISIBLE_ITEMS,
-          0
-        );
-        this.callbacks.onNavigatePageUp?.();
+      case "Tab":
+        if (this.shouldHandleKey("tab")) {
+          event.preventDefault();
+          event.stopPropagation();
+          const addSpace =
+            this.settings.keyBindings.insertWithSpace.key === "tab";
+          this.callbacks.onSelect(addSpace);
+        }
         break;
-
-      case "Home":
-        keyEvent.preventDefault();
-        this.inputState.selectedIndex = 0;
-        this.callbacks.onNavigateHome?.();
+      case " ":
+        if (this.shouldHandleKey("space")) {
+          event.preventDefault();
+          event.stopPropagation();
+          const addSpace =
+            this.settings.keyBindings.insertWithSpace.key === "space";
+          this.callbacks.onSelect(addSpace);
+        }
         break;
-
-      case "End":
-        keyEvent.preventDefault();
-        this.inputState.selectedIndex = totalItems - 1;
-        this.callbacks.onNavigateEnd?.();
-        break;
-
       default:
-        // Handle digit key selection (1-9)
-        if (this.settings?.numberSelection) {
-          const digit = Number.parseInt(keyEvent.key);
-          if (
-            digit >= 1 &&
-            digit <= AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE &&
-            digit <= totalItems
-          ) {
-            keyEvent.preventDefault();
-            this.callbacks.onSelectByNumber?.(digit - 1);
+        // Handle number key selection (1-9)
+        if (this.settings.numberSelection && /^[1-9]$/.test(key)) {
+          const index = parseInt(key) - 1;
+          if (index >= 0 && index < AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.callbacks.onSelectByNumber(index);
           }
+        } else if (!/^[a-zA-Z0-9]$/.test(key) && key.length === 1) {
+          // Non-alphanumeric character typed, hide menu
+          this.callbacks.onHideMenu();
         }
         break;
     }
   };
+
+  private shouldHandleKey(key: "enter" | "tab" | "space"): boolean {
+    return (
+      this.settings.keyBindings.insertWithoutSpace.key === key ||
+      this.settings.keyBindings.insertWithSpace.key === key
+    );
+  }
+
+  private handleBlur = () => {
+    setTimeout(() => {
+      this.callbacks.onHideMenu();
+    }, 150);
+  };
+
+  private handleClick = () => {
+    const context = this.getCurrentContext();
+    if (context && context.currentWord.length >= this.settings.minWordLength) {
+      this.callbacks.onWordChange(context);
+    } else {
+      this.callbacks.onHideMenu();
+    }
+  };
+
+  public getCurrentContext(): InputContext | null {
+    if (!this.isContentEditable() && !this.isInputElement()) {
+      return null;
+    }
+
+    try {
+      if (this.isContentEditable()) {
+        return this.getContentEditableContext();
+      } else {
+        return this.getInputElementContext();
+      }
+    } catch (error) {
+      console.error("Error getting input context:", error);
+      return null;
+    }
+  }
+
+  private isContentEditable(): boolean {
+    return (
+      this.element.contentEditable === "true" ||
+      this.element.getAttribute("contenteditable") === "true"
+    );
+  }
+
+  private isInputElement(): boolean {
+    return (
+      this.element.nodeName === "INPUT" || this.element.nodeName === "TEXTAREA"
+    );
+  }
+
+  private getContentEditableContext(): InputContext | null {
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return null;
+
+    const range = selection.getRangeAt(0);
+    const text = this.element.textContent || "";
+    const caretPosition = this.getCaretPositionInContentEditable(range);
+
+    const { currentWord, wordStart, wordEnd } = this.extractWordAtPosition(
+      text,
+      caretPosition
+    );
+
+    return {
+      element: this.element,
+      currentWord,
+      wordStart,
+      wordEnd,
+      caretPosition,
+      currentValue: text,
+    };
+  }
+
+  private getInputElementContext(): InputContext | null {
+    const input = this.element as HTMLInputElement | HTMLTextAreaElement;
+    const text = input.value;
+    const caretPosition = input.selectionStart || 0;
+
+    const { currentWord, wordStart, wordEnd } = this.extractWordAtPosition(
+      text,
+      caretPosition
+    );
+
+    return {
+      element: this.element,
+      currentWord,
+      wordStart,
+      wordEnd,
+      caretPosition,
+      currentValue: text,
+    };
+  }
+
+  private getCaretPositionInContentEditable(range: Range): number {
+    const preCaretRange = range.cloneRange();
+    preCaretRange.selectNodeContents(this.element);
+    preCaretRange.setEnd(range.endContainer, range.endOffset);
+    return preCaretRange.toString().length;
+  }
+
+  private extractWordAtPosition(
+    text: string,
+    position: number
+  ): {
+    currentWord: string;
+    wordStart: number;
+    wordEnd: number;
+  } {
+    // Find word boundaries
+    let wordStart = position;
+    let wordEnd = position;
+
+    // Find start of word (go backwards until we hit a separator or start of text)
+    while (
+      wordStart > 0 &&
+      !this.autocompleteSeparator.test(text[wordStart - 1])
+    ) {
+      wordStart--;
+    }
+
+    // Find end of word (go forwards until we hit a separator or end of text)
+    while (
+      wordEnd < text.length &&
+      !this.autocompleteSeparator.test(text[wordEnd])
+    ) {
+      wordEnd++;
+    }
+
+    const currentWord = text.substring(wordStart, wordEnd);
+
+    return {
+      currentWord,
+      wordStart,
+      wordEnd,
+    };
+  }
+
+  public replaceCurrentWord(newWord: string, addSpace = false): void {
+    const context = this.getCurrentContext();
+    if (!context) return;
+
+    const replacement = newWord + (addSpace ? " " : "");
+
+    if (this.isContentEditable()) {
+      this.replaceWordInContentEditable(context, replacement);
+    } else {
+      this.replaceWordInInputElement(context, replacement);
+    }
+  }
+
+  private replaceWordInContentEditable(
+    context: InputContext,
+    replacement: string
+  ): void {
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return;
+
+    try {
+      const range = selection.getRangeAt(0);
+      const startContainer = range.startContainer;
+
+      // Create a new range that selects the current word
+      const wordRange = document.createRange();
+
+      if (startContainer.nodeType === Node.TEXT_NODE) {
+        const textNode = startContainer as Text;
+        const textContent = textNode.textContent || "";
+        const caretOffset = range.startOffset;
+
+        // Find word boundaries relative to this text node
+        let wordStart = caretOffset;
+        let wordEnd = caretOffset;
+
+        while (
+          wordStart > 0 &&
+          !this.autocompleteSeparator.test(textContent[wordStart - 1])
+        ) {
+          wordStart--;
+        }
+
+        while (
+          wordEnd < textContent.length &&
+          !this.autocompleteSeparator.test(textContent[wordEnd])
+        ) {
+          wordEnd--;
+        }
+
+        wordRange.setStart(textNode, wordStart);
+        wordRange.setEnd(textNode, wordEnd);
+      }
+
+      // Replace the word
+      wordRange.deleteContents();
+      const textNode = document.createTextNode(replacement);
+      wordRange.insertNode(textNode);
+
+      // Position cursor at end of replacement
+      const newRange = document.createRange();
+      newRange.setStartAfter(textNode);
+      newRange.collapse(true);
+
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+    } catch (error) {
+      console.error("Error replacing word in contenteditable:", error);
+    }
+  }
+
+  private replaceWordInInputElement(
+    context: InputContext,
+    replacement: string
+  ): void {
+    const input = this.element as HTMLInputElement | HTMLTextAreaElement;
+    const { currentValue, wordStart, wordEnd } = context;
+
+    const newValue =
+      currentValue.substring(0, wordStart) +
+      replacement +
+      currentValue.substring(wordEnd);
+
+    input.value = newValue;
+
+    // Position cursor at end of replacement
+    const newCursorPosition = wordStart + replacement.length;
+    input.setSelectionRange(newCursorPosition, newCursorPosition);
+
+    // Trigger input event for any listeners
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  public setActive(active: boolean): void {
+    this.isActive = active;
+  }
+
+  public isMenuActive(): boolean {
+    return this.isActive;
+  }
+
+  public updateSettings(settings: WordServeSettings): void {
+    this.settings = settings;
+  }
 }

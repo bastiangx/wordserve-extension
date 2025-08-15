@@ -187,3 +187,22 @@ export function normalizeSettings(input: any): WordServeSettings {
     domains,
   };
 }
+
+export async function getSettings(): Promise<WordServeSettings> {
+  try {
+    const { settings } = await browser.storage.sync.get({ settings: DEFAULT_SETTINGS });
+    return normalizeSettings(settings);
+  } catch (error) {
+    console.error("Failed to load settings:", error);
+    return DEFAULT_SETTINGS;
+  }
+}
+
+export async function saveSettings(settings: WordServeSettings): Promise<void> {
+  try {
+    await browser.storage.sync.set({ settings });
+  } catch (error) {
+    console.error("Failed to save settings:", error);
+    throw error;
+  }
+}

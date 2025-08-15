@@ -220,55 +220,76 @@
   }
 
   /* WordServe Autocomplete Menu Styles */
-  #wordserve-menu-container {
-    pointer-events: none;
+  .wordserve-menu-container {
+    z-index: 999999 !important;
   }
 
-  #wordserve-menu-container [data-radix-popper-content-wrapper] {
-    pointer-events: auto;
+  /* Isolated theme - uses fixed Rose Pine colors */
+  .wordserve-menu-isolated .wordserve-menu {
+    --menu-bg: 249 22% 12%; /* #191724 base */
+    --menu-fg: 245 50% 91%; /* #e0def4 text */
+    --menu-border: 248 25% 18%; /* #26233a overlay */
+    --menu-hover-bg: 253 12% 26%; /* #393552 interaction */
+    --menu-hover-fg: 245 50% 91%; /* #e0def4 text */
+    --menu-muted: 249 12% 47%; /* #6e6a86 muted */
+    --menu-accent: 189 43% 73%; /* #9ccfd8 foam */
+    --menu-accent-fg: 249 22% 12%; /* #191724 base */
+
+    background: hsl(var(--menu-bg)) !important;
+    color: hsl(var(--menu-fg)) !important;
+    border-color: hsl(var(--menu-border)) !important;
   }
 
-  .wordserve-menu-isolated {
-    background: var(--background);
-    color: var(--foreground);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  .wordserve-menu-isolated .wordserve-menu-item-description {
+    color: hsl(var(--menu-muted)) !important;
   }
 
-  .wordserve-menu-adaptive {
-    background: var(--popover);
-    color: var(--popover-foreground);
+  .wordserve-menu-isolated .wordserve-menu-item-badge {
+    background: hsl(var(--menu-accent)) !important;
+    color: hsl(var(--menu-accent-fg)) !important;
   }
 
-  /* Animation for menu appearance */
-  @keyframes wordserve-menu-in {
-    from {
-      opacity: 0;
-      transform: scale(0.95) translateY(-5px);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
+  /* Adaptive theme - uses page CSS custom properties */
+  .wordserve-menu-adaptive .wordserve-menu {
+    background: hsl(var(--popover)) !important;
+    color: hsl(var(--popover-foreground)) !important;
+    border-color: hsl(var(--border)) !important;
   }
 
-  @keyframes wordserve-menu-out {
-    from {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
-    to {
-      opacity: 0;
-      transform: scale(0.95) translateY(-5px);
-    }
+  .wordserve-menu-adaptive .wordserve-menu-item-description {
+    color: hsl(var(--muted-foreground)) !important;
   }
 
-  .wordserve-menu-enter {
-    animation: wordserve-menu-in 0.15s ease-out;
+  .wordserve-menu-adaptive .wordserve-menu-item-badge {
+    background: hsl(var(--secondary)) !important;
+    color: hsl(var(--secondary-foreground)) !important;
   }
 
-  .wordserve-menu-exit {
-    animation: wordserve-menu-out 0.1s ease-in;
+  /* Menu scrollbar styling */
+  .wordserve-menu::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .wordserve-menu::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .wordserve-menu::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted));
+    border-radius: 3px;
+  }
+
+  .wordserve-menu::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+
+  /* Menu item transitions and focus */
+  .wordserve-menu-item {
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .wordserve-menu-item:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: -2px;
   }
 }

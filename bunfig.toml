@@ -1,9 +1,0 @@
-[test]
-# Use jsdom environment for React component / DOM tests
-browser = "jsdom"
-# Preload file to extend expect with jest-dom matchers
-preload = ["./tests/setup.ts"]
- # Restrict test discovery to the local tests directory only
- root = "./tests"
- # Glob patterns to ignore (reference codebase not under test)
- exclude = ["FluentTyper/**", "ws-obsidian/**"]
