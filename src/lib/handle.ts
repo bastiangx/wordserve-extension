@@ -1,6 +1,7 @@
 import { getWASMInstance } from "@/lib/wasm/ws-wasm";
 import type { WordServeSettings, DisplaySuggestion } from "@/types";
 import { normalizeSettings } from "@/lib/settings";
+import { AUTOCOMPLETE_DEFAULTS } from "@/types";
 import browser from "webextension-polyfill";
 
 export interface AutocompleteSuggestion extends DisplaySuggestion {
@@ -179,16 +180,18 @@ export class ContentScriptManager {
 
   private createMenu() {
     this.menuElement = document.createElement("div");
+    // style menu with theme vars and default dimensions
     this.menuElement.style.cssText = `
       position: absolute;
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      max-height: 200px;
+      background: hsl(var(--popover));
+      color: hsl(var(--popover-foreground));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      max-height: ${AUTOCOMPLETE_DEFAULTS.MAX_HEIGHT}px;
       overflow-y: auto;
       z-index: 10000;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: inherit;
       font-size: 14px;
     `;
     document.body.appendChild(this.menuElement);
@@ -226,9 +229,38 @@ export class ContentScriptManager {
     if (!this.menuElement) return;
 
     const rect = input.getBoundingClientRect();
-    this.menuElement.style.left = rect.left + "px";
-    this.menuElement.style.top = rect.bottom + window.scrollY + "px";
-    this.menuElement.style.minWidth = rect.width + "px";
+    const scrollY = window.scrollY;
+    const offset = AUTOCOMPLETE_DEFAULTS.POSITION_OFFSET;
+    const contentHeight = this.menuElement.scrollHeight;
+    const effectiveHeight = Math.min(
+      contentHeight,
+      AUTOCOMPLETE_DEFAULTS.MAX_HEIGHT
+    );
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    // flip menu above input if not enough space below
+    let top: number;
+    if (
+      spaceBelow < effectiveHeight + offset &&
+      spaceAbove > effectiveHeight + offset
+    ) {
+      top = rect.top + scrollY - effectiveHeight - offset;
+    } else {
+      top = rect.bottom + scrollY + offset;
+    }
+    let left = rect.left + window.scrollX;
+    // ensure within viewport horizontally
+    const menuWidth = this.menuElement.offsetWidth;
+    const viewportWidth = window.innerWidth;
+    if (left + menuWidth > viewportWidth) {
+      left = Math.max(8, viewportWidth - menuWidth - 8);
+    }
+    this.menuElement.style.left = `${left}px`;
+    this.menuElement.style.top = `${top}px`;
+    this.menuElement.style.minWidth = `${Math.max(
+      rect.width,
+      AUTOCOMPLETE_DEFAULTS.MIN_WIDTH
+    )}px`;
   }
 
   private selectSuggestion(text: string) {
