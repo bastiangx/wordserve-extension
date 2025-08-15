@@ -1,5 +1,6 @@
 import type { WordServeSettings, InputState } from "@/types";
-import type { AutocompleteSuggestion } from "@/components/ws-menu";
+import type { AutocompleteSuggestion } from "@/lib/handle";
+import { AUTOCOMPLETE_DEFAULTS } from "@/types";
 
 type Callbacks = {
   onSuggestionsRequested?: (
@@ -7,6 +8,14 @@ type Callbacks = {
     element: HTMLInputElement | HTMLTextAreaElement
   ) => void;
   onMenuHide?: () => void;
+  onNavigateUp?: () => void;
+  onNavigateDown?: () => void;
+  onNavigatePageUp?: () => void;
+  onNavigatePageDown?: () => void;
+  onNavigateHome?: () => void;
+  onNavigateEnd?: () => void;
+  onSelectCurrent?: () => void;
+  onSelectByNumber?: (number: number) => void;
 };
 
 // Tracks caret/word state and supports committing insertions.
@@ -40,6 +49,7 @@ export class InputHandler {
     el.addEventListener("input", this.handleInput);
     el.addEventListener("blur", this.handleBlur);
     el.addEventListener("focus", this.handleFocus);
+    el.addEventListener("keydown", this.handleKeyDown);
     this.recomputeStateFromElement(el);
   }
 
@@ -48,11 +58,31 @@ export class InputHandler {
     this.currentElement.removeEventListener("input", this.handleInput);
     this.currentElement.removeEventListener("blur", this.handleBlur);
     this.currentElement.removeEventListener("focus", this.handleFocus);
+    this.currentElement.removeEventListener("keydown", this.handleKeyDown);
     this.currentElement = null;
   }
 
   getInputState(): InputState {
     return { ...this.inputState };
+  }
+
+  updateSuggestions(suggestions: AutocompleteSuggestion[]) {
+    // Convert AutocompleteSuggestion to the simpler type used in InputState
+    this.inputState.suggestions = suggestions.map((s) => ({
+      word: s.word,
+      rank: s.rank,
+    }));
+    this.inputState.selectedIndex = 0;
+    this.inputState.isActive = suggestions.length > 0;
+  }
+
+  getSelectedIndex(): number {
+    return this.inputState.selectedIndex;
+  }
+
+  getCurrentSuggestion(): { word: string; rank: number } | null {
+    if (this.inputState.suggestions.length === 0) return null;
+    return this.inputState.suggestions[this.inputState.selectedIndex] || null;
   }
 
   insertSuggestion(suggestion: AutocompleteSuggestion, addSpace = false) {
@@ -138,5 +168,95 @@ export class InputHandler {
     if (!el) return;
     this.recomputeStateFromElement(el);
     // content script will decide whether to fetch suggestions on focus
+  };
+
+  private handleKeyDown = (e: Event) => {
+    const keyEvent = e as KeyboardEvent;
+    // Only handle keys when menu is active and has suggestions
+    if (!this.inputState.isActive || this.inputState.suggestions.length === 0) {
+      return;
+    }
+
+    const totalItems = this.inputState.suggestions.length;
+
+    switch (keyEvent.key) {
+      case "ArrowDown":
+        keyEvent.preventDefault();
+        this.inputState.selectedIndex =
+          this.inputState.selectedIndex < totalItems - 1
+            ? this.inputState.selectedIndex + 1
+            : 0;
+        this.callbacks.onNavigateDown?.();
+        break;
+
+      case "ArrowUp":
+        keyEvent.preventDefault();
+        this.inputState.selectedIndex =
+          this.inputState.selectedIndex > 0
+            ? this.inputState.selectedIndex - 1
+            : totalItems - 1;
+        this.callbacks.onNavigateUp?.();
+        break;
+
+      case "Enter":
+      case "Tab":
+        keyEvent.preventDefault();
+        this.callbacks.onSelectCurrent?.();
+        break;
+
+      case "Escape":
+        keyEvent.preventDefault();
+        this.inputState.isActive = false;
+        this.inputState.suggestions = [];
+        this.callbacks.onMenuHide?.();
+        break;
+
+      case "PageDown":
+        keyEvent.preventDefault();
+        this.inputState.selectedIndex = Math.min(
+          this.inputState.selectedIndex +
+            AUTOCOMPLETE_DEFAULTS.DEFAULT_VISIBLE_ITEMS,
+          totalItems - 1
+        );
+        this.callbacks.onNavigatePageDown?.();
+        break;
+
+      case "PageUp":
+        keyEvent.preventDefault();
+        this.inputState.selectedIndex = Math.max(
+          this.inputState.selectedIndex -
+            AUTOCOMPLETE_DEFAULTS.DEFAULT_VISIBLE_ITEMS,
+          0
+        );
+        this.callbacks.onNavigatePageUp?.();
+        break;
+
+      case "Home":
+        keyEvent.preventDefault();
+        this.inputState.selectedIndex = 0;
+        this.callbacks.onNavigateHome?.();
+        break;
+
+      case "End":
+        keyEvent.preventDefault();
+        this.inputState.selectedIndex = totalItems - 1;
+        this.callbacks.onNavigateEnd?.();
+        break;
+
+      default:
+        // Handle digit key selection (1-9)
+        if (this.settings?.numberSelection) {
+          const digit = Number.parseInt(keyEvent.key);
+          if (
+            digit >= 1 &&
+            digit <= AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE &&
+            digit <= totalItems
+          ) {
+            keyEvent.preventDefault();
+            this.callbacks.onSelectByNumber?.(digit - 1);
+          }
+        }
+        break;
+    }
   };
 }

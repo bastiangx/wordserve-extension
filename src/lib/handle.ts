@@ -1,6 +1,7 @@
 import { getWASMInstance } from "@/lib/wasm/ws-wasm";
 import type { WordServeSettings, DisplaySuggestion } from "@/types";
 import { normalizeSettings } from "@/lib/settings";
+import browser from "webextension-polyfill";
 
 export interface AutocompleteSuggestion extends DisplaySuggestion {
   id: string;
