@@ -9,9 +9,7 @@ type Callbacks = {
   onMenuHide?: () => void;
 };
 
-// Lightweight stub implementation to satisfy type-checking and the content script manager.
-// This does not implement the full suggestion logic (WASM, parsing) — it's a minimal
-// scaffold that other modules can call until a full implementation is restored.
+// Tracks caret/word state and supports committing insertions.
 export class InputHandler {
   private settings: WordServeSettings;
   private callbacks: Callbacks;
@@ -39,10 +37,10 @@ export class InputHandler {
   attachToElement(el: HTMLInputElement | HTMLTextAreaElement) {
     this.detachFromElement();
     this.currentElement = el;
-    // Minimal event wiring to keep behavior predictable; real implementation will be richer
     el.addEventListener("input", this.handleInput);
     el.addEventListener("blur", this.handleBlur);
     el.addEventListener("focus", this.handleFocus);
+    this.recomputeStateFromElement(el);
   }
 
   detachFromElement() {
@@ -58,7 +56,6 @@ export class InputHandler {
   }
 
   insertSuggestion(suggestion: AutocompleteSuggestion, addSpace = false) {
-    // Minimal insertion logic: replace current value at caret with suggestion.word
     if (!this.currentElement) return;
     const el = this.currentElement;
     try {
@@ -68,27 +65,37 @@ export class InputHandler {
       const insert = suggestion.word + (addSpace ? " " : "");
       el.value = before + insert + after;
       const caret = (before + insert).length;
+      // restore focus and caret
+      el.focus();
       el.setSelectionRange(caret, caret);
-      // Trigger input event so React and other listeners update
+      // Notify other listeners
       el.dispatchEvent(new Event("input", { bubbles: true }));
     } catch (e) {
       // noop
     }
-    // Hide menu after insertion
+
+    // hide menu
     this.inputState.isActive = false;
     this.inputState.suggestions = [];
     this.callbacks.onMenuHide?.();
   }
 
-  // Basic handlers to update internal state and call callbacks.
-  private handleInput = (e: Event) => {
-    const el = e.target as HTMLInputElement | HTMLTextAreaElement;
+  // recompute input state (word, selection, position) from element
+  private recomputeStateFromElement(
+    el: HTMLInputElement | HTMLTextAreaElement
+  ) {
     const caret = el.selectionStart ?? el.value.length;
-    // naive word extraction
     const upto = el.value.slice(0, caret);
     const match = upto.match(/([\w']+)$/);
     const word = match ? match[0] : "";
     const start = match ? caret - word.length : caret;
+
+    const rect = el.getBoundingClientRect();
+    const position = {
+      x: rect.left + window.scrollX,
+      y: rect.bottom + window.scrollY,
+    };
+
     this.inputState = {
       ...this.inputState,
       currentWord: word,
@@ -96,18 +103,17 @@ export class InputHandler {
       wordEnd: caret,
       currentValue: el.value,
       caretPosition: caret,
+      position,
     };
+  }
 
-    // For the stub we won't compute real suggestions; call onSuggestionsRequested with empty list
+  private handleInput = (e: Event) => {
+    const el = e.target as HTMLInputElement | HTMLTextAreaElement;
+    this.recomputeStateFromElement(el);
+
     if (this.inputState.currentWord.length >= this.settings.minWordLength) {
       this.inputState.isActive = true;
-      this.inputState.suggestions = [];
-      this.callbacks.onSuggestionsRequested?.(
-        this.inputState.suggestions.map(
-          (s, i) => ({ id: `s-${i}`, word: s.word, rank: s.rank } as any)
-        ),
-        el
-      );
+      // fetching suggestions is handled by the content script
     } else {
       this.inputState.isActive = false;
       this.inputState.suggestions = [];
@@ -116,7 +122,7 @@ export class InputHandler {
   };
 
   private handleBlur = () => {
-    // Hide suggestions shortly after blur
+    // Hide suggestions shortly after blur to allow clicks on the menu
     setTimeout(() => {
       this.inputState.isActive = false;
       this.inputState.suggestions = [];
@@ -124,7 +130,13 @@ export class InputHandler {
     }, 150);
   };
 
-  private handleFocus = () => {
-    // no-op for stub
+  private handleFocus = (e?: Event) => {
+    const el = (e?.target || this.currentElement) as
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | null;
+    if (!el) return;
+    this.recomputeStateFromElement(el);
+    // content script will decide whether to fetch suggestions on focus
   };
 }
