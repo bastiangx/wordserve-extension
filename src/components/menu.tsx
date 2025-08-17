@@ -100,7 +100,7 @@ export const AutocompleteMenu: React.FC<AutocompleteMenuProps> = ({
     >
       {displaySuggestions.map((suggestion, index) => {
         const isSelected = index === selectedIndex;
-        const digitKey = index < 9 ? index + 1 : null;
+        const showRanking = index < 9; // Only show ranking for first 9 items
 
         return (
           <div
@@ -112,47 +112,37 @@ export const AutocompleteMenu: React.FC<AutocompleteMenuProps> = ({
               compact ? "px-3 py-1" : "px-4 py-2"
             )}
             style={{
-              backgroundColor: isSelected ? "#524f67" : "transparent", // highlight-high : transparent
-              color: isSelected ? "#191724" : "#e0def4", // base : text
+              backgroundColor: isSelected ? "#21202e" : "transparent", // Use darker highlight color
+              color: "#e0def4", // Keep normal foreground color always
             }}
-            onMouseEnter={() => isSelected || onHover(index)}
+            onMouseEnter={() => onHover(index)}
             onClick={(e) => handleClick(suggestion, e)}
           >
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              {/* Digit key indicator */}
-              {digitKey && (
-                <span
-                  className="text-xs font-medium opacity-60 min-w-[12px]"
-                  style={{
-                    color: isSelected ? "#191724" : "#908caa", // base : subtle
-                  }}
-                >
-                  {digitKey}
-                </span>
-              )}
-
               {/* Word */}
               <span
                 className="font-medium truncate"
                 style={{
-                  color: isSelected ? "#191724" : "#e0def4", // base : text
+                  color: "#e0def4", // Keep normal color always
                 }}
               >
                 {suggestion.word}
               </span>
             </div>
 
-            {/* Rank badge */}
-            <Badge
-              variant="outline"
-              className="text-xs font-medium ml-2 shrink-0"
-              style={{
-                borderColor: isSelected ? "rgba(25, 23, 36, 0.2)" : "#403d52", // base/20 : highlight-med
-                color: isSelected ? "rgba(25, 23, 36, 0.8)" : "#908caa", // base/80 : subtle
-              }}
-            >
-              {suggestion.rank}
-            </Badge>
+            {/* Rank badge - only for first 9 items */}
+            {showRanking && (
+              <Badge
+                variant="outline"
+                className="text-xs font-medium ml-2 shrink-0"
+                style={{
+                  borderColor: "#403d52", // Keep consistent border color
+                  color: "#e0def4", // Keep normal color always
+                }}
+              >
+                {suggestion.rank}
+              </Badge>
+            )}
           </div>
         );
       })}

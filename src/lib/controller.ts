@@ -242,13 +242,21 @@ export class AutocompleteController {
   }
 
   private handleNumberSelection(index: number): void {
+    console.log(
+      "WordServe: Number selection for index:",
+      index,
+      "visible:",
+      this.isVisible,
+      "suggestions:",
+      this.suggestions.length
+    );
     if (!this.isVisible || this.suggestions.length === 0) return;
 
-    // Convert 1-based to 0-based index
-    const suggestionIndex = index - 1;
-    if (suggestionIndex >= 0 && suggestionIndex < this.suggestions.length) {
-      const suggestion = this.suggestions[suggestionIndex];
-      this.insertSuggestion(suggestion.word, false);
+    // Index is already 0-based from input handler
+    if (index >= 0 && index < this.suggestions.length) {
+      const suggestion = this.suggestions[index];
+      console.log("WordServe: Selecting suggestion:", suggestion);
+      this.insertSuggestion(suggestion.word, true); // Always add space for digit selection
       this.hideMenu();
     }
   }
@@ -378,6 +386,7 @@ export class AutocompleteController {
 
   public updateSettings(settings: Partial<WordServeSettings>): void {
     this.settings = { ...this.settings, ...settings };
+    this.inputHandler.updateSettings(this.settings);
     this.hideMenu();
   }
 

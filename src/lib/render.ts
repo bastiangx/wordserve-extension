@@ -105,7 +105,7 @@ export class AutocompleteMenuRenderer {
     options: AutocompleteMenuOptions
   ): HTMLElement {
     const isSelected = index === options.selectedIndex;
-    const digitKey = index < 9 ? index + 1 : null;
+    const showRanking = index < 9; // Only show ranking for first 9 items
 
     const item = document.createElement("div");
     item.className = `wordserve-menu-item ${isSelected ? "selected" : ""}`;
@@ -113,14 +113,6 @@ export class AutocompleteMenuRenderer {
     // Content container
     const content = document.createElement("div");
     content.className = "wordserve-menu-item-content";
-
-    // Digit key indicator
-    if (digitKey) {
-      const number = document.createElement("span");
-      number.className = "wordserve-menu-item-number";
-      number.textContent = digitKey.toString();
-      content.appendChild(number);
-    }
 
     // Word
     const word = document.createElement("span");
@@ -130,11 +122,13 @@ export class AutocompleteMenuRenderer {
 
     item.appendChild(content);
 
-    // Rank badge
-    const rank = document.createElement("span");
-    rank.className = "wordserve-menu-item-rank";
-    rank.textContent = suggestion.rank.toString();
-    item.appendChild(rank);
+    // Rank badge - only for first 9 items
+    if (showRanking) {
+      const rank = document.createElement("span");
+      rank.className = "wordserve-menu-item-rank";
+      rank.textContent = suggestion.rank.toString();
+      item.appendChild(rank);
+    }
 
     // Event listeners
     item.addEventListener("click", (e) => {
@@ -144,9 +138,7 @@ export class AutocompleteMenuRenderer {
     });
 
     item.addEventListener("mouseenter", () => {
-      if (!isSelected) {
-        options.onHover(index);
-      }
+      options.onHover(index);
     });
 
     return item;

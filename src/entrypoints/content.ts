@@ -59,6 +59,7 @@ export default defineContentScript({
           if (stored.wordserveSettings) {
             this.settings = normalizeSettings(stored.wordserveSettings);
           }
+          console.log("WordServe: Loaded settings:", this.settings);
         } catch (error) {
           console.error("Failed to load settings:", error);
         }
@@ -68,6 +69,7 @@ export default defineContentScript({
         browser.runtime.onMessage.addListener(
           (message, sender, sendResponse) => {
             switch (message.type) {
+              case "settingsUpdated":
               case "wordserve-settings-updated":
                 this.updateSettings(message.settings);
                 break;
@@ -293,7 +295,9 @@ export default defineContentScript({
       }
 
       private updateSettings(newSettings: Partial<WordServeSettings>): void {
-        this.settings = { ...this.settings, ...newSettings };
+        this.settings = normalizeSettings({ ...this.settings, ...newSettings });
+        this.domainEnabledCache = null; // Clear cache when settings change
+        console.log("WordServe: Updated settings:", this.settings);
 
         // Update all existing controllers
         this.controllers.forEach((controller) => {

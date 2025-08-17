@@ -34,16 +34,21 @@
 }
 
 .wordserve-autocomplete-menu::-webkit-scrollbar-track {
-  background: #1f1d2e;
+  background: transparent;
 }
 
 .wordserve-autocomplete-menu::-webkit-scrollbar-thumb {
-  background: #6e6a86;
+  background: transparent;
   border-radius: 3px;
+  transition: background-color 200ms ease;
+}
+
+.wordserve-autocomplete-menu:hover::-webkit-scrollbar-thumb {
+  background: #6e6a86;
 }
 
 .wordserve-autocomplete-menu::-webkit-scrollbar-thumb:hover {
-  background: #908caa;
+  background: #908caa !important;
 }
 
 .wordserve-menu-item {
@@ -67,8 +72,8 @@
 }
 
 .wordserve-menu-item.selected {
-  background: #524f67;
-  color: #191724;
+  background: #21202e;
+  color: #e0def4;
 }
 
 .wordserve-menu-item-content {
@@ -99,7 +104,7 @@
   font-weight: 500;
   background: transparent;
   border: 1px solid #403d52;
-  color: #908caa;
+  color: #e0def4;
   padding: 2px 6px;
   border-radius: 4px;
   margin-left: 8px;
@@ -107,12 +112,12 @@
 }
 
 .wordserve-menu-item.selected .wordserve-menu-item-rank {
-  border-color: rgba(25, 23, 36, 0.2);
-  color: rgba(25, 23, 36, 0.8);
+  border-color: #403d52;
+  color: #e0def4;
 }
 
 .wordserve-menu-item.selected .wordserve-menu-item-number {
-  color: #191724;
+  color: #e0def4;
 }
 
 /* Compact mode */
