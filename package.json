@@ -7,16 +7,15 @@
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
-    "build": "bun run scripts/verify.ts && bun run scripts/gen-manifest.ts && wxt build",
-    "build:firefox": "bun run scripts/build-wasm.ts && bun run scripts/verify.ts && bun run scripts/gen-manifest.ts && wxt build -b firefox",
-    "build:wasm": "bun run scripts/build-wasm.ts && bun run scripts/gen-manifest.ts",
-    "download:assets": "bun run scripts/dl-data.ts",
-    "verify:assets": "bun run scripts/verify.ts",
-    "zip": "wxt zip",
-    "zip:firefox": "wxt zip -b firefox",
+    "build": "bun run scripts/gen-manifest.ts && wxt build",
+    "build:firefox": "bun run scripts/gen-manifest.ts && wxt build -b firefox",
+    "prep": "bun run scripts/download.ts",
+    "prep:force": "bun run scripts/download.ts --force",
     "compile": "tsc --noEmit",
     "postinstall": "wxt prepare",
-    "ui:add": "bunx shadcn-ui@latest add"
+    "ui:add": "bunx shadcn-ui@latest add",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox"
   },
   "dependencies": {
     "@msgpack/msgpack": "^3.1.2",
