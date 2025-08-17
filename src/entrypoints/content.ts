@@ -1,202 +1,355 @@
-import { AutocompleteMenu } from "@/components/autocomplete-menu-fluenttyper";
-import { getSettings } from "@/lib/settings";
-import { shouldActivateForDomain } from "@/lib/domains";
-import type { WordServeSettings } from "@/types";
+import { AutocompleteController } from "@/lib/controller";
 import { DEFAULT_SETTINGS } from "@/types";
+import { normalizeSettings } from "@/lib/settings";
+import type { WordServeSettings } from "@/types";
+import { browser } from "wxt/browser";
 
 export default defineContentScript({
   matches: ["<all_urls>"],
   main() {
-    let currentSettings: WordServeSettings = DEFAULT_SETTINGS;
-    const activeMenus = new Map<HTMLElement, AutocompleteMenu>();
+    console.log("WordServe content script loaded");
 
-    async function loadSettings() {
-      try {
-        const settings = await getSettings();
-        currentSettings = settings;
-      } catch (error) {
-        console.error("[WordServe] Failed to load settings:", error);
-        currentSettings = DEFAULT_SETTINGS;
-      }
-    }
+    class WordServeContentScript {
+      private controllers = new Map<HTMLElement, AutocompleteController>();
+      private settings: WordServeSettings = DEFAULT_SETTINGS;
+      private isEnabled = true;
+      private observer: MutationObserver | null = null;
+      private domainEnabledCache: boolean | null = null;
 
-    function initializeAutocomplete() {
-      const elements = findTextInputElements();
-
-      elements.forEach((element) => {
-        if (!activeMenus.has(element) && shouldEnableForElement(element)) {
-          attachAutocomplete(element);
-        }
-      });
-    }
-
-    function findTextInputElements(): HTMLElement[] {
-      const selectors = [
-        'input[type="text"]',
-        'input[type="search"]',
-        'input[type="email"]',
-        'input[type="url"]',
-        "input:not([type])",
-        "textarea",
-        '[contenteditable="true"]',
-        '[contenteditable=""]',
-      ];
-
-      const elements: HTMLElement[] = [];
-      selectors.forEach((selector) => {
-        const found = document.querySelectorAll(selector);
-        found.forEach((el) => {
-          if (el instanceof HTMLElement) {
-            elements.push(el);
-          }
-        });
-      });
-
-      return elements;
-    }
-
-    function shouldEnableForElement(element: HTMLElement): boolean {
-      // Skip if element has data attributes indicating it should be ignored
-      if (element.dataset.wordserveDisabled === "true") {
-        return false;
+      constructor() {
+        this.initializeSettings();
+        this.setupMessageListener();
+        this.setupDOMObserver();
+        this.attachToExistingInputs();
+        this.checkWASMStatus();
       }
 
-      // Skip if parent has disabled wordserve
-      let parent = element.parentElement;
-      while (parent) {
-        if (parent.dataset.wordserveDisabled === "true") {
-          return false;
-        }
-        parent = parent.parentElement;
-      }
+      private async checkWASMStatus(): Promise<void> {
+        try {
+          const response = await browser.runtime.sendMessage({
+            type: "wordserve-status",
+          });
+          console.log("WordServe: WASM status check:", response);
 
-      // Check domain settings
-      const hostname = window.location.hostname;
-      return shouldActivateForDomain(hostname, currentSettings.domains);
-    }
-
-    function attachAutocomplete(element: HTMLElement) {
-      try {
-        const menu = new AutocompleteMenu({
-          element,
-          settings: currentSettings,
-        });
-        activeMenus.set(element, menu);
-      } catch (error) {
-        console.error("[WordServe] Failed to attach autocomplete:", error);
-      }
-    }
-
-    function updateAllMenus() {
-      // Remove menus for elements that should no longer have autocomplete
-      for (const [element, menu] of activeMenus) {
-        if (!shouldEnableForElement(element)) {
-          menu.destroy();
-          activeMenus.delete(element);
-        } else {
-          // Update existing menu with new settings
-          menu.updateSettings(currentSettings);
-        }
-      }
-
-      // Add menus for elements that should now have autocomplete
-      const elements = findTextInputElements();
-      elements.forEach((element) => {
-        if (!activeMenus.has(element) && shouldEnableForElement(element)) {
-          attachAutocomplete(element);
-        }
-      });
-    }
-
-    function observeNewElements() {
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.type === "childList") {
-            mutation.addedNodes.forEach((node) => {
-              if (node.nodeType === Node.ELEMENT_NODE) {
-                const element = node as HTMLElement;
-
-                // Check if the added element or any of its descendants are text inputs
-                const inputs = [
-                  element,
-                  ...element.querySelectorAll(
-                    'input[type="text"], input[type="search"], input[type="email"], input[type="url"], input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]'
-                  ),
-                ];
-
-                inputs.forEach((input) => {
-                  if (
-                    input instanceof HTMLElement &&
-                    !activeMenus.has(input) &&
-                    shouldEnableForElement(input)
-                  ) {
-                    attachAutocomplete(input);
-                  }
-                });
-              }
+          if (!response?.ready) {
+            // Also check for any error messages
+            const errorResponse = await browser.runtime.sendMessage({
+              type: "wordserve-last-error",
             });
+            if (errorResponse) {
+              console.error("WordServe: Background error:", errorResponse);
+            }
 
-            // Clean up menus for removed elements
-            mutation.removedNodes.forEach((node) => {
-              if (node.nodeType === Node.ELEMENT_NODE) {
-                const element = node as HTMLElement;
-                if (activeMenus.has(element)) {
-                  activeMenus.get(element)?.destroy();
-                  activeMenus.delete(element);
+            console.log(
+              "WordServe: WASM not ready, will check again in 2 seconds"
+            );
+            setTimeout(() => this.checkWASMStatus(), 2000);
+          } else {
+            console.log("WordServe: WASM is ready!");
+          }
+        } catch (error) {
+          console.error("WordServe: Failed to check WASM status:", error);
+          setTimeout(() => this.checkWASMStatus(), 2000);
+        }
+      }
+
+      private async initializeSettings(): Promise<void> {
+        try {
+          const stored = await browser.storage.sync.get("wordserveSettings");
+          if (stored.wordserveSettings) {
+            this.settings = normalizeSettings(stored.wordserveSettings);
+          }
+        } catch (error) {
+          console.error("Failed to load settings:", error);
+        }
+      }
+
+      private setupMessageListener(): void {
+        browser.runtime.onMessage.addListener(
+          (message, sender, sendResponse) => {
+            switch (message.type) {
+              case "wordserve-settings-updated":
+                this.updateSettings(message.settings);
+                break;
+              case "wordserve-toggle":
+                this.toggle(message.enabled);
+                break;
+              case "wordserve-reload":
+                this.reload();
+                break;
+            }
+          }
+        );
+      }
+
+      private setupDOMObserver(): void {
+        this.observer = new MutationObserver((mutations) => {
+          for (const mutation of mutations) {
+            if (mutation.type === "childList") {
+              mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                  this.attachToInputsInElement(node as Element);
                 }
+              });
+            }
+          }
+        });
 
-                // Also check descendants
-                activeMenus.forEach((menu, el) => {
-                  if (!document.contains(el)) {
-                    menu.destroy();
-                    activeMenus.delete(el);
+        this.observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+        });
+      }
+
+      private attachToExistingInputs(): void {
+        this.attachToInputsInElement(document.body);
+      }
+
+      private attachToInputsInElement(element: Element): void {
+        if (!this.isEnabled) return;
+
+        // Check if the element itself is an input
+        if (this.isTargetElement(element)) {
+          this.attachToInput(element as HTMLElement);
+        }
+
+        // Find all input elements within the element
+        const inputs = element.querySelectorAll(
+          'input[type="text"], input[type="search"], input[type="email"], input[type="url"], ' +
+            'input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]'
+        );
+
+        inputs.forEach((input) => {
+          if (this.isTargetElement(input)) {
+            this.attachToInput(input as HTMLElement);
+          }
+        });
+      }
+
+      private isTargetElement(element: Element): boolean {
+        if (!(element instanceof HTMLElement)) return false;
+
+        // Check domain settings first (cached)
+        if (!this.isEnabledForCurrentDomain()) return false;
+
+        // Only target specific input elements, not contenteditable divs
+        const isInput =
+          element.nodeName === "INPUT" || element.nodeName === "TEXTAREA";
+        const isContentEditable =
+          element.contentEditable === "true" ||
+          element.getAttribute("contenteditable") === "true";
+
+        if (!isInput && !isContentEditable) return false;
+
+        // Skip elements that are too small or hidden
+        const rect = element.getBoundingClientRect();
+        if (rect.width < 50 || rect.height < 20) return false;
+
+        // Skip password fields and sensitive inputs
+        if (element instanceof HTMLInputElement) {
+          const type = element.type.toLowerCase();
+          if (
+            [
+              "password",
+              "hidden",
+              "file",
+              "color",
+              "range",
+              "checkbox",
+              "radio",
+              "submit",
+              "button",
+              "reset",
+            ].includes(type)
+          ) {
+            return false;
+          }
+        }
+
+        // Skip elements in sensitive contexts
+        const sensitiveSelectors = [
+          "[data-sensitive]",
+          "[data-no-autocomplete]",
+          ".password",
+          ".credit-card",
+          ".sensitive",
+          'form[action*="login"]',
+          'form[action*="signin"]',
+          'form[action*="password"]',
+          'form[action*="payment"]',
+        ];
+
+        for (const selector of sensitiveSelectors) {
+          if (element.matches(selector) || element.closest(selector)) {
+            return false;
+          }
+        }
+
+        return true;
+      }
+
+      private isEnabledForCurrentDomain(): boolean {
+        if (this.domainEnabledCache !== null) {
+          return this.domainEnabledCache;
+        }
+
+        const hostname = window.location.hostname;
+        const domainSettings = this.settings.domains;
+
+        console.log("WordServe: Checking domain enablement for:", hostname);
+
+        if (domainSettings.blacklistMode) {
+          // Blacklist mode: check if domain is blocked
+          for (const pattern of domainSettings.blacklist) {
+            if (this.matchesDomainPattern(hostname, pattern)) {
+              console.log("WordServe: Domain blocked by pattern:", pattern);
+              this.domainEnabledCache = false;
+              return false;
+            }
+          }
+          console.log("WordServe: Domain not blocked, enabled");
+          this.domainEnabledCache = true;
+          return true; // Not blocked, so enabled
+        } else {
+          // Whitelist mode: check if domain is allowed
+          if (domainSettings.whitelist.length > 0) {
+            const allowed = domainSettings.whitelist.some((pattern) =>
+              this.matchesDomainPattern(hostname, pattern)
+            );
+            console.log("WordServe: Whitelist mode, allowed:", allowed);
+            this.domainEnabledCache = allowed;
+            return allowed;
+          }
+          console.log(
+            "WordServe: Whitelist mode with empty whitelist, disabled"
+          );
+          this.domainEnabledCache = false;
+          return false; // No whitelist entries, so disabled
+        }
+      }
+
+      private matchesDomainPattern(hostname: string, pattern: string): boolean {
+        // Simple wildcard matching
+        const regexPattern = pattern.replace(/\./g, "\\.").replace(/\*/g, ".*");
+
+        const regex = new RegExp(`^${regexPattern}$`, "i");
+        return regex.test(hostname);
+      }
+
+      private attachToInput(element: HTMLElement): void {
+        // Skip if already attached
+        if (this.controllers.has(element)) return;
+
+        console.log(
+          "WordServe: Attaching to element:",
+          element.tagName,
+          element instanceof HTMLInputElement ? element.type : "N/A"
+        );
+
+        try {
+          const controller = new AutocompleteController({
+            element,
+            settings: this.settings,
+            onSelectionMade: (word, originalWord) => {
+              this.logSelection(word, originalWord);
+            },
+          });
+
+          this.controllers.set(element, controller);
+          console.log("WordServe: Successfully attached controller to element");
+
+          // Cleanup when element is removed
+          const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+              if (mutation.type === "childList") {
+                mutation.removedNodes.forEach((node) => {
+                  if (
+                    node === element ||
+                    (node instanceof Element && node.contains(element))
+                  ) {
+                    this.detachFromInput(element);
+                    observer.disconnect();
                   }
                 });
               }
-            });
-          }
+            }
+          });
+
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+          });
+        } catch (error) {
+          console.error("Failed to attach autocomplete to element:", error);
+        }
+      }
+
+      private detachFromInput(element: HTMLElement): void {
+        const controller = this.controllers.get(element);
+        if (controller) {
+          controller.destroy();
+          this.controllers.delete(element);
+        }
+      }
+
+      private updateSettings(newSettings: Partial<WordServeSettings>): void {
+        this.settings = { ...this.settings, ...newSettings };
+
+        // Update all existing controllers
+        this.controllers.forEach((controller) => {
+          controller.updateSettings(this.settings);
         });
-      });
+      }
 
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-      });
+      private toggle(enabled: boolean): void {
+        this.isEnabled = enabled;
 
-      return observer;
+        if (enabled) {
+          this.controllers.forEach((controller) => controller.enable());
+          this.attachToExistingInputs(); // Reattach to any inputs we might have missed
+        } else {
+          this.controllers.forEach((controller) => controller.disable());
+        }
+      }
+
+      private reload(): void {
+        // Destroy all existing controllers
+        this.controllers.forEach((controller) => controller.destroy());
+        this.controllers.clear();
+
+        // Reload settings and reattach
+        this.initializeSettings().then(() => {
+          this.attachToExistingInputs();
+        });
+      }
+
+      private logSelection(word: string, originalWord: string): void {
+        if (this.settings.debugMode) {
+          console.log(
+            `WordServe: Selected "${word}" to replace "${originalWord}"`
+          );
+        }
+      }
+
+      public destroy(): void {
+        // Cleanup all controllers
+        this.controllers.forEach((controller) => controller.destroy());
+        this.controllers.clear();
+
+        // Disconnect observer
+        if (this.observer) {
+          this.observer.disconnect();
+          this.observer = null;
+        }
+      }
     }
 
-    // Initialize everything
-    loadSettings().then(() => {
-      initializeAutocomplete();
-      const observer = observeNewElements();
+    // Initialize the content script
+    const wordServe = new WordServeContentScript();
 
-      // Settings change listener
-      browser.storage.onChanged.addListener((changes) => {
-        if (changes.settings) {
-          currentSettings = changes.settings.newValue || DEFAULT_SETTINGS;
-          updateAllMenus();
-        }
-      });
-
-      // Handle focus events for better UX
-      document.addEventListener("focus", (event) => {
-        const target = event.target as HTMLElement;
-        if (activeMenus.has(target)) {
-          activeMenus.get(target)?.setEnabled(true);
-        }
-      });
-
-      document.addEventListener("blur", (event) => {
-        const target = event.target as HTMLElement;
-        if (activeMenus.has(target)) {
-          activeMenus.get(target)?.setEnabled(false);
-        }
-      });
-
-      console.log(`[WordServe] Content script initialized with ${activeMenus.size} autocomplete instances`);
+    // Cleanup on page unload
+    window.addEventListener("beforeunload", () => {
+      wordServe.destroy();
     });
-
-    console.log("[WordServe] Content script loading...");
   },
 });

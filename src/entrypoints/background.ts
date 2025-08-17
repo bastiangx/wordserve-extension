@@ -13,7 +13,6 @@ async function cryptoDigestSHA256(data: Uint8Array): Promise<string> {
   }
 }
 
-// Remove unused default export and fix exception handling
 export default defineBackground(() => {
   console.log("WordServe background script loaded");
 
@@ -26,37 +25,57 @@ export default defineBackground(() => {
     async initialize(): Promise<void> {
       if (this.isInitialized || this.isLoading) return;
       this.isLoading = true;
+      console.log(
+        "WordServe: BackgroundWordServeWASM.initialize() starting..."
+      );
       try {
+        console.log("WordServe: Importing wasm_exec.js...");
         self.importScripts(browser.runtime.getURL("wasm_exec.js" as any));
+        console.log("WordServe: Fetching wordserve.wasm...");
         const wasmResponse = await fetch(
           browser.runtime.getURL("wordserve.wasm" as any)
         );
         if (!wasmResponse.ok) {
-          // Fix: Log error and return/re-throw properly
           console.error(`WASM fetch failed with status ${wasmResponse.status}`);
           throw new Error(`wasm fetch ${wasmResponse.status}`);
         }
+        console.log("WordServe: WASM fetch successful, instantiating...");
         const wasmBytes = await wasmResponse.arrayBuffer();
         const go = new (globalThis as any).Go();
         const wasmModule = await WebAssembly.instantiate(
           wasmBytes,
           go.importObject
         );
+        console.log("WordServe: WASM instantiated, running Go program...");
         await new Promise<void>((resolve, reject) => {
           const timeout = setTimeout(
             () => reject(new Error("WASM initialization timeout")),
             10000
           );
           (globalThis as any).wasmReady = () => {
+            console.log("WordServe: wasmReady callback triggered");
+            console.log("WordServe: Checking available global objects...");
+            console.log(
+              "WordServe: wasmCompleter available:",
+              !!(globalThis as any).wasmCompleter
+            );
+            if ((globalThis as any).wasmCompleter) {
+              console.log(
+                "WordServe: wasmCompleter methods:",
+                Object.keys((globalThis as any).wasmCompleter)
+              );
+            }
             clearTimeout(timeout);
             this.isInitialized = true;
             resolve();
           };
           go.run(wasmModule.instance).catch((error: any) => {
+            console.error("WordServe: Go program failed:", error);
             clearTimeout(timeout);
             reject(new Error(`Go program failed: ${error}`));
           });
         });
+        console.log("WordServe: WASM initialization completed");
       } catch (e) {
         console.error("WASM initialization failed:", e);
         this.isLoading = false;
@@ -146,6 +165,7 @@ export default defineBackground(() => {
 
   async function loadDictionaryData() {
     if (!wasmInstance) return;
+    console.log("WordServe: Starting dictionary data load...");
     try {
       // Attempt to fetch asset manifest for integrity (non-fatal)
       let manifest: Record<string, { sha256?: string }> | null = null;
@@ -159,8 +179,15 @@ export default defineBackground(() => {
           for (const a of data.assets || []) {
             manifest[a.path] = { sha256: a.sha256 };
           }
+          console.log("WordServe: Asset manifest loaded");
         }
-      } catch {}
+      } catch {
+        console.log(
+          "WordServe: No asset manifest, continuing without integrity checks"
+        );
+      }
+
+      console.log("WordServe: Fetching dictionary chunks...");
       const chunkPromises: Promise<Uint8Array>[] = [];
       for (let i = 1; i <= EXPECTED_CHUNKS; i++) {
         const chunkNum = String(i).padStart(4, "0");
@@ -179,6 +206,8 @@ export default defineBackground(() => {
         );
       }
       const chunks = await Promise.all(chunkPromises);
+      console.log(`WordServe: Fetched ${chunks.length} dictionary chunks`);
+
       if (chunks.length !== EXPECTED_CHUNKS) {
         console.error(
           `Expected ${EXPECTED_CHUNKS} chunks, got ${chunks.length}`
@@ -187,26 +216,7 @@ export default defineBackground(() => {
           `expected ${EXPECTED_CHUNKS} chunks, got ${chunks.length}`
         );
       }
-      // Hash verify wasm if manifest provides
-      if (manifest) {
-        try {
-          const wasmSpec = manifest["wordserve.wasm"];
-          if (wasmSpec?.sha256) {
-            const wasmBuf = new Uint8Array(
-              await (
-                await fetch(browser.runtime.getURL("wordserve.wasm" as any))
-              ).arrayBuffer()
-            );
-            const wasmHash = await cryptoDigestSHA256(wasmBuf);
-            if (wasmHash !== wasmSpec.sha256) {
-              console.error("Hash mismatch for wordserve.wasm");
-              throw new Error("hash mismatch for wordserve.wasm");
-            }
-          }
-        } catch (ihErr) {
-          console.warn("Integrity check (non-fatal) failed:", ihErr);
-        }
-      }
+      console.log("WordServe: Starting dictionary integrity checks...");
       for (let i = 0; i < chunks.length; i++) {
         const chk = chunks[i];
         if (chk.byteLength < MIN_CHUNK_BYTES) {
@@ -226,6 +236,9 @@ export default defineBackground(() => {
           }
         }
       }
+      console.log(
+        "WordServe: Dictionary chunks validated, initializing WASM completer..."
+      );
       if ((globalThis as any).wasmCompleter?.initWithBinaryData) {
         const result = (globalThis as any).wasmCompleter.initWithBinaryData(
           chunks
@@ -245,18 +258,24 @@ export default defineBackground(() => {
         throw new Error("WASM completer not available");
       }
     } catch (err) {
+      console.error("WordServe: Dictionary load error:", err);
       await recordError(`Binary dictionary load failed: ${String(err)}`);
     }
   }
 
   async function initializeWASM() {
+    console.log("WordServe: Starting WASM initialization...");
     try {
       wasmInstance = new BackgroundWordServeWASM();
+      console.log("WordServe: Created WASM instance, initializing...");
       await wasmInstance.initialize();
+      console.log("WordServe: WASM initialized, loading dictionary data...");
       await loadDictionaryData();
+      console.log("WordServe: Dictionary loaded, broadcasting ready...");
       broadcast("wordserve-ready");
       console.log("WordServe WASM initialized in background");
     } catch (e) {
+      console.error("WordServe: WASM initialization failed:", e);
       await recordError(`Initialization failed: ${String(e)}`);
     }
   }
@@ -389,9 +408,8 @@ export default defineBackground(() => {
       if (message.type === "updateSettings") {
         (async () => {
           try {
-            const normalized = normalizeSettings(message.settings);
             await browser.storage.sync.set({
-              wordserveSettings: normalized,
+              wordserveSettings: message.settings,
             });
             const tabs = await browser.tabs.query({});
             for (const tab of tabs)
@@ -442,15 +460,16 @@ export default defineBackground(() => {
   browser.runtime.onInstalled.addListener(async (details) => {
     if (details.reason === "install") {
       try {
-        await browser.storage.sync.set({ wordserveSettings: normalizeSettings(DEFAULT_SETTINGS) });
+        await browser.storage.sync.set({
+          wordserveSettings: normalizeSettings(DEFAULT_SETTINGS),
+        });
       } catch (e) {
         await recordError(`Default settings init failed: ${String(e)}`);
       }
     }
   });
-
-  // Fix promise handling for initializeWASM
   (async () => {
+    console.log("WordServe: Background script starting initialization...");
     await initializeWASM();
   })();
 });

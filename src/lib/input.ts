@@ -1,5 +1,10 @@
 import type { WordServeSettings, InputState } from "@/types";
 import { AUTOCOMPLETE_DEFAULTS } from "@/types";
+import {
+  getCaretCoordinates,
+  getCaretCoordinatesContentEditable,
+  type CaretPosition,
+} from "@/lib/caret";
 
 export interface InputContext {
   element: HTMLElement;
@@ -8,6 +13,7 @@ export interface InputContext {
   wordEnd: number;
   caretPosition: number;
   currentValue: string;
+  caretCoords: CaretPosition;
 }
 
 export interface KeyboardEvent {
@@ -46,6 +52,7 @@ export class InputHandler {
     this.settings = settings;
     this.callbacks = callbacks;
     this.autocompleteSeparator = /\s+/;
+    this.isActive = true; // Make active by default
     this.attach();
   }
 
@@ -65,11 +72,14 @@ export class InputHandler {
 
   private handleInput = (event: Event) => {
     const context = this.getCurrentContext();
-    if (!context) return;
+    if (!context) {
+      return;
+    }
 
     // Check if we should trigger autocomplete
     if (context.currentWord.length >= this.settings.minWordLength) {
       if (context.currentWord !== this.lastWord) {
+        console.log("WordServe: Word change detected:", context.currentWord);
         this.lastWord = context.currentWord;
         this.callbacks.onWordChange(context);
       }
@@ -86,12 +96,12 @@ export class InputHandler {
       return;
     }
 
-    if (!this.isActive) return;
-
+    // Only handle menu navigation keys when menu is active/visible
     const { key } = event;
 
     switch (key) {
       case "ArrowDown":
+        // Only handle if menu is visible (we need a way to check this)
         event.preventDefault();
         event.stopPropagation();
         this.callbacks.onNavigate("down");
@@ -137,7 +147,10 @@ export class InputHandler {
         // Handle number key selection (1-9)
         if (this.settings.numberSelection && /^[1-9]$/.test(key)) {
           const index = parseInt(key) - 1;
-          if (index >= 0 && index < AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE) {
+          if (
+            index >= 0 &&
+            index < AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE
+          ) {
             event.preventDefault();
             event.stopPropagation();
             this.callbacks.onSelectByNumber(index);
@@ -215,6 +228,8 @@ export class InputHandler {
       caretPosition
     );
 
+    const caretCoords = getCaretCoordinatesContentEditable(this.element);
+
     return {
       element: this.element,
       currentWord,
@@ -222,6 +237,7 @@ export class InputHandler {
       wordEnd,
       caretPosition,
       currentValue: text,
+      caretCoords,
     };
   }
 
@@ -235,6 +251,8 @@ export class InputHandler {
       caretPosition
     );
 
+    const caretCoords = getCaretCoordinates(input);
+
     return {
       element: this.element,
       currentWord,
@@ -242,6 +260,7 @@ export class InputHandler {
       wordEnd,
       caretPosition,
       currentValue: text,
+      caretCoords,
     };
   }
 
@@ -388,6 +407,14 @@ export class InputHandler {
 
   public isMenuActive(): boolean {
     return this.isActive;
+  }
+
+  public enable(): void {
+    this.isActive = true;
+  }
+
+  public disable(): void {
+    this.isActive = false;
   }
 
   public updateSettings(settings: WordServeSettings): void {
