@@ -105,7 +105,7 @@ export class AutocompleteController {
       console.log("WordServe: Calling background service for completion");
       const response = await browser.runtime.sendMessage({
         type: "wordserve-complete",
-        word: word,
+        prefix: word,
         limit: this.settings.maxSuggestions,
       });
 

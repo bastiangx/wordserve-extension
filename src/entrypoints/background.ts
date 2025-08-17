@@ -42,6 +42,7 @@ export default defineBackground(() => {
         console.log("WordServe: WASM fetch successful, instantiating...");
         const wasmBytes = await wasmResponse.arrayBuffer();
         const go = new (globalThis as any).Go();
+
         const wasmModule = await WebAssembly.instantiate(
           wasmBytes,
           go.importObject
@@ -126,14 +127,17 @@ export default defineBackground(() => {
         console.error("WASM not initialized for completeRaw");
         throw new Error("WASM not initialized");
       }
+      console.log(`WordServe: Calling wasmCompleter.completeRaw("${prefix}", ${limit})`);
       const result = (globalThis as any).wasmCompleter.completeRaw(
         prefix,
         limit
       );
+      console.log("WordServe: Raw completion result:", result);
       if (result.error) {
         console.error("Raw completion error:", result.error);
         throw new Error(result.error);
       }
+      console.log("WordServe: Returning suggestions:", result.suggestions);
       return result.suggestions;
     }
   }
@@ -146,7 +150,7 @@ export default defineBackground(() => {
         if (tab.id)
           browser.tabs
             .sendMessage(tab.id, { type, ...payload })
-            .catch(() => {});
+            .catch(() => { });
     });
   }
 
@@ -155,7 +159,7 @@ export default defineBackground(() => {
       await browser.storage.local.set({
         wordserveLastError: { message, ts: Date.now() },
       });
-    } catch {}
+    } catch { }
     console.error("WordServe error:", message);
     broadcast("wordserve-error", { message });
   }
@@ -240,9 +244,11 @@ export default defineBackground(() => {
         "WordServe: Dictionary chunks validated, initializing WASM completer..."
       );
       if ((globalThis as any).wasmCompleter?.initWithBinaryData) {
+        console.log("WordServe: Calling wasmCompleter.initWithBinaryData with", chunks.length, "chunks");
         const result = (globalThis as any).wasmCompleter.initWithBinaryData(
           chunks
         );
+        console.log("WordServe: initWithBinaryData result:", result);
         if (!result?.success) {
           console.error("Failed to load dictionary:", result?.error);
           throw new Error(result?.error || "Failed to load dictionary");
@@ -419,7 +425,7 @@ export default defineBackground(() => {
                     type: "settingsUpdated",
                     settings: message.settings,
                   })
-                  .catch(() => {});
+                  .catch(() => { });
             sendResponse({ success: true });
           } catch (e) {
             sendResponse({ success: false, error: String(e) });

@@ -5,8 +5,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "bun run scripts/gen-manifest.ts && wxt build",
-    "build:firefox": "bun run scripts/gen-manifest.ts && wxt build -b firefox",
+    "build": "bun run scripts/manifest.ts && wxt build",
+    "build:firefox": "bun run scripts/manifest.ts && wxt build -b firefox",
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
     "prep": "bun run scripts/download.ts",
