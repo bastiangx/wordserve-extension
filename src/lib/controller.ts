@@ -25,6 +25,7 @@ export class AutocompleteController {
   private currentWord = "";
   private debounceTimer: number | null = null;
   private onSelectionMade?: (word: string, originalWord: string) => void;
+  private keyboardNavigationActive = false;
 
   constructor(options: AutocompleteControllerOptions) {
     console.log(
@@ -156,6 +157,8 @@ export class AutocompleteController {
     this.suggestions = suggestions;
     this.selectedIndex = 0;
     this.isVisible = true;
+    this.keyboardNavigationActive = false; // Reset keyboard navigation flag
+    this.inputHandler.setMenuVisible(true); // Notify input handler
 
     // Calculate menu position
     const menuSize = {
@@ -184,6 +187,7 @@ export class AutocompleteController {
       visible: this.isVisible,
       maxItems: this.settings.maxSuggestions,
       compact: this.settings.compactMode,
+      enableBlur: this.settings.menuBlur,
     });
     console.log("WordServe: Menu render called");
   }
@@ -197,14 +201,16 @@ export class AutocompleteController {
   }
 
   private handleMenuHover(index: number): void {
-    this.selectedIndex = index;
-    this.renderMenuWithCurrentPosition();
+    // Only update selection if we're not actively using keyboard navigation
+    if (!this.keyboardNavigationActive && this.selectedIndex !== index) {
+      this.selectedIndex = index;
+      this.renderMenuWithCurrentPosition();
+    }
   }
 
   private renderMenuWithCurrentPosition(): void {
     if (!this.isVisible) return;
 
-    // Re-render with current position (for hover updates)
     const menuSize = {
       width: 300,
       height: Math.min(this.suggestions.length * 32 + 16, 200),
@@ -219,6 +225,8 @@ export class AutocompleteController {
   private handleNavigation(direction: "up" | "down"): void {
     if (!this.isVisible || this.suggestions.length === 0) return;
 
+    this.keyboardNavigationActive = true; // Mark that we're using keyboard
+    
     if (direction === "down") {
       this.selectedIndex = (this.selectedIndex + 1) % this.suggestions.length;
     } else {
@@ -229,9 +237,12 @@ export class AutocompleteController {
     }
 
     this.renderMenuWithCurrentPosition();
-  }
-
-  private handleSelection(addSpace: boolean = false): void {
+    
+    // Reset keyboard navigation flag after a delay
+    setTimeout(() => {
+      this.keyboardNavigationActive = false;
+    }, 200);
+  }  private handleSelection(addSpace: boolean = false): void {
     if (!this.isVisible || this.suggestions.length === 0) return;
 
     const selectedSuggestion = this.suggestions[this.selectedIndex];
@@ -367,6 +378,7 @@ export class AutocompleteController {
     this.isVisible = false;
     this.suggestions = [];
     this.selectedIndex = 0;
+    this.inputHandler.setMenuVisible(false); // Notify input handler
 
     this.menuRenderer.hide();
   }

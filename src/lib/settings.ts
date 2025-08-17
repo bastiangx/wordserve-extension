@@ -91,6 +91,7 @@ export function normalizeSettings(input: any): WordServeSettings {
     merged.menuBorderRadius,
     DEFAULT_SETTINGS.menuBorderRadius ?? false
   );
+  const menuBlur = toBool(merged.menuBlur, DEFAULT_SETTINGS.menuBlur ?? true);
 
   const fontSizeRaw = merged.fontSize;
   const fontSize =
@@ -174,6 +175,7 @@ export function normalizeSettings(input: any): WordServeSettings {
     ghostTextEnabled,
     menuBorder,
     menuBorderRadius,
+    menuBlur,
     fontSize,
     fontWeight,
     debugMode,
@@ -190,7 +192,9 @@ export function normalizeSettings(input: any): WordServeSettings {
 
 export async function getSettings(): Promise<WordServeSettings> {
   try {
-    const { settings } = await browser.storage.sync.get({ settings: DEFAULT_SETTINGS });
+    const { settings } = await browser.storage.sync.get({
+      settings: DEFAULT_SETTINGS,
+    });
     return normalizeSettings(settings);
   } catch (error) {
     console.error("Failed to load settings:", error);

@@ -18,6 +18,7 @@ export interface AutocompleteMenuProps {
   maxHeight?: number;
   maxItems?: number;
   compact?: boolean;
+  enableBlur?: boolean;
 }
 
 export const AutocompleteMenu: React.FC<AutocompleteMenuProps> = ({
@@ -30,6 +31,7 @@ export const AutocompleteMenu: React.FC<AutocompleteMenuProps> = ({
   maxHeight = 200,
   maxItems = 9,
   compact = true,
+  enableBlur = true,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const selectedItemRef = useRef<HTMLDivElement>(null);
@@ -59,7 +61,9 @@ export const AutocompleteMenu: React.FC<AutocompleteMenuProps> = ({
   const handleClick = useCallback(
     (suggestion: Suggestion, event: React.MouseEvent) => {
       event.preventDefault();
-      onSelect(suggestion, false);
+      event.stopPropagation();
+      console.log("WordServe: Menu item clicked:", suggestion.word);
+      onSelect(suggestion, true); // Always add space for mouse clicks
     },
     [onSelect]
   );
@@ -89,13 +93,19 @@ export const AutocompleteMenu: React.FC<AutocompleteMenuProps> = ({
         // Compact mode
         compact ? "py-1" : "py-2",
         // Animation - using standard Tailwind classes
-        "transition-all duration-100 ease-out"
+        "transition-all duration-100 ease-out",
+        // Blur effect
+        enableBlur && "backdrop-blur-md"
       )}
       style={{
         ...menuStyle,
-        backgroundColor: "#191724", // Rose Pine base
-        borderColor: "#403d52", // Rose Pine highlight-med
+        backgroundColor: enableBlur 
+          ? "rgba(25, 23, 36, 0.75)" // More transparent when blur is enabled
+          : "#191724", // Solid when blur is disabled
+        borderColor: enableBlur ? "rgba(64, 61, 82, 0.8)" : "#403d52",
         color: "#e0def4", // Rose Pine text
+        backdropFilter: enableBlur ? "blur(16px) saturate(180%)" : undefined,
+        WebkitBackdropFilter: enableBlur ? "blur(16px) saturate(180%)" : undefined, // Safari support
       }}
     >
       {displaySuggestions.map((suggestion, index) => {

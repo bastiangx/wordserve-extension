@@ -16,6 +16,7 @@ export interface AutocompleteMenuOptions {
   maxHeight?: number;
   maxItems?: number;
   compact?: boolean;
+  enableBlur?: boolean;
 }
 
 export class AutocompleteMenuRenderer {
@@ -57,12 +58,21 @@ export class AutocompleteMenuRenderer {
       console.log("WordServe: Creating new menu");
       this.menu = this.createMenu();
       this.container!.appendChild(this.menu);
+      
+      // Debug: Add click listeners to containers
+      this.container!.addEventListener("click", (e) => {
+        console.log("WordServe: Container clicked, target:", e.target);
+      });
+      
+      this.menu.addEventListener("click", (e) => {
+        console.log("WordServe: Menu clicked, target:", e.target);
+      });
     }
 
     // Update container classes
     this.container!.className = `wordserve-menu-container ${
       options.compact ? "compact" : ""
-    }`;
+    } ${options.enableBlur ? "blur-enabled" : ""}`;
 
     // Position the container
     this.container!.style.left = `${options.position.x}px`;
@@ -132,10 +142,13 @@ export class AutocompleteMenuRenderer {
 
     // Event listeners
     item.addEventListener("click", (e) => {
+      console.log("WordServe: Click event triggered on item:", suggestion.word);
       e.preventDefault();
       e.stopPropagation();
-      options.onSelect(suggestion, false);
-    });
+      console.log("WordServe: About to call onSelect with:", suggestion);
+      options.onSelect(suggestion, true);
+      console.log("WordServe: onSelect called successfully");
+    }, { capture: true });
 
     item.addEventListener("mouseenter", () => {
       options.onHover(index);

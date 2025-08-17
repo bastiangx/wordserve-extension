@@ -42,6 +42,7 @@ export class InputHandler {
   private isActive = false;
   private lastWord = "";
   private autocompleteSeparator: RegExp;
+  private menuVisible = false;
 
   constructor(
     element: HTMLElement,
@@ -90,32 +91,40 @@ export class InputHandler {
   };
 
   private handleKeydown = (event: KeyboardEvent) => {
-    // Don't handle if modifier keys are pressed (except shift for special cases)
+    const { key } = event;
+
+    // Handle navigation keys first (these work with modifier keys)
+    switch (key) {
+      case "ArrowDown":
+      case "ArrowUp":
+        // Only handle if menu is visible
+        if (this.menuVisible) {
+          event.preventDefault();
+          event.stopPropagation();
+          this.callbacks.onNavigate(key === "ArrowDown" ? "down" : "up");
+        }
+        return;
+      case "Escape":
+        // Only handle if menu is visible
+        if (this.menuVisible) {
+          event.preventDefault();
+          event.stopPropagation();
+          this.callbacks.onHideMenu();
+        }
+        return;
+    }
+
+    // Don't handle other keys if modifier keys are pressed (except shift)
     if (event.ctrlKey || event.metaKey || event.altKey) {
-      this.callbacks.onHideMenu();
       return;
     }
 
-    // Only handle menu navigation keys when menu is active/visible
-    const { key } = event;
+    // Only handle these keys when menu is visible
+    if (!this.menuVisible) {
+      return;
+    }
 
     switch (key) {
-      case "ArrowDown":
-        // Only handle if menu is visible (we need a way to check this)
-        event.preventDefault();
-        event.stopPropagation();
-        this.callbacks.onNavigate("down");
-        break;
-      case "ArrowUp":
-        event.preventDefault();
-        event.stopPropagation();
-        this.callbacks.onNavigate("up");
-        break;
-      case "Escape":
-        event.preventDefault();
-        event.stopPropagation();
-        this.callbacks.onHideMenu();
-        break;
       case "Enter":
         if (this.shouldHandleKey("enter")) {
           event.preventDefault();
@@ -173,7 +182,7 @@ export class InputHandler {
   private handleBlur = () => {
     setTimeout(() => {
       this.callbacks.onHideMenu();
-    }, 150);
+    }, 300); // Increased delay to allow menu clicks to process
   };
 
   private handleClick = () => {
@@ -419,5 +428,9 @@ export class InputHandler {
 
   public updateSettings(settings: WordServeSettings): void {
     this.settings = settings;
+  }
+
+  public setMenuVisible(visible: boolean): void {
+    this.menuVisible = visible;
   }
 }

@@ -44,6 +44,7 @@ export interface WordServeSettings {
   ghostTextEnabled: boolean;
   menuBorder: boolean;
   menuBorderRadius: boolean;
+  menuBlur: boolean;
   fontSize: string | number;
   fontWeight: string;
   debugMode?: boolean;
@@ -178,6 +179,7 @@ export const DEFAULT_SETTINGS: WordServeSettings = {
   ghostTextEnabled: true,
   menuBorder: true,
   menuBorderRadius: true,
+  menuBlur: true,
   fontSize: 16,
   fontWeight: "normal",
   debugMode: false,
