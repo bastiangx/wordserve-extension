@@ -33,6 +33,7 @@ export interface InputHandlerCallbacks {
   onNavigate: (direction: "up" | "down") => void;
   onSelect: (addSpace?: boolean) => void;
   onSelectByNumber: (index: number) => void;
+  onBackspace: (context: InputContext, event: KeyboardEvent) => void;
 }
 
 export class InputHandler {
@@ -92,6 +93,15 @@ export class InputHandler {
 
   private handleKeydown = (event: KeyboardEvent) => {
     const { key } = event;
+
+    // Handle backspace for smart backspace functionality
+    if (key === "Backspace" && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const context = this.getCurrentContext();
+      if (context) {
+        // Pass the event to the callback so it can prevent default if needed
+        this.callbacks.onBackspace(context, event);
+      }
+    }
 
     // Handle navigation keys first (these work with modifier keys)
     switch (key) {

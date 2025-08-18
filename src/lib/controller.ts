@@ -5,6 +5,8 @@ import {
   type InputHandlerCallbacks,
 } from "@/lib/input";
 import { calculateMenuPosition } from "@/lib/caret";
+import { ghostTextManager } from "@/lib/ghost-text";
+import { smartBackspace } from "@/lib/smart-backspace";
 import type { WordServeSettings, RawSuggestion } from "@/types";
 import { browser } from "wxt/browser";
 
@@ -53,6 +55,7 @@ export class AutocompleteController {
       onNavigate: this.handleNavigation.bind(this),
       onSelect: this.handleSelection.bind(this),
       onSelectByNumber: this.handleNumberSelection.bind(this),
+      onBackspace: this.handleBackspace.bind(this),
     };
   }
 
@@ -156,6 +159,19 @@ export class AutocompleteController {
     this.keyboardNavigationActive = false; // Reset keyboard navigation flag
     this.inputHandler.setMenuVisible(true); // Notify input handler
 
+    // Show ghost text for the first suggestion if enabled
+    if (this.settings.ghostTextEnabled && suggestions.length > 0) {
+      const firstSuggestion = suggestions[0];
+      const ghostText = firstSuggestion.word.substring(this.currentWord.length);
+      if (ghostText.length > 0) {
+        ghostTextManager.setGhostText(
+          context.element,
+          context.caretPosition,
+          ghostText
+        );
+      }
+    }
+
     // Calculate menu position
     const menuSize = {
       width: 300,
@@ -233,6 +249,24 @@ export class AutocompleteController {
 
     this.renderMenuWithCurrentPosition();
 
+    // Update ghost text with the newly selected suggestion
+    if (this.settings.ghostTextEnabled) {
+      const context = this.inputHandler.getCurrentContext();
+      if (context) {
+        const selectedSuggestion = this.suggestions[this.selectedIndex];
+        const ghostText = selectedSuggestion.word.substring(this.currentWord.length);
+        if (ghostText.length > 0) {
+          ghostTextManager.setGhostText(
+            context.element,
+            context.caretPosition,
+            ghostText
+          );
+        } else {
+          ghostTextManager.clearGhostText(context.element);
+        }
+      }
+    }
+
     setTimeout(() => {
       this.keyboardNavigationActive = false;
     }, 200);
@@ -266,6 +300,22 @@ export class AutocompleteController {
     }
   }
 
+  private handleBackspace(context: InputContext, event: any): void {
+    // Check if we can restore a previously committed word
+    const state = smartBackspace.canRestore(context.element, context.caretPosition);
+    if (state) {
+      // Prevent the default backspace behavior
+      event.preventDefault();
+      event.stopPropagation();
+      smartBackspace.restore(context.element, state);
+      return;
+    }
+
+    // If no restoration available, hide menu and clear ghost text
+    this.hideMenu();
+    ghostTextManager.clearGhostText(context.element);
+  }
+
   private insertSuggestion(word: string, addSpace: boolean): void {
     const context = this.inputHandler.getCurrentContext();
     if (!context) return;
@@ -274,6 +324,15 @@ export class AutocompleteController {
     const beforeWord = currentValue.substring(0, wordStart);
     const afterWord = currentValue.substring(wordEnd);
     const newValue = beforeWord + word + (addSpace ? " " : "") + afterWord;
+
+    // Record the commit for smart backspace
+    if (this.settings.smartBackspace) {
+      const commitPosition = wordStart + word.length + (addSpace ? 1 : 0);
+      smartBackspace.recordCommit(element, word, this.currentWord, commitPosition);
+    }
+
+    // Clear ghost text
+    ghostTextManager.clearGhostText(element);
 
     // Insert the suggestion
     if (element.nodeName === "INPUT" || element.nodeName === "TEXTAREA") {
@@ -374,6 +433,12 @@ export class AutocompleteController {
     this.selectedIndex = 0;
     this.inputHandler.setMenuVisible(false); // Notify input handler
 
+    // Clear ghost text when hiding menu
+    const context = this.inputHandler.getCurrentContext();
+    if (context) {
+      ghostTextManager.clearGhostText(context.element);
+    }
+
     this.menuRenderer.hide();
   }
 
@@ -381,6 +446,12 @@ export class AutocompleteController {
     // Clear timers
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
+    }
+
+    // Clear ghost text and smart backspace state for this element
+    const context = this.inputHandler.getCurrentContext();
+    if (context) {
+      ghostTextManager.clearGhostText(context.element);
     }
 
     // Cleanup input handler

@@ -1,6 +1,7 @@
 import { AutocompleteController } from "@/lib/controller";
 import { DEFAULT_SETTINGS } from "@/types";
 import { normalizeSettings } from "@/lib/settings";
+import { ghostTextManager } from "@/lib/ghost-text";
 import type { WordServeSettings } from "@/types";
 import { browser } from "wxt/browser";
 
@@ -22,6 +23,9 @@ export default defineContentScript({
         this.setupDOMObserver();
         this.attachToExistingInputs();
         this.checkWASMStatus();
+
+        // Initialize ghost text manager
+        ghostTextManager.setupEventListeners();
       }
 
       private async checkWASMStatus(): Promise<void> {
@@ -118,7 +122,7 @@ export default defineContentScript({
         // Find all input elements within the element
         const inputs = element.querySelectorAll(
           'input[type="text"], input[type="search"], input[type="email"], input[type="url"], ' +
-            'input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]'
+          'input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]'
         );
 
         inputs.forEach((input) => {

@@ -215,4 +215,15 @@
     background-color: hsl(var(--background));
     border-color: hsl(var(--border));
   }
+
+  .wordserve-ghost-text {
+    color: hsl(var(--muted-foreground)) !important;
+    opacity: 0.6 !important;
+    pointer-events: none !important;
+    user-select: none !important;
+    position: absolute !important;
+    white-space: nowrap !important;
+    z-index: 9999 !important;
+    /* font-style: italic !important; */
+  }
 }
