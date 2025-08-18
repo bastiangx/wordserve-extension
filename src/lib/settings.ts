@@ -79,10 +79,6 @@ export function normalizeSettings(input: any): WordServeSettings {
     DEFAULT_SETTINGS.showRankingOverride
   );
   const compactMode = toBool(merged.compactMode, DEFAULT_SETTINGS.compactMode);
-  const ghostTextEnabled = toBool(
-    merged.ghostTextEnabled,
-    DEFAULT_SETTINGS.ghostTextEnabled
-  );
   const menuBorder = toBool(
     merged.menuBorder,
     DEFAULT_SETTINGS.menuBorder ?? false
@@ -91,7 +87,6 @@ export function normalizeSettings(input: any): WordServeSettings {
     merged.menuBorderRadius,
     DEFAULT_SETTINGS.menuBorderRadius ?? false
   );
-  const menuBlur = toBool(merged.menuBlur, DEFAULT_SETTINGS.menuBlur ?? true);
 
   const fontSizeRaw = merged.fontSize;
   const fontSize =
@@ -172,10 +167,8 @@ export function normalizeSettings(input: any): WordServeSettings {
     numberSelection,
     showRankingOverride,
     compactMode,
-    ghostTextEnabled,
     menuBorder,
     menuBorderRadius,
-    menuBlur,
     fontSize,
     fontWeight,
     debugMode,

@@ -41,7 +41,6 @@ export interface WordServeSettings {
   numberSelection: boolean;
   showRankingOverride: boolean;
   compactMode: boolean;
-  ghostTextEnabled: boolean;
   menuBorder: boolean;
   menuBorderRadius: boolean;
   fontSize: string | number;
@@ -175,7 +174,6 @@ export const DEFAULT_SETTINGS: WordServeSettings = {
   numberSelection: true,
   showRankingOverride: false,
   compactMode: false,
-  ghostTextEnabled: true,
   menuBorder: true,
   menuBorderRadius: true,
   fontSize: 16,

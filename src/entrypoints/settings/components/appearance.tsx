@@ -181,21 +181,6 @@ export function AppearanceSettings({
 
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label>Ghost text</Label>
-                <p className="text-sm text-muted-foreground">
-                  Show preview text inline with typing
-                </p>
-              </div>
-              <Switch
-                checked={pendingSettings.ghostTextEnabled}
-                onCheckedChange={(checked) =>
-                  updatePendingSetting("ghostTextEnabled", checked)
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
                 <Label>Ranking position</Label>
                 <p className="text-sm text-muted-foreground">
                   Position of ranking numbers in suggestion menu

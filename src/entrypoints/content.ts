@@ -1,7 +1,6 @@
 import { AutocompleteController } from "@/lib/controller";
 import { DEFAULT_SETTINGS } from "@/types";
 import { normalizeSettings } from "@/lib/settings";
-import { ghostTextManager } from "@/lib/ghost";
 import type { WordServeSettings } from "@/types";
 import { browser } from "wxt/browser";
 
@@ -23,9 +22,6 @@ export default defineContentScript({
         this.setupDOMObserver();
         this.attachToExistingInputs();
         this.checkWASMStatus();
-
-        // Initialize ghost text manager
-        ghostTextManager.setupEventListeners();
       }
 
       private async checkWASMStatus(): Promise<void> {
