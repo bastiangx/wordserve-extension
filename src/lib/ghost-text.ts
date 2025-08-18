@@ -18,13 +18,6 @@ export class GhostTextManager {
   }
 
   public setGhostText(element: HTMLElement, position: number, text: string): void {
-    console.log('WordServe setGhostText called:', {
-      element: element.tagName,
-      position,
-      text,
-      textLength: text.length
-    });
-    
     if (!text) {
       this.clearGhostText(element);
       return;
@@ -40,13 +33,9 @@ export class GhostTextManager {
     };
 
     if (this.isInputElement(element)) {
-      console.log('WordServe: Setting ghost text for input element');
       this.setGhostTextForInput(state);
     } else if (this.isContentEditable(element)) {
-      console.log('WordServe: Setting ghost text for contenteditable element');
       this.setGhostTextForContentEditable(state);
-    } else {
-      console.log('WordServe: Element is neither input nor contenteditable');
     }
 
     this.states.set(element, state);
@@ -68,40 +57,41 @@ export class GhostTextManager {
 
   private setGhostTextForInput(state: GhostTextState): void {
     const input = state.element as HTMLInputElement | HTMLTextAreaElement;
+    
     const ghostElement = this.createGhostElement(state.ghostText);
     
-    console.log('WordServe: Getting caret coordinates for input');
-    // Use the existing caret coordinate system for consistent positioning
-    const caretCoords = getCaretCoordinates(input);
-    console.log('WordServe: Caret coordinates:', caretCoords);
-    
-    // Position the ghost text at the caret position
-    ghostElement.style.left = `${caretCoords.x}px`;
-    ghostElement.style.top = `${caretCoords.y}px`;
-    
-    // Apply font styles to match input
+    // Copy exact font properties from input
     const inputStyles = window.getComputedStyle(input);
     ghostElement.style.fontSize = inputStyles.fontSize;
     ghostElement.style.fontFamily = inputStyles.fontFamily;
     ghostElement.style.fontWeight = inputStyles.fontWeight;
     ghostElement.style.letterSpacing = inputStyles.letterSpacing;
     ghostElement.style.lineHeight = inputStyles.lineHeight;
+    ghostElement.style.padding = '0';
+    ghostElement.style.margin = '0';
+    ghostElement.style.border = 'none';
+    
+    // Just use the caret coordinates directly - they're already accurate
+    const caretCoords = getCaretCoordinates(input);
+    
+    // Position ghost text exactly at the caret position
+    ghostElement.style.left = `${caretCoords.x}px`;
+    ghostElement.style.top = `${caretCoords.y}px`;
+    
+    console.log('WordServe: Direct caret positioning:', {
+      caretCoords,
+      ghostText: state.ghostText,
+      position: state.position
+    });
 
-    console.log('WordServe: Inserting ghost element into DOM');
-    // Insert into DOM
     this.insertGhostElement(input, ghostElement);
     state.ghostElement = ghostElement;
-    console.log('WordServe: Ghost element inserted, state saved');
   }  private setGhostTextForContentEditable(state: GhostTextState): void {
     const element = state.element;
     const ghostElement = this.createGhostElement(state.ghostText);
     
     // Use the existing caret coordinate system for contenteditable
     const caretCoords = getCaretCoordinatesContentEditable(element);
-    
-    // Position the ghost text at the caret position
-    ghostElement.style.left = `${caretCoords.x}px`;
-    ghostElement.style.top = `${caretCoords.y}px`;
     
     // Apply font styles to match element
     const elementStyles = window.getComputedStyle(element);
@@ -110,6 +100,10 @@ export class GhostTextManager {
     ghostElement.style.fontWeight = elementStyles.fontWeight;
     ghostElement.style.letterSpacing = elementStyles.letterSpacing;
     ghostElement.style.lineHeight = elementStyles.lineHeight;
+    
+    // Position the ghost text at the caret position
+    ghostElement.style.left = `${caretCoords.x}px`;
+    ghostElement.style.top = `${caretCoords.y}px`;
 
     // Insert into DOM
     this.insertGhostElement(element, ghostElement);
@@ -139,6 +133,8 @@ export class GhostTextManager {
 
     if (this.isInputElement(element)) {
       const input = element as HTMLInputElement | HTMLTextAreaElement;
+      
+      // Use direct caret coordinates for both X and Y
       const caretCoords = getCaretCoordinates(input);
       state.ghostElement.style.left = `${caretCoords.x}px`;
       state.ghostElement.style.top = `${caretCoords.y}px`;
@@ -152,6 +148,49 @@ export class GhostTextManager {
   private insertGhostElement(input: HTMLElement, ghostElement: HTMLElement): void {
     // Always append to document.body for consistent viewport-relative positioning
     document.body.appendChild(ghostElement);
+  }
+
+  private createMeasurementElement(input: HTMLInputElement | HTMLTextAreaElement, text: string): HTMLElement {
+    // Create a hidden span instead of input clone for more accurate text measurement
+    const measureEl = document.createElement('span');
+    const inputStyles = window.getComputedStyle(input);
+    
+    // Copy all text-affecting styles exactly
+    measureEl.style.position = 'absolute';
+    measureEl.style.visibility = 'hidden';
+    measureEl.style.height = 'auto';
+    measureEl.style.width = 'auto';
+    measureEl.style.whiteSpace = 'pre';
+    measureEl.style.fontSize = inputStyles.fontSize;
+    measureEl.style.fontFamily = inputStyles.fontFamily;
+    measureEl.style.fontWeight = inputStyles.fontWeight;
+    measureEl.style.letterSpacing = inputStyles.letterSpacing;
+    measureEl.style.textTransform = inputStyles.textTransform;
+    measureEl.style.wordSpacing = inputStyles.wordSpacing;
+    measureEl.style.textIndent = inputStyles.textIndent;
+    measureEl.style.padding = '0';
+    measureEl.style.border = 'none';
+    measureEl.style.margin = '0';
+    measureEl.style.lineHeight = inputStyles.lineHeight;
+    
+    // Use textContent instead of value for spans
+    measureEl.textContent = text;
+    document.body.appendChild(measureEl);
+    
+    console.log('WordServe: Measurement element created:', {
+      text,
+      element: measureEl,
+      computedStyles: {
+        fontSize: measureEl.style.fontSize,
+        fontFamily: measureEl.style.fontFamily,
+        fontWeight: measureEl.style.fontWeight
+      },
+      measuredWidth: measureEl.getBoundingClientRect().width,
+      scrollWidth: measureEl.scrollWidth,
+      offsetWidth: measureEl.offsetWidth
+    });
+    
+    return measureEl;
   }
 
   private isInputElement(element: HTMLElement): boolean {
