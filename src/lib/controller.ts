@@ -5,8 +5,8 @@ import {
   type InputHandlerCallbacks,
 } from "@/lib/input";
 import { calculateMenuPosition } from "@/lib/caret";
-import { ghostTextManager } from "@/lib/ghost-text";
-import { smartBackspace } from "@/lib/smart-backspace";
+import { ghostTextManager } from "@/lib/ghost";
+import { smartBackspace } from "@/lib/backspace";
 import type { WordServeSettings, RawSuggestion } from "@/types";
 import { browser } from "wxt/browser";
 
