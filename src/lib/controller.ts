@@ -56,10 +56,6 @@ export class AutocompleteController {
     };
   }
 
-  private createMenuContainer(): void {
-    // No longer needed - handled by AutocompleteMenuRenderer
-  }
-
   private async handleWordChange(context: InputContext): Promise<void> {
     console.log(
       "WordServe: handleWordChange called with:",
@@ -187,7 +183,6 @@ export class AutocompleteController {
       visible: this.isVisible,
       maxItems: this.settings.maxSuggestions,
       compact: this.settings.compactMode,
-      enableBlur: this.settings.menuBlur,
     });
     console.log("WordServe: Menu render called");
   }
@@ -225,8 +220,8 @@ export class AutocompleteController {
   private handleNavigation(direction: "up" | "down"): void {
     if (!this.isVisible || this.suggestions.length === 0) return;
 
-    this.keyboardNavigationActive = true; // Mark that we're using keyboard
-    
+    this.keyboardNavigationActive = true;
+
     if (direction === "down") {
       this.selectedIndex = (this.selectedIndex + 1) % this.suggestions.length;
     } else {
@@ -237,12 +232,11 @@ export class AutocompleteController {
     }
 
     this.renderMenuWithCurrentPosition();
-    
-    // Reset keyboard navigation flag after a delay
+
     setTimeout(() => {
       this.keyboardNavigationActive = false;
     }, 200);
-  }  private handleSelection(addSpace: boolean = false): void {
+  } private handleSelection(addSpace: boolean = false): void {
     if (!this.isVisible || this.suggestions.length === 0) return;
 
     const selectedSuggestion = this.suggestions[this.selectedIndex];

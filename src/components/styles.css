@@ -1,6 +1,6 @@
 .wordserve-menu-container {
   all: initial;
-  font-family: "Geist Mono", "Monaco", "Menlo", "Consolas", monospace;
+  font-family: "Geist Mono", "Monaco", monospace;
   font-size: 14px;
   line-height: 1.4;
   color: #e0def4;
@@ -27,13 +27,6 @@
   overflow-y: auto;
   pointer-events: auto;
   transition: opacity 100ms ease-out, transform 100ms ease-out;
-}
-
-.wordserve-menu-container.blur-enabled .wordserve-autocomplete-menu {
-  background: rgba(25, 23, 36, 0.65) !important;
-  backdrop-filter: blur(24px) saturate(200%);
-  -webkit-backdrop-filter: blur(24px) saturate(200%);
-  border: 1px solid rgba(64, 61, 82, 0.9);
 }
 
 .wordserve-autocomplete-menu::-webkit-scrollbar {
@@ -80,7 +73,7 @@
 }
 
 .wordserve-menu-item.selected {
-  background: #2a283e;
+  background: #21202e;
   color: #e0def4;
 }
 
@@ -137,12 +130,10 @@
   padding: 4px 12px;
 }
 
-/* Hide menu when not visible */
 .wordserve-autocomplete-menu.hidden {
   display: none;
 }
 
-/* Animation classes */
 .wordserve-menu-enter {
   opacity: 0;
   transform: scale(0.95) translateY(-2px);

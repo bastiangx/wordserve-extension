@@ -16,7 +16,6 @@ export interface AutocompleteMenuOptions {
   maxHeight?: number;
   maxItems?: number;
   compact?: boolean;
-  enableBlur?: boolean;
 }
 
 export class AutocompleteMenuRenderer {
@@ -72,7 +71,7 @@ export class AutocompleteMenuRenderer {
     // Update container classes
     this.container!.className = `wordserve-menu-container ${
       options.compact ? "compact" : ""
-    } ${options.enableBlur ? "blur-enabled" : ""}`;
+    }`;
 
     // Position the container
     this.container!.style.left = `${options.position.x}px`;

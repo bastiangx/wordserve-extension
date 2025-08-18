@@ -249,21 +249,6 @@ export function AppearanceSettings({
 
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label>Background blur</Label>
-                <p className="text-sm text-muted-foreground">
-                 Blur effect behind the suggestion menu
-                </p>
-              </div>
-              <Switch
-                checked={pendingSettings.menuBlur}
-                onCheckedChange={(checked) =>
-                  updatePendingSetting("menuBlur", checked)
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
                 <Label>Theme mode</Label>
                 <p className="text-sm text-muted-foreground">
                   How the menu integrates with page themes
