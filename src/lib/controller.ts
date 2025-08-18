@@ -147,6 +147,12 @@ export class AutocompleteController {
       suggestions.length,
       "suggestions"
     );
+    console.log('WordServe: Current settings:', {
+      ghostTextEnabled: this.settings.ghostTextEnabled,
+      smartBackspace: this.settings.smartBackspace,
+      maxSuggestions: this.settings.maxSuggestions
+    });
+    
     if (suggestions.length === 0) {
       console.log("WordServe: No suggestions, hiding menu");
       this.hideMenu();
@@ -163,6 +169,15 @@ export class AutocompleteController {
     if (this.settings.ghostTextEnabled && suggestions.length > 0) {
       const firstSuggestion = suggestions[0];
       const ghostText = firstSuggestion.word.substring(this.currentWord.length);
+      console.log('WordServe Ghost Text Debug:', {
+        enabled: this.settings.ghostTextEnabled,
+        currentWord: this.currentWord,
+        suggestion: firstSuggestion.word,
+        ghostText: ghostText,
+        ghostTextLength: ghostText.length,
+        element: context.element.tagName,
+        caretPosition: context.caretPosition
+      });
       if (ghostText.length > 0) {
         ghostTextManager.setGhostText(
           context.element,
@@ -301,9 +316,12 @@ export class AutocompleteController {
   }
 
   private handleBackspace(context: InputContext, event: any): void {
+    console.log('WordServe handleBackspace - checking at current position:', context.caretPosition);
+    
     // Check if we can restore a previously committed word
     const state = smartBackspace.canRestore(context.element, context.caretPosition);
     if (state) {
+      console.log('WordServe handleBackspace - preventing default, restoring:', state);
       // Prevent the default backspace behavior
       event.preventDefault();
       event.stopPropagation();
@@ -327,7 +345,19 @@ export class AutocompleteController {
 
     // Record the commit for smart backspace
     if (this.settings.smartBackspace) {
-      const commitPosition = wordStart + word.length + (addSpace ? 1 : 0);
+      // Record at the position where backspace will be detected (after the word, before any space)
+      const commitPosition = wordStart + word.length;
+      console.log('WordServe Smart Backspace Debug - Recording commit:', {
+        originalWord: this.currentWord,
+        committedWord: word,
+        addSpace: addSpace,
+        wordStart: wordStart,
+        wordLength: word.length,
+        commitPosition: commitPosition,
+        beforeWord: beforeWord,
+        afterWord: afterWord,
+        newValue: newValue
+      });
       smartBackspace.recordCommit(element, word, this.currentWord, commitPosition);
     }
 

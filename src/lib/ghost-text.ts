@@ -1,3 +1,5 @@
+import { getCaretCoordinates, getCaretCoordinatesContentEditable } from '@/lib/caret';
+
 interface GhostTextState {
   element: HTMLElement;
   ghostText: string;
@@ -16,6 +18,13 @@ export class GhostTextManager {
   }
 
   public setGhostText(element: HTMLElement, position: number, text: string): void {
+    console.log('WordServe setGhostText called:', {
+      element: element.tagName,
+      position,
+      text,
+      textLength: text.length
+    });
+    
     if (!text) {
       this.clearGhostText(element);
       return;
@@ -31,9 +40,13 @@ export class GhostTextManager {
     };
 
     if (this.isInputElement(element)) {
+      console.log('WordServe: Setting ghost text for input element');
       this.setGhostTextForInput(state);
     } else if (this.isContentEditable(element)) {
+      console.log('WordServe: Setting ghost text for contenteditable element');
       this.setGhostTextForContentEditable(state);
+    } else {
+      console.log('WordServe: Element is neither input nor contenteditable');
     }
 
     this.states.set(element, state);
@@ -56,117 +69,88 @@ export class GhostTextManager {
   private setGhostTextForInput(state: GhostTextState): void {
     const input = state.element as HTMLInputElement | HTMLTextAreaElement;
     const ghostElement = this.createGhostElement(state.ghostText);
+    
+    console.log('WordServe: Getting caret coordinates for input');
+    // Use the existing caret coordinate system for consistent positioning
+    const caretCoords = getCaretCoordinates(input);
+    console.log('WordServe: Caret coordinates:', caretCoords);
+    
+    // Position the ghost text at the caret position
+    ghostElement.style.left = `${caretCoords.x}px`;
+    ghostElement.style.top = `${caretCoords.y}px`;
+    
+    // Apply font styles to match input
+    const inputStyles = window.getComputedStyle(input);
+    ghostElement.style.fontSize = inputStyles.fontSize;
+    ghostElement.style.fontFamily = inputStyles.fontFamily;
+    ghostElement.style.fontWeight = inputStyles.fontWeight;
+    ghostElement.style.letterSpacing = inputStyles.letterSpacing;
+    ghostElement.style.lineHeight = inputStyles.lineHeight;
 
-    // Position the ghost text relative to the input
-    this.positionGhostElement(input, ghostElement, state.position, state.ghostText);
-
+    console.log('WordServe: Inserting ghost element into DOM');
     // Insert into DOM
     this.insertGhostElement(input, ghostElement);
     state.ghostElement = ghostElement;
-  }
-
-  private setGhostTextForContentEditable(state: GhostTextState): void {
+    console.log('WordServe: Ghost element inserted, state saved');
+  }  private setGhostTextForContentEditable(state: GhostTextState): void {
     const element = state.element;
-    const selection = window.getSelection();
-
-    if (!selection || selection.rangeCount === 0) return;
-
-    const range = selection.getRangeAt(0);
     const ghostElement = this.createGhostElement(state.ghostText);
+    
+    // Use the existing caret coordinate system for contenteditable
+    const caretCoords = getCaretCoordinatesContentEditable(element);
+    
+    // Position the ghost text at the caret position
+    ghostElement.style.left = `${caretCoords.x}px`;
+    ghostElement.style.top = `${caretCoords.y}px`;
+    
+    // Apply font styles to match element
+    const elementStyles = window.getComputedStyle(element);
+    ghostElement.style.fontSize = elementStyles.fontSize;
+    ghostElement.style.fontFamily = elementStyles.fontFamily;
+    ghostElement.style.fontWeight = elementStyles.fontWeight;
+    ghostElement.style.letterSpacing = elementStyles.letterSpacing;
+    ghostElement.style.lineHeight = elementStyles.lineHeight;
 
-    // Insert the ghost text at the current cursor position
-    try {
-      const clonedRange = range.cloneRange();
-      clonedRange.collapse(false); // Move to end of range
-      clonedRange.insertNode(ghostElement);
-
-      // Restore the original selection
-      selection.removeAllRanges();
-      selection.addRange(range);
-
-      state.ghostElement = ghostElement;
-    } catch (error) {
-      console.warn("Failed to insert ghost text in contenteditable:", error);
-    }
+    // Insert into DOM
+    this.insertGhostElement(element, ghostElement);
+    state.ghostElement = ghostElement;
   }
 
   private createGhostElement(text: string): HTMLElement {
     const span = document.createElement('span');
     span.className = 'wordserve-ghost-text';
     span.textContent = text;
-    // Remove inline styles - rely solely on CSS class for consistent theming
+    
+    // Ensure basic positioning styles are set
+    span.style.position = 'absolute';
+    span.style.pointerEvents = 'none';
+    span.style.userSelect = 'none';
+    span.style.whiteSpace = 'nowrap';
+    span.style.zIndex = '9999';
+    span.style.color = 'rgba(128, 128, 128, 0.6)'; // Fallback color
+    
+    console.log('WordServe: Created ghost element:', span);
     return span;
   }
 
-  private positionGhostElement(
-    input: HTMLInputElement | HTMLTextAreaElement,
-    ghostElement: HTMLElement,
-    position: number,
-    ghostText: string
-  ): void {
-    try {
-      // Get the input rect and styles
-      const inputRect = input.getBoundingClientRect();
-      const inputStyles = window.getComputedStyle(input);
-      const currentValue = input.value;
+  public updateGhostTextPosition(element: HTMLElement): void {
+    const state = this.states.get(element);
+    if (!state || !state.ghostElement) return;
 
-      // Calculate text width up to cursor position using canvas for accuracy
-      const textUpToCursor = currentValue.substring(0, position);
-      const textWidth = this.getTextWidth(textUpToCursor, inputStyles);
-
-      // Parse layout values
-      const paddingLeft = parseFloat(inputStyles.paddingLeft) || 0;
-      const paddingTop = parseFloat(inputStyles.paddingTop) || 0;
-      const borderLeftWidth = parseFloat(inputStyles.borderLeftWidth) || 0;
-      const borderTopWidth = parseFloat(inputStyles.borderTopWidth) || 0;
-      const scrollLeft = input.scrollLeft || 0;
-      const scrollTop = input.scrollTop || 0;
-
-      // Calculate final position relative to viewport
-      const x = inputRect.left + paddingLeft + borderLeftWidth + textWidth - scrollLeft;
-      const y = inputRect.top + paddingTop + borderTopWidth - scrollTop;
-
-      // Apply positioning and font styles to match input
-      ghostElement.style.left = `${x}px`;
-      ghostElement.style.top = `${y}px`;
-      ghostElement.style.fontSize = inputStyles.fontSize;
-      ghostElement.style.fontFamily = inputStyles.fontFamily;
-      ghostElement.style.fontWeight = inputStyles.fontWeight;
-      ghostElement.style.letterSpacing = inputStyles.letterSpacing;
-      ghostElement.style.lineHeight = inputStyles.lineHeight;
-
-    } catch (error) {
-      console.warn('Failed to position ghost text:', error);
+    if (this.isInputElement(element)) {
+      const input = element as HTMLInputElement | HTMLTextAreaElement;
+      const caretCoords = getCaretCoordinates(input);
+      state.ghostElement.style.left = `${caretCoords.x}px`;
+      state.ghostElement.style.top = `${caretCoords.y}px`;
+    } else if (this.isContentEditable(element)) {
+      const caretCoords = getCaretCoordinatesContentEditable(element);
+      state.ghostElement.style.left = `${caretCoords.x}px`;
+      state.ghostElement.style.top = `${caretCoords.y}px`;
     }
-  }
-
-  private getTextWidth(text: string, styles: CSSStyleDeclaration): number {
-    if (!text) return 0;
-
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-
-    if (!context) return 0;
-
-    // Set font properties to match input element exactly
-    const fontStyle = styles.fontStyle || 'normal';
-    const fontWeight = styles.fontWeight || 'normal';
-    const fontSize = styles.fontSize || '16px';
-    const fontFamily = styles.fontFamily || 'monospace';
-
-    context.font = `${fontStyle} ${fontWeight} ${fontSize} ${fontFamily}`;
-
-    // Apply letter spacing if present
-    const letterSpacing = parseFloat(styles.letterSpacing) || 0;
-    const metrics = context.measureText(text);
-
-    // Add letter spacing to the width calculation
-    return metrics.width + (letterSpacing * (text.length - 1));
   }
 
   private insertGhostElement(input: HTMLElement, ghostElement: HTMLElement): void {
     // Always append to document.body for consistent viewport-relative positioning
-    // This aligns with the getBoundingClientRect positioning logic
     document.body.appendChild(ghostElement);
   }
 
@@ -178,16 +162,6 @@ export class GhostTextManager {
     return element.contentEditable === 'true' ||
       element.isContentEditable ||
       element.getAttribute('contenteditable') === 'true';
-  }
-
-  public updateGhostTextPosition(element: HTMLElement): void {
-    const state = this.states.get(element);
-    if (!state || !state.ghostElement) return;
-
-    if (this.isInputElement(element)) {
-      const input = element as HTMLInputElement | HTMLTextAreaElement;
-      this.positionGhostElement(input, state.ghostElement, state.position, state.ghostText);
-    }
   }
 
   // Listen for scroll and resize events to update positions

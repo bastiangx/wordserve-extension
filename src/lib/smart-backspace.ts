@@ -30,12 +30,29 @@ export class SmartBackspace {
     const key = this.getStateKey(elementId, currentPosition);
     const state = this.states.get(key);
 
+    console.log('WordServe Smart Backspace - canRestore check:', {
+      elementId: elementId,
+      currentPosition: currentPosition,
+      key: key,
+      hasState: !!state,
+      stateCount: this.states.size,
+      allKeys: Array.from(this.states.keys())
+    });
+
     if (!state) return null;
 
     // Check if we're at the exact position where the commit happened
     if (currentPosition === state.commitPosition && elementId === state.elementId) {
+      console.log('WordServe Smart Backspace - Can restore:', state);
       return state;
     }
+
+    console.log('WordServe Smart Backspace - Position mismatch:', {
+      currentPosition: currentPosition,
+      stateCommitPosition: state.commitPosition,
+      positionsMatch: currentPosition === state.commitPosition,
+      elementIdsMatch: elementId === state.elementId
+    });
 
     return null;
   }
@@ -64,9 +81,13 @@ export class SmartBackspace {
         return;
       }
 
-      // Replace the committed word with the original word
+      // Check if there's a space after the committed word that was added during commit
+      const hasSpaceAfter = wordEnd < currentValue.length && currentValue[wordEnd] === ' ';
+      const actualWordEnd = hasSpaceAfter ? wordEnd + 1 : wordEnd;
+
+      // Replace the committed word (and space if present) with the original word
       const beforeWord = currentValue.substring(0, wordStart);
-      const afterWord = currentValue.substring(wordEnd);
+      const afterWord = currentValue.substring(actualWordEnd);
       const newValue = beforeWord + state.originalWord + afterWord;
 
       input.value = newValue;
@@ -96,11 +117,15 @@ export class SmartBackspace {
       const nodeOffset = wordStart - this.getTextNodeOffset(element, textNode);
       const wordEndInNode = nodeOffset + state.lastCommittedWord.length;
 
-      // Replace the committed word with the original word
+      // Check if there's a space after the committed word that was added during commit
       const nodeText = textNode.textContent || '';
+      const hasSpaceAfter = wordEndInNode < nodeText.length && nodeText[wordEndInNode] === ' ';
+      const actualWordEndInNode = hasSpaceAfter ? wordEndInNode + 1 : wordEndInNode;
+
+      // Replace the committed word (and space if present) with the original word
       const newText = nodeText.substring(0, nodeOffset) +
         state.originalWord +
-        nodeText.substring(wordEndInNode);
+        nodeText.substring(actualWordEndInNode);
 
       textNode.textContent = newText;
 
