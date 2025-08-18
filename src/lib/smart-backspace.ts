@@ -21,45 +21,50 @@ export class SmartBackspace {
       lastCommittedWord: committedWord,
       originalWord: originalWord,
       commitPosition: position,
-      elementId: elementId
+      elementId: elementId,
     });
   }
 
-  public canRestore(element: HTMLElement, currentPosition: number): SmartBackspaceState | null {
+  public canRestore(
+    element: HTMLElement,
+    currentPosition: number
+  ): SmartBackspaceState | null {
     const elementId = this.getElementId(element);
     const key = this.getStateKey(elementId, currentPosition);
     const state = this.states.get(key);
 
-    console.log('WordServe Smart Backspace - canRestore check:', {
+    console.log("WordServe Smart Backspace - canRestore check:", {
       elementId: elementId,
       currentPosition: currentPosition,
       key: key,
       hasState: !!state,
       stateCount: this.states.size,
-      allKeys: Array.from(this.states.keys())
+      allKeys: Array.from(this.states.keys()),
     });
-
     if (!state) return null;
-
-    // Check if we're at the exact position where the commit happened
-    if (currentPosition === state.commitPosition && elementId === state.elementId) {
-      console.log('WordServe Smart Backspace - Can restore:', state);
+    if (
+      currentPosition === state.commitPosition &&
+      elementId === state.elementId
+    ) {
+      console.log("WordServe Smart Backspace - Can restore:", state);
       return state;
     }
 
-    console.log('WordServe Smart Backspace - Position mismatch:', {
+    console.log("WordServe Smart Backspace - Position mismatch:", {
       currentPosition: currentPosition,
       stateCommitPosition: state.commitPosition,
       positionsMatch: currentPosition === state.commitPosition,
-      elementIdsMatch: elementId === state.elementId
+      elementIdsMatch: elementId === state.elementId,
     });
-
     return null;
   }
 
   public restore(element: HTMLElement, state: SmartBackspaceState): void {
     if (this.isInputElement(element)) {
-      this.restoreInInput(element as HTMLInputElement | HTMLTextAreaElement, state);
+      this.restoreInInput(
+        element as HTMLInputElement | HTMLTextAreaElement,
+        state
+      );
     } else if (this.isContentEditable(element)) {
       this.restoreInContentEditable(element, state);
     }
@@ -69,20 +74,28 @@ export class SmartBackspace {
     this.states.delete(key);
   }
 
-  private restoreInInput(input: HTMLInputElement | HTMLTextAreaElement, state: SmartBackspaceState): void {
+  private restoreInInput(
+    input: HTMLInputElement | HTMLTextAreaElement,
+    state: SmartBackspaceState
+  ): void {
     try {
       const currentValue = input.value;
       const wordStart = state.commitPosition - state.lastCommittedWord.length;
       const wordEnd = state.commitPosition;
 
       // Validate positions to prevent corruption
-      if (wordStart < 0 || wordEnd > currentValue.length || wordStart > wordEnd) {
-        console.warn('Invalid word positions for smart backspace restore');
+      if (
+        wordStart < 0 ||
+        wordEnd > currentValue.length ||
+        wordStart > wordEnd
+      ) {
+        console.warn("Invalid word positions for smart backspace restore");
         return;
       }
 
       // Check if there's a space after the committed word that was added during commit
-      const hasSpaceAfter = wordEnd < currentValue.length && currentValue[wordEnd] === ' ';
+      const hasSpaceAfter =
+        wordEnd < currentValue.length && currentValue[wordEnd] === " ";
       const actualWordEnd = hasSpaceAfter ? wordEnd + 1 : wordEnd;
 
       // Replace the committed word (and space if present) with the original word
@@ -97,13 +110,16 @@ export class SmartBackspace {
       input.setSelectionRange(newCursorPos, newCursorPos);
 
       // Trigger input event to notify any listeners
-      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event("input", { bubbles: true }));
     } catch (error) {
-      console.warn('Failed to restore word in input:', error);
+      console.warn("Failed to restore word in input:", error);
     }
   }
 
-  private restoreInContentEditable(element: HTMLElement, state: SmartBackspaceState): void {
+  private restoreInContentEditable(
+    element: HTMLElement,
+    state: SmartBackspaceState
+  ): void {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
 
@@ -118,12 +134,16 @@ export class SmartBackspace {
       const wordEndInNode = nodeOffset + state.lastCommittedWord.length;
 
       // Check if there's a space after the committed word that was added during commit
-      const nodeText = textNode.textContent || '';
-      const hasSpaceAfter = wordEndInNode < nodeText.length && nodeText[wordEndInNode] === ' ';
-      const actualWordEndInNode = hasSpaceAfter ? wordEndInNode + 1 : wordEndInNode;
+      const nodeText = textNode.textContent || "";
+      const hasSpaceAfter =
+        wordEndInNode < nodeText.length && nodeText[wordEndInNode] === " ";
+      const actualWordEndInNode = hasSpaceAfter
+        ? wordEndInNode + 1
+        : wordEndInNode;
 
       // Replace the committed word (and space if present) with the original word
-      const newText = nodeText.substring(0, nodeOffset) +
+      const newText =
+        nodeText.substring(0, nodeOffset) +
         state.originalWord +
         nodeText.substring(actualWordEndInNode);
 
@@ -138,7 +158,7 @@ export class SmartBackspace {
       selection.removeAllRanges();
       selection.addRange(range);
     } catch (error) {
-      console.warn('Failed to restore word in contenteditable:', error);
+      console.warn("Failed to restore word in contenteditable:", error);
     }
   }
 
@@ -182,10 +202,10 @@ export class SmartBackspace {
       }
 
       // Add class names if present
-      if (current.className && typeof current.className === 'string') {
+      if (current.className && typeof current.className === "string") {
         const classes = current.className.trim().split(/\s+/).filter(Boolean);
         if (classes.length > 0) {
-          selector += `.${classes.join('.')}`;
+          selector += `.${classes.join(".")}`;
         }
       }
 
@@ -193,7 +213,7 @@ export class SmartBackspace {
       const parent = current.parentElement;
       if (parent) {
         const siblings = Array.from(parent.children).filter(
-          child => child.tagName === current!.tagName
+          (child) => child.tagName === current!.tagName
         );
         if (siblings.length > 1) {
           const index = siblings.indexOf(current) + 1;
@@ -205,7 +225,7 @@ export class SmartBackspace {
       current = current.parentElement;
     }
 
-    return path.join(' > ');
+    return path.join(" > ");
   }
 
   private getStateKey(elementId: string, position: number): string {
@@ -213,16 +233,21 @@ export class SmartBackspace {
   }
 
   private isInputElement(element: HTMLElement): boolean {
-    return element.tagName === 'INPUT' || element.tagName === 'TEXTAREA';
+    return element.tagName === "INPUT" || element.tagName === "TEXTAREA";
   }
 
   private isContentEditable(element: HTMLElement): boolean {
-    return element.contentEditable === 'true' ||
+    return (
+      element.contentEditable === "true" ||
       element.isContentEditable ||
-      element.getAttribute('contenteditable') === 'true';
+      element.getAttribute("contenteditable") === "true"
+    );
   }
 
-  private findTextNodeAtPosition(element: HTMLElement, position: number): Text | null {
+  private findTextNodeAtPosition(
+    element: HTMLElement,
+    position: number
+  ): Text | null {
     const walker = document.createTreeWalker(
       element,
       NodeFilter.SHOW_TEXT,
