@@ -443,4 +443,21 @@ export class AutocompleteController {
     this.inputHandler.disable();
     this.hideMenu();
   }
+
+  // Ghost text support methods
+  public getCurrentSuggestions(): Suggestion[] {
+    return this.suggestions;
+  }
+
+  public getSelectedIndex(): number {
+    return this.selectedIndex;
+  }
+
+  public getCurrentWord(): string {
+    return this.currentWord;
+  }
+
+  public isMenuVisible(): boolean {
+    return this.isVisible;
+  }
 }

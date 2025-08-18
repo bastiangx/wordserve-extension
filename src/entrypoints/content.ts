@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS } from "@/types";
 import { normalizeSettings } from "@/lib/settings";
 import type { WordServeSettings } from "@/types";
 import { browser } from "wxt/browser";
+import { GhostTextManager } from "@/lib/ghost-text";
 
 export default defineContentScript({
   matches: ["<all_urls>"],
@@ -11,6 +12,7 @@ export default defineContentScript({
 
     class WordServeContentScript {
       private controllers = new Map<HTMLElement, AutocompleteController>();
+      private ghostManagers = new Map<HTMLElement, GhostTextManager>();
       private settings: WordServeSettings = DEFAULT_SETTINGS;
       private isEnabled = true;
       private observer: MutationObserver | null = null;
@@ -118,7 +120,7 @@ export default defineContentScript({
         // Find all input elements within the element
         const inputs = element.querySelectorAll(
           'input[type="text"], input[type="search"], input[type="email"], input[type="url"], ' +
-          'input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]'
+            'input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]'
         );
 
         inputs.forEach((input) => {
@@ -239,15 +241,12 @@ export default defineContentScript({
       }
 
       private attachToInput(element: HTMLElement): void {
-        // Skip if already attached
         if (this.controllers.has(element)) return;
-
         console.log(
           "WordServe: Attaching to element:",
           element.tagName,
           element instanceof HTMLInputElement ? element.type : "N/A"
         );
-
         try {
           const controller = new AutocompleteController({
             element,
@@ -256,11 +255,8 @@ export default defineContentScript({
               this.logSelection(word, originalWord);
             },
           });
-
           this.controllers.set(element, controller);
-          console.log("WordServe: Successfully attached controller to element");
-
-          // Cleanup when element is removed
+          this.attachGhostText(element);
           const observer = new MutationObserver((mutations) => {
             for (const mutation of mutations) {
               if (mutation.type === "childList") {
@@ -276,7 +272,6 @@ export default defineContentScript({
               }
             }
           });
-
           observer.observe(document.body, {
             childList: true,
             subtree: true,
@@ -292,14 +287,142 @@ export default defineContentScript({
           controller.destroy();
           this.controllers.delete(element);
         }
+        this.detachGhostText(element);
+      }
+
+      private attachGhostText(element: HTMLElement): void {
+        if (
+          this.ghostManagers.has(element) ||
+          !this.shouldAttachGhostText(element)
+        ) {
+          console.log("WordServe: Skipping ghost text attachment for element:", element.tagName, 
+                     "Already has ghost text:", this.ghostManagers.has(element),
+                     "Suitable:", this.shouldAttachGhostText(element));
+          return;
+        }
+        
+        console.log("WordServe: Attaching ghost text to element:", element.tagName);
+        
+        try {
+          // Get the corresponding autocomplete controller
+          const controller = this.controllers.get(element);
+          if (!controller) {
+            console.warn("WordServe: No controller found for ghost text element");
+            return;
+          }
+
+          const ghostManager = new GhostTextManager(element, {
+            getSuggestion: async (text: string, signal: AbortSignal) => {
+              // Instead of making API calls, get the current suggestion from the controller
+              return this.getCurrentSuggestionFromController(element);
+            },
+            debounceMs: 50, // Much faster response
+            acceptKey: "Tab",
+            rejectKey: "Escape",
+          });
+          
+          this.ghostManagers.set(element, ghostManager);
+          console.log("WordServe: Successfully attached ghost text to element");
+        } catch (error) {
+          console.warn("Failed to attach ghost text to element:", error);
+        }
+      }
+
+      private detachGhostText(element: HTMLElement): void {
+        const ghostManager = this.ghostManagers.get(element);
+        if (ghostManager) {
+          ghostManager.destroy();
+          this.ghostManagers.delete(element);
+        }
+      }
+
+      private shouldAttachGhostText(element: HTMLElement): boolean {
+        if ((element as HTMLInputElement).type === "password") return false;
+        const rect = element.getBoundingClientRect();
+        if (rect.width < 50 || rect.height < 20) return false;
+        const skipContainers = [
+          ".CodeMirror",
+          ".monaco-editor",
+          ".ace_editor",
+          "[data-slate-editor]",
+          ".prosemirror-editor",
+        ];
+
+        for (const selector of skipContainers) {
+          if (element.closest(selector)) return false;
+        }
+        return true;
+      }
+
+      private getCurrentSuggestionFromController(element: HTMLElement): string | null {
+        const controller = this.controllers.get(element);
+        if (!controller) {
+          return null;
+        }
+
+        // Only show ghost text when the menu is visible
+        if (!controller.isMenuVisible()) {
+          return null;
+        }
+
+        // Get the current suggestions from the controller
+        const suggestions = controller.getCurrentSuggestions();
+        if (!suggestions || suggestions.length === 0) {
+          return null;
+        }
+
+        // Get the selected/first suggestion
+        const selectedIndex = controller.getSelectedIndex() || 0;
+        const suggestion = suggestions[selectedIndex];
+        
+        if (!suggestion) {
+          return null;
+        }
+
+        // Return just the completion part (remove the prefix that was already typed)
+        const currentWord = controller.getCurrentWord();
+        if (suggestion.word.startsWith(currentWord)) {
+          const completion = suggestion.word.substring(currentWord.length);
+          console.log("WordServe: Ghost text showing completion:", `"${completion}"`, "for word:", `"${currentWord}"`);
+          return completion;
+        }
+
+        return null;
+      }
+
+      private async getSuggestionForGhostText(
+        text: string,
+        signal: AbortSignal
+      ): Promise<string | null> {
+        if (!this.isEnabled || !text.trim()) return null;
+
+        try {
+          // Use the same API as the main controller
+          const response = await browser.runtime.sendMessage({
+            type: "wordserve-complete",
+            prefix: text.trim(),
+            limit: 1,
+          });
+
+          if (signal.aborted) return null;
+
+          if (response?.suggestions && response.suggestions.length > 0) {
+            // Return the first suggestion word
+            return response.suggestions[0].word;
+          }
+        } catch (error) {
+          if (!signal.aborted) {
+            console.warn("Ghost text suggestion error:", error);
+          }
+        }
+
+        return null;
       }
 
       private updateSettings(newSettings: Partial<WordServeSettings>): void {
         this.settings = normalizeSettings({ ...this.settings, ...newSettings });
-        this.domainEnabledCache = null; // Clear cache when settings change
+        this.domainEnabledCache = null;
         console.log("WordServe: Updated settings:", this.settings);
-
-        // Update all existing controllers
         this.controllers.forEach((controller) => {
           controller.updateSettings(this.settings);
         });
@@ -310,16 +433,19 @@ export default defineContentScript({
 
         if (enabled) {
           this.controllers.forEach((controller) => controller.enable());
-          this.attachToExistingInputs(); // Reattach to any inputs we might have missed
+          this.attachToExistingInputs();
         } else {
           this.controllers.forEach((controller) => controller.disable());
         }
       }
 
       private reload(): void {
-        // Destroy all existing controllers
+        // Destroy all existing controllers and ghost managers
         this.controllers.forEach((controller) => controller.destroy());
         this.controllers.clear();
+
+        this.ghostManagers.forEach((manager) => manager.destroy());
+        this.ghostManagers.clear();
 
         // Reload settings and reattach
         this.initializeSettings().then(() => {
@@ -347,11 +473,7 @@ export default defineContentScript({
         }
       }
     }
-
-    // Initialize the content script
     const wordServe = new WordServeContentScript();
-
-    // Cleanup on page unload
     window.addEventListener("beforeunload", () => {
       wordServe.destroy();
     });
