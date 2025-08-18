@@ -33,29 +33,13 @@ export class SmartBackspace {
     const key = this.getStateKey(elementId, currentPosition);
     const state = this.states.get(key);
 
-    console.log("WordServe Smart Backspace - canRestore check:", {
-      elementId: elementId,
-      currentPosition: currentPosition,
-      key: key,
-      hasState: !!state,
-      stateCount: this.states.size,
-      allKeys: Array.from(this.states.keys()),
-    });
     if (!state) return null;
     if (
       currentPosition === state.commitPosition &&
       elementId === state.elementId
     ) {
-      console.log("WordServe Smart Backspace - Can restore:", state);
       return state;
     }
-
-    console.log("WordServe Smart Backspace - Position mismatch:", {
-      currentPosition: currentPosition,
-      stateCommitPosition: state.commitPosition,
-      positionsMatch: currentPosition === state.commitPosition,
-      elementIdsMatch: elementId === state.elementId,
-    });
     return null;
   }
 
@@ -68,8 +52,6 @@ export class SmartBackspace {
     } else if (this.isContentEditable(element)) {
       this.restoreInContentEditable(element, state);
     }
-
-    // Clear the state after restoration
     const key = this.getStateKey(state.elementId, state.commitPosition);
     this.states.delete(key);
   }
@@ -82,14 +64,11 @@ export class SmartBackspace {
       const currentValue = input.value;
       const wordStart = state.commitPosition - state.lastCommittedWord.length;
       const wordEnd = state.commitPosition;
-
-      // Validate positions to prevent corruption
       if (
         wordStart < 0 ||
         wordEnd > currentValue.length ||
         wordStart > wordEnd
       ) {
-        console.warn("Invalid word positions for smart backspace restore");
         return;
       }
 
@@ -97,22 +76,16 @@ export class SmartBackspace {
       const hasSpaceAfter =
         wordEnd < currentValue.length && currentValue[wordEnd] === " ";
       const actualWordEnd = hasSpaceAfter ? wordEnd + 1 : wordEnd;
-
-      // Replace the committed word (and space if present) with the original word
       const beforeWord = currentValue.substring(0, wordStart);
       const afterWord = currentValue.substring(actualWordEnd);
       const newValue = beforeWord + state.originalWord + afterWord;
-
       input.value = newValue;
-
       // Set cursor position after the restored word
       const newCursorPos = wordStart + state.originalWord.length;
       input.setSelectionRange(newCursorPos, newCursorPos);
-
-      // Trigger input event to notify any listeners
       input.dispatchEvent(new Event("input", { bubbles: true }));
     } catch (error) {
-      console.warn("Failed to restore word in input:", error);
+      console.error("Failed to restore word in input:", error);
     }
   }
 
@@ -122,7 +95,6 @@ export class SmartBackspace {
   ): void {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
-
     try {
       // Find the text node and position where the word was committed
       const wordStart = state.commitPosition - state.lastCommittedWord.length;
@@ -132,8 +104,6 @@ export class SmartBackspace {
 
       const nodeOffset = wordStart - this.getTextNodeOffset(element, textNode);
       const wordEndInNode = nodeOffset + state.lastCommittedWord.length;
-
-      // Check if there's a space after the committed word that was added during commit
       const nodeText = textNode.textContent || "";
       const hasSpaceAfter =
         wordEndInNode < nodeText.length && nodeText[wordEndInNode] === " ";
@@ -148,7 +118,6 @@ export class SmartBackspace {
         nodeText.substring(actualWordEndInNode);
 
       textNode.textContent = newText;
-
       // Set cursor position after the restored word
       const newCursorPos = nodeOffset + state.originalWord.length;
       const range = document.createRange();
@@ -158,7 +127,7 @@ export class SmartBackspace {
       selection.removeAllRanges();
       selection.addRange(range);
     } catch (error) {
-      console.warn("Failed to restore word in contenteditable:", error);
+      console.error("Failed to restore word in contenteditable:", error);
     }
   }
 
@@ -177,11 +146,9 @@ export class SmartBackspace {
   }
 
   private getElementId(element: HTMLElement): string {
-    // Try to get a unique identifier for the element
     if (element.id) {
       return `id:${element.id}`;
     }
-
     // Use element's position in the DOM as fallback
     const path = this.getElementPath(element);
     return `path:${path}`;
@@ -194,21 +161,17 @@ export class SmartBackspace {
     while (current && current !== document.body) {
       let selector = current.tagName.toLowerCase();
 
-      // If element has an ID, it's unique - use it and stop
       if (current.id) {
         selector += `#${current.id}`;
         path.unshift(selector);
         break;
       }
-
-      // Add class names if present
       if (current.className && typeof current.className === "string") {
         const classes = current.className.trim().split(/\s+/).filter(Boolean);
         if (classes.length > 0) {
           selector += `.${classes.join(".")}`;
         }
       }
-
       // Add nth-child only if there are multiple siblings of same tag
       const parent = current.parentElement;
       if (parent) {
@@ -220,7 +183,6 @@ export class SmartBackspace {
           selector += `:nth-child(${index})`;
         }
       }
-
       path.unshift(selector);
       current = current.parentElement;
     }
@@ -264,7 +226,6 @@ export class SmartBackspace {
       }
       currentPos += nodeLength;
     }
-
     return null;
   }
 
@@ -274,7 +235,6 @@ export class SmartBackspace {
       NodeFilter.SHOW_TEXT,
       null
     );
-
     let offset = 0;
     let node: Text | null = null;
 
@@ -284,7 +244,6 @@ export class SmartBackspace {
       }
       offset += node.textContent?.length || 0;
     }
-
     return offset;
   }
 }
