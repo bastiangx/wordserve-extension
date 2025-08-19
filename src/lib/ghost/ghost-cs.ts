@@ -3,7 +3,7 @@
  * Automatically enables ghost text on detected input fields
  */
 
-import { GhostTextManager, GhostTextOptions } from "../lib/ghost-text";
+import { GhostTextManager, GhostTextOptions } from "./ghost";
 
 interface WordserveAPI {
   getSuggestion: (text: string, signal: AbortSignal) => Promise<string | null>;
