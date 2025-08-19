@@ -5,6 +5,7 @@ import {
   getCaretCoordinatesContentEditable,
   type CaretPosition,
 } from "@/lib/caret";
+import { smartBackspace } from "@/lib/backspace";
 
 export interface InputContext {
   element: HTMLElement;
@@ -44,6 +45,7 @@ export class InputHandler {
   private lastWord = "";
   private autocompleteSeparator: RegExp;
   private menuVisible = false;
+  private lastInputWasFromSuggestion = false;
 
   constructor(
     element: HTMLElement,
@@ -78,6 +80,20 @@ export class InputHandler {
       return;
     }
 
+    // Only invalidate smart backspace if this wasn't from our suggestion system
+    // AND if the user typed a space or punctuation (indicating they moved on from the last word)
+    if (!this.lastInputWasFromSuggestion && this.settings.smartBackspace) {
+      // Check the last character typed to see if it's a space or punctuation
+      const lastChar = this.getLastTypedCharacter();
+      if (lastChar && (/\s/.test(lastChar) || /[^\w]/.test(lastChar))) {
+        console.log("WordServe: Smart backspace invalidated due to space/punctuation:", lastChar);
+        smartBackspace.invalidateForElement(this.element);
+      }
+    }
+    
+    // Reset the flag for next input
+    this.lastInputWasFromSuggestion = false;
+
     // Check if we should trigger autocomplete
     if (context.currentWord.length >= this.settings.minWordLength) {
       if (context.currentWord !== this.lastWord) {
@@ -95,7 +111,12 @@ export class InputHandler {
     const { key } = event;
 
     // Handle backspace for smart backspace functionality
-    if (key === "Backspace" && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    if (
+      key === "Backspace" &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey
+    ) {
       const context = this.getCurrentContext();
       if (context) {
         // Pass the event to the callback so it can prevent default if needed
@@ -160,10 +181,16 @@ export class InputHandler {
           const addSpace =
             this.settings.keyBindings.insertWithSpace.key === "space";
           this.callbacks.onSelect(addSpace);
+        } else {
+          if (this.settings.smartBackspace) {
+            smartBackspace.invalidateForElement(this.element);
+            console.log(
+              "WordServe: Smart backspace invalidated due to space key"
+            );
+          }
         }
         break;
       default:
-        // Handle number key selection (1-9)
         if (this.settings.numberSelection && /^[1-9]$/.test(key)) {
           const index = parseInt(key) - 1;
           if (
@@ -192,7 +219,7 @@ export class InputHandler {
   private handleBlur = () => {
     setTimeout(() => {
       this.callbacks.onHideMenu();
-    }, 300); // Increased delay to allow menu clicks to process
+    }, 300);
   };
 
   private handleClick = () => {
@@ -442,5 +469,30 @@ export class InputHandler {
 
   public setMenuVisible(visible: boolean): void {
     this.menuVisible = visible;
+  }
+
+  public markInputFromSuggestion(): void {
+    this.lastInputWasFromSuggestion = true;
+  }
+
+  private getLastTypedCharacter(): string | null {
+    if (this.isInputElement()) {
+      const input = this.element as HTMLInputElement | HTMLTextAreaElement;
+      const cursorPos = input.selectionStart || 0;
+      if (cursorPos > 0) {
+        return input.value.charAt(cursorPos - 1);
+      }
+    } else if (this.isContentEditable()) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const textNode = range.startContainer;
+        const offset = range.startOffset;
+        if (textNode.nodeType === Node.TEXT_NODE && offset > 0) {
+          return textNode.textContent?.charAt(offset - 1) || null;
+        }
+      }
+    }
+    return null;
   }
 }

@@ -3,10 +3,11 @@ export interface SmartBackspaceState {
   originalWord: string;
   commitPosition: number;
   elementId: string;
+  timestamp: number; // Add timestamp for better tracking
 }
 
 export class SmartBackspace {
-  private states = new Map<string, SmartBackspaceState>();
+  private elementStates = new Map<string, SmartBackspaceState>(); // One state per element
 
   public recordCommit(
     element: HTMLElement,
@@ -15,14 +16,28 @@ export class SmartBackspace {
     position: number
   ): void {
     const elementId = this.getElementId(element);
-    const key = this.getStateKey(elementId, position);
-
-    this.states.set(key, {
+    
+    // Store only the most recent commit for this element
+    this.elementStates.set(elementId, {
       lastCommittedWord: committedWord,
       originalWord: originalWord,
       commitPosition: position,
       elementId: elementId,
+      timestamp: Date.now(),
     });
+
+    console.log("WordServe: SmartBackspace recorded commit:", {
+      committedWord,
+      originalWord,
+      position,
+      elementId,
+    });
+  }
+
+  public invalidateForElement(element: HTMLElement): void {
+    const elementId = this.getElementId(element);
+    this.elementStates.delete(elementId);
+    console.log("WordServe: SmartBackspace invalidated for element:", elementId);
   }
 
   public canRestore(
@@ -30,16 +45,20 @@ export class SmartBackspace {
     currentPosition: number
   ): SmartBackspaceState | null {
     const elementId = this.getElementId(element);
-    const key = this.getStateKey(elementId, currentPosition);
-    const state = this.states.get(key);
+    const state = this.elementStates.get(elementId);
 
-    if (!state) return null;
-    if (
-      currentPosition === state.commitPosition &&
-      elementId === state.elementId
-    ) {
+    if (!state) {
+      console.log("WordServe: SmartBackspace - no state found for element:", elementId);
+      return null;
+    }
+
+    // Check if the current position is exactly at the end of the committed word
+    if (currentPosition === state.commitPosition) {
+      console.log("WordServe: SmartBackspace - can restore:", state);
       return state;
     }
+
+    console.log("WordServe: SmartBackspace - position mismatch. Current:", currentPosition, "Expected:", state.commitPosition);
     return null;
   }
 
@@ -52,8 +71,10 @@ export class SmartBackspace {
     } else if (this.isContentEditable(element)) {
       this.restoreInContentEditable(element, state);
     }
-    const key = this.getStateKey(state.elementId, state.commitPosition);
-    this.states.delete(key);
+    
+    // Remove the state after successful restore
+    const elementId = this.getElementId(element);
+    this.elementStates.delete(elementId);
   }
 
   private restoreInInput(
@@ -131,18 +152,17 @@ export class SmartBackspace {
     }
   }
 
-  public clearState(element: HTMLElement, position: number): void {
+  public clearState(element: HTMLElement): void {
     const elementId = this.getElementId(element);
-    const key = this.getStateKey(elementId, position);
-    this.states.delete(key);
+    this.elementStates.delete(elementId);
   }
 
   public clearAllStates(): void {
-    this.states.clear();
+    this.elementStates.clear();
   }
 
   public getStateCount(): number {
-    return this.states.size;
+    return this.elementStates.size;
   }
 
   private getElementId(element: HTMLElement): string {
@@ -188,10 +208,6 @@ export class SmartBackspace {
     }
 
     return path.join(" > ");
-  }
-
-  private getStateKey(elementId: string, position: number): string {
-    return `${elementId}:${position}`;
   }
 
   private isInputElement(element: HTMLElement): boolean {

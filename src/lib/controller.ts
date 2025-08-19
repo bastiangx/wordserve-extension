@@ -284,6 +284,7 @@ export class AutocompleteController {
     const beforeWord = currentValue.substring(0, wordStart);
     const afterWord = currentValue.substring(wordEnd);
     const newValue = beforeWord + word + (addSpace ? " " : "") + afterWord;
+    this.inputHandler.markInputFromSuggestion();
     if (this.settings.smartBackspace) {
       const commitPosition = wordStart + word.length;
       smartBackspace.recordCommit(
