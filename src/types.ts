@@ -70,6 +70,11 @@ export interface WordServeSettings {
     customFontFamily?: string;
     customFontSize?: number;
   };
+  ghostText: {
+    enabled: boolean;
+    fontStyle: "normal" | "italic" | "bold";
+    colorIntensity: "normal" | "muted" | "faint" | "accent";
+  };
   domains: import("@/lib/domains").DomainSettings;
 }
 
@@ -199,6 +204,11 @@ export const DEFAULT_SETTINGS: WordServeSettings = {
     uppercaseSuggestions: false,
     prefixColorIntensity: "normal",
     ghostTextColorIntensity: "muted",
+  },
+  ghostText: {
+    enabled: true,
+    fontStyle: "normal",
+    colorIntensity: "muted",
   },
   domains: {
     blacklistMode: true,

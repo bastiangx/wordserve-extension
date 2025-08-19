@@ -13,6 +13,7 @@ export interface AutocompleteControllerOptions {
   element: HTMLElement;
   settings: WordServeSettings;
   onSelectionMade?: (word: string, originalWord: string) => void;
+  onSelectionChanged?: () => void;
 }
 
 export class AutocompleteController {
@@ -26,6 +27,7 @@ export class AutocompleteController {
   private currentWord = "";
   private debounceTimer: number | null = null;
   private onSelectionMade?: (word: string, originalWord: string) => void;
+  private onSelectionChanged?: () => void;
   private keyboardNavigationActive = false;
 
   constructor(options: AutocompleteControllerOptions) {
@@ -36,6 +38,7 @@ export class AutocompleteController {
     this.element = options.element;
     this.settings = options.settings;
     this.onSelectionMade = options.onSelectionMade;
+    this.onSelectionChanged = options.onSelectionChanged;
 
     this.inputHandler = new InputHandler(
       this.element,
@@ -64,13 +67,9 @@ export class AutocompleteController {
       context.currentWord
     );
     this.currentWord = context.currentWord;
-
-    // Clear existing timer
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
     }
-
-    // Debounce the suggestion request
     this.debounceTimer = setTimeout(async () => {
       try {
         console.log(
@@ -98,30 +97,22 @@ export class AutocompleteController {
       console.log("WordServe: Word too short, returning empty suggestions");
       return [];
     }
-
     try {
-      // Call background service for WASM completion
       console.log("WordServe: Calling background service for completion");
       const response = await browser.runtime.sendMessage({
         type: "wordserve-complete",
         prefix: word,
         limit: this.settings.maxSuggestions,
       });
-
-      console.log("WordServe: Background service response:", response);
-
       if (response?.error) {
         console.error("WordServe: Background service error:", response.error);
         return [];
       }
-
       const rawSuggestions = response?.suggestions || [];
       console.log(
         "WordServe: Raw suggestions from background:",
         rawSuggestions
       );
-
-      // Convert RawSuggestion[] to Suggestion[]
       const suggestions = rawSuggestions.map(
         (raw: RawSuggestion, index: number) => ({
           word: raw.word,
@@ -146,28 +137,25 @@ export class AutocompleteController {
       suggestions.length,
       "suggestions"
     );
-    
     if (suggestions.length === 0) {
       console.log("WordServe: No suggestions, hiding menu");
       this.hideMenu();
       return;
     }
-
     this.suggestions = suggestions;
     this.selectedIndex = 0;
     this.isVisible = true;
-    this.keyboardNavigationActive = false; // Reset keyboard navigation flag
-    this.inputHandler.setMenuVisible(true); // Notify input handler
-
-    // Calculate menu position
+    this.keyboardNavigationActive = false;
+    this.inputHandler.setMenuVisible(true);
     const menuSize = {
       width: 300,
       height: Math.min(suggestions.length * 32 + 16, 200),
     };
     const position = calculateMenuPosition(context.caretCoords, menuSize);
-    console.log("WordServe: Calculated menu position:", position);
-
     this.renderMenu(position);
+    if (this.onSelectionChanged) {
+      this.onSelectionChanged();
+    }
   }
 
   private renderMenu(position: { x: number; y: number }): void {
@@ -199,16 +187,17 @@ export class AutocompleteController {
   }
 
   private handleMenuHover(index: number): void {
-    // Only update selection if we're not actively using keyboard navigation
     if (!this.keyboardNavigationActive && this.selectedIndex !== index) {
       this.selectedIndex = index;
       this.renderMenuWithCurrentPosition();
+      if (this.onSelectionChanged) {
+        this.onSelectionChanged();
+      }
     }
   }
 
   private renderMenuWithCurrentPosition(): void {
     if (!this.isVisible) return;
-
     const menuSize = {
       width: 300,
       height: Math.min(this.suggestions.length * 32 + 16, 200),
@@ -222,9 +211,7 @@ export class AutocompleteController {
 
   private handleNavigation(direction: "up" | "down"): void {
     if (!this.isVisible || this.suggestions.length === 0) return;
-
     this.keyboardNavigationActive = true;
-
     if (direction === "down") {
       this.selectedIndex = (this.selectedIndex + 1) % this.suggestions.length;
     } else {
@@ -233,15 +220,17 @@ export class AutocompleteController {
           ? this.suggestions.length - 1
           : this.selectedIndex - 1;
     }
-
     this.renderMenuWithCurrentPosition();
-
+    if (this.onSelectionChanged) {
+      this.onSelectionChanged();
+    }
     setTimeout(() => {
       this.keyboardNavigationActive = false;
     }, 200);
-  } private handleSelection(addSpace: boolean = false): void {
-    if (!this.isVisible || this.suggestions.length === 0) return;
+  }
 
+  private handleSelection(addSpace: boolean = false): void {
+    if (!this.isVisible || this.suggestions.length === 0) return;
     const selectedSuggestion = this.suggestions[this.selectedIndex];
     if (selectedSuggestion) {
       this.insertSuggestion(selectedSuggestion.word, addSpace);
@@ -259,86 +248,66 @@ export class AutocompleteController {
       this.suggestions.length
     );
     if (!this.isVisible || this.suggestions.length === 0) return;
-
-    // Index is already 0-based from input handler
     if (index >= 0 && index < this.suggestions.length) {
       const suggestion = this.suggestions[index];
-      console.log("WordServe: Selecting suggestion:", suggestion);
-      this.insertSuggestion(suggestion.word, true); // Always add space for digit selection
+      this.insertSuggestion(suggestion.word, true);
       this.hideMenu();
     }
   }
 
   private handleBackspace(context: InputContext, event: any): void {
-    console.log('WordServe handleBackspace - checking at current position:', context.caretPosition);
-    
-    // Check if we can restore a previously committed word
-    const state = smartBackspace.canRestore(context.element, context.caretPosition);
+    console.log(
+      "WordServe handleBackspace - checking at current position:",
+      context.caretPosition
+    );
+    const state = smartBackspace.canRestore(
+      context.element,
+      context.caretPosition
+    );
     if (state) {
-      console.log('WordServe handleBackspace - preventing default, restoring:', state);
-      // Prevent the default backspace behavior
+      console.log(
+        "WordServe handleBackspace - preventing default, restoring:",
+        state
+      );
       event.preventDefault();
       event.stopPropagation();
       smartBackspace.restore(context.element, state);
       return;
     }
-
-    // If no restoration available, hide menu
     this.hideMenu();
   }
 
   private insertSuggestion(word: string, addSpace: boolean): void {
     const context = this.inputHandler.getCurrentContext();
     if (!context) return;
-
     const { element, wordStart, wordEnd, currentValue } = context;
     const beforeWord = currentValue.substring(0, wordStart);
     const afterWord = currentValue.substring(wordEnd);
     const newValue = beforeWord + word + (addSpace ? " " : "") + afterWord;
-
-    // Record the commit for smart backspace
     if (this.settings.smartBackspace) {
-      // Record at the position where backspace will be detected (after the word, before any space)
       const commitPosition = wordStart + word.length;
-      console.log('WordServe Smart Backspace Debug - Recording commit:', {
-        originalWord: this.currentWord,
-        committedWord: word,
-        addSpace: addSpace,
-        wordStart: wordStart,
-        wordLength: word.length,
-        commitPosition: commitPosition,
-        beforeWord: beforeWord,
-        afterWord: afterWord,
-        newValue: newValue
-      });
-      smartBackspace.recordCommit(element, word, this.currentWord, commitPosition);
+      smartBackspace.recordCommit(
+        element,
+        word,
+        this.currentWord,
+        commitPosition
+      );
     }
-
-    // Insert the suggestion
     if (element.nodeName === "INPUT" || element.nodeName === "TEXTAREA") {
       const input = element as HTMLInputElement | HTMLTextAreaElement;
       input.value = newValue;
-
-      // Set cursor position after inserted word
       const newCursorPos = wordStart + word.length + (addSpace ? 1 : 0);
       input.setSelectionRange(newCursorPos, newCursorPos);
-
-      // Trigger input event to notify any listeners
       input.dispatchEvent(new Event("input", { bubbles: true }));
     } else {
-      // Handle contenteditable
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
-
-        // Find the text node containing the word
         const textNode = this.findTextNodeAtPosition(element, wordStart);
         if (textNode) {
           const nodeOffset =
             wordStart - this.getTextNodeOffset(element, textNode);
           const wordEndInNode = nodeOffset + (wordEnd - wordStart);
-
-          // Replace the word
           const nodeText = textNode.textContent || "";
           const newText =
             nodeText.substring(0, nodeOffset) +
@@ -346,8 +315,6 @@ export class AutocompleteController {
             (addSpace ? " " : "") +
             nodeText.substring(wordEndInNode);
           textNode.textContent = newText;
-
-          // Set cursor position
           const newCursorPos = nodeOffset + word.length + (addSpace ? 1 : 0);
           range.setStart(textNode, newCursorPos);
           range.setEnd(textNode, newCursorPos);
@@ -356,8 +323,6 @@ export class AutocompleteController {
         }
       }
     }
-
-    // Notify callback
     if (this.onSelectionMade) {
       this.onSelectionMade(word, this.currentWord);
     }
@@ -372,10 +337,8 @@ export class AutocompleteController {
       NodeFilter.SHOW_TEXT,
       null
     );
-
     let currentPos = 0;
     let node: Text | null = null;
-
     while ((node = walker.nextNode() as Text)) {
       const nodeLength = node.textContent?.length || 0;
       if (currentPos + nodeLength > position) {
@@ -383,7 +346,6 @@ export class AutocompleteController {
       }
       currentPos += nodeLength;
     }
-
     return null;
   }
 
@@ -393,17 +355,14 @@ export class AutocompleteController {
       NodeFilter.SHOW_TEXT,
       null
     );
-
     let offset = 0;
     let node: Text | null = null;
-
     while ((node = walker.nextNode() as Text)) {
       if (node === targetNode) {
         return offset;
       }
       offset += node.textContent?.length || 0;
     }
-
     return offset;
   }
 
@@ -411,21 +370,15 @@ export class AutocompleteController {
     this.isVisible = false;
     this.suggestions = [];
     this.selectedIndex = 0;
-    this.inputHandler.setMenuVisible(false); // Notify input handler
-
+    this.inputHandler.setMenuVisible(false);
     this.menuRenderer.hide();
   }
 
   public destroy(): void {
-    // Clear timers
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
     }
-
-    // Cleanup input handler
     this.inputHandler.detach();
-
-    // Cleanup menu renderer
     this.menuRenderer.destroy();
   }
 
@@ -444,7 +397,6 @@ export class AutocompleteController {
     this.hideMenu();
   }
 
-  // Ghost text support methods
   public getCurrentSuggestions(): Suggestion[] {
     return this.suggestions;
   }

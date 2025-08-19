@@ -3,30 +3,26 @@
  * Works with any input field (input, textarea, contenteditable)
  */
 
-// Simple LRU Cache implementation
+import type { WordServeSettings } from "@/types";
+
 class LRUCache<K, V> {
   private cache = new Map<K, V>();
   private maxSize: number;
-
   constructor(maxSize: number = 25) {
     this.maxSize = maxSize;
   }
-
   get(key: K): V | undefined {
     const value = this.cache.get(key);
     if (value !== undefined) {
-      // Move to end (most recently used)
       this.cache.delete(key);
       this.cache.set(key, value);
     }
     return value;
   }
-
   set(key: K, value: V): void {
     if (this.cache.has(key)) {
       this.cache.delete(key);
     } else if (this.cache.size >= this.maxSize) {
-      // Remove least recently used (first item)
       const firstKey = this.cache.keys().next().value;
       if (firstKey !== undefined) {
         this.cache.delete(firstKey);
@@ -34,7 +30,6 @@ class LRUCache<K, V> {
     }
     this.cache.set(key, value);
   }
-
   clear(): void {
     this.cache.clear();
   }
@@ -46,6 +41,9 @@ export interface GhostTextOptions {
   acceptKey?: string;
   rejectKey?: string;
   getSuggestion?: (text: string, signal: AbortSignal) => Promise<string | null>;
+  settings: WordServeSettings;
+  isMenuActive?: () => boolean;
+  getSelectedSuggestion?: () => string | null;
 }
 
 export interface GhostTextPosition {
@@ -65,11 +63,14 @@ export class GhostTextManager {
   private currentSuggestion: string = "";
   private abortController: AbortController | null = null;
   private debounceTimer: number | null = null;
-  private options: Required<GhostTextOptions>;
+  private options: GhostTextOptions;
   private suggestionCache: LRUCache<string, string>;
 
-  constructor(element: HTMLElement, options: GhostTextOptions = {}) {
-    console.log("WordServe: Creating GhostTextManager for element:", element.tagName);
+  constructor(element: HTMLElement, options: GhostTextOptions) {
+    console.log(
+      "WordServe: Creating GhostTextManager for element:",
+      element.tagName
+    );
     this.targetElement = element;
     this.options = {
       ghostTextClass: "wordserve-ghost-text",
@@ -77,11 +78,11 @@ export class GhostTextManager {
       acceptKey: "Tab",
       rejectKey: "Escape",
       getSuggestion: async () => null,
+      isMenuActive: () => false,
+      getSelectedSuggestion: () => null,
       ...options,
     };
-
     this.suggestionCache = new LRUCache<string, string>(25);
-
     this.init();
     console.log("WordServe: GhostTextManager initialization complete");
   }
@@ -130,7 +131,6 @@ export class GhostTextManager {
       "width",
       "text-align",
     ];
-
     stylesToCopy.forEach((prop) => {
       to.style.setProperty(prop, computedStyle.getPropertyValue(prop));
     });
@@ -140,16 +140,13 @@ export class GhostTextManager {
     if (!this.mirrorElement) {
       return { left: 0, top: 0, width: 0, height: 0 };
     }
-
-    // For input and textarea, we can use a simpler approach
-    if (this.targetElement instanceof HTMLInputElement || 
-        this.targetElement instanceof HTMLTextAreaElement) {
-      
+    if (
+      this.targetElement instanceof HTMLInputElement ||
+      this.targetElement instanceof HTMLTextAreaElement
+    ) {
       const targetRect = this.targetElement.getBoundingClientRect();
       const styles = window.getComputedStyle(this.targetElement);
-      
-      // Create a temporary span to measure just the current text
-      const measureSpan = document.createElement('span');
+      const measureSpan = document.createElement("span");
       measureSpan.style.cssText = `
         position: absolute;
         top: -9999px;
@@ -160,37 +157,22 @@ export class GhostTextManager {
         letter-spacing: ${styles.letterSpacing};
         white-space: pre;
       `;
-      
       const currentText = this.getCurrentText();
       measureSpan.textContent = currentText;
       document.body.appendChild(measureSpan);
-      
       const textWidth = measureSpan.getBoundingClientRect().width;
       document.body.removeChild(measureSpan);
-      
       const paddingLeft = parseInt(styles.paddingLeft, 10) || 0;
       const paddingTop = parseInt(styles.paddingTop, 10) || 0;
-      
       const position = {
         left: targetRect.left + paddingLeft + textWidth,
         top: targetRect.top + paddingTop,
         width: 0,
         height: parseInt(styles.fontSize, 10) || 16,
       };
-      
-      console.log("WordServe: Ghost text position calculation:", {
-        targetRect: { left: targetRect.left, top: targetRect.top, width: targetRect.width },
-        currentText,
-        textWidth,
-        paddingLeft,
-        paddingTop,
-        finalPosition: position
-      });
-
       return position;
     }
-
-    // Fallback for contenteditable (more complex)
+    // fallback
     return { left: 0, top: 0, width: 0, height: 20 };
   }
 
@@ -219,51 +201,56 @@ export class GhostTextManager {
 
   private getCurrentWord(): string {
     const fullText = this.getCurrentText();
-    // Extract the current word being typed (last word)
     const words = fullText.split(/\s+/);
     const lastWord = words[words.length - 1] || "";
-    console.log("WordServe: Ghost text current word:", lastWord, "from full text:", fullText);
+    console.log(
+      "WordServe: Ghost text current word:",
+      lastWord,
+      "from full text:",
+      fullText
+    );
     return lastWord;
   }
 
   private createGhostElement(): HTMLElement {
     const ghost = document.createElement("span");
     ghost.id = GHOST_TEXT_ID;
-    ghost.className = this.options.ghostTextClass;
+    ghost.className = this.options.ghostTextClass || "wordserve-ghost-text";
+    const { fontStyle, colorIntensity } = this.options.settings.ghostText;
+
     ghost.style.cssText = `
       position: absolute;
       pointer-events: none;
-      color: #999;
+      color: var(--wordserve-ghost-color-${colorIntensity}, #999);
       opacity: 0.6;
       z-index: 1000;
       white-space: pre;
       font-family: inherit;
       font-size: inherit;
       line-height: inherit;
+      font-style: ${fontStyle};
+      font-weight: ${fontStyle === "bold" ? "bold" : "inherit"};
     `;
     return ghost;
   }
 
   private showGhostText(suggestion: string): void {
-    console.log("WordServe: Ghost text showGhostText called with:", `"${suggestion}"`);
+    console.log(
+      "WordServe: Ghost text showGhostText called with:",
+      `"${suggestion}"`
+    );
     this.hideGhostText();
-
     if (!suggestion) {
       console.log("WordServe: Ghost text - no suggestion provided");
       return;
     }
-
     this.currentSuggestion = suggestion;
     this.ghostElement = this.createGhostElement();
     this.ghostElement.textContent = suggestion;
-
     const position = this.getCaretPosition();
-    console.log("WordServe: Ghost text position:", position);
     this.ghostElement.style.left = `${position.left}px`;
     this.ghostElement.style.top = `${position.top}px`;
-
     document.body.appendChild(this.ghostElement);
-    console.log("WordServe: Ghost text element added to DOM");
   }
 
   private hideGhostText(): void {
@@ -280,28 +267,45 @@ export class GhostTextManager {
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
     }
-
     this.debounceTimer = window.setTimeout(async () => {
+      if (!this.options.settings.ghostText.enabled) {
+        this.hideGhostText();
+        return;
+      }
+      if (!this.options.isMenuActive || !this.options.isMenuActive()) {
+        this.hideGhostText();
+        return;
+      }
+      if (this.options.getSelectedSuggestion) {
+        const selectedSuggestion = this.options.getSelectedSuggestion();
+        if (selectedSuggestion) {
+          this.showGhostText(selectedSuggestion);
+          return;
+        }
+      }
       const currentWord = this.getCurrentWord().trim();
       console.log("WordServe: Ghost text processing word:", `"${currentWord}"`);
-      if (!currentWord || currentWord.length < 2) { // Require at least 2 characters
+      if (
+        !currentWord ||
+        currentWord.length < this.options.settings.minWordLength
+      ) {
         console.log("WordServe: Ghost text - no word or too short, hiding");
         this.hideGhostText();
         return;
       }
-
-      // Check cache first
       let suggestion = this.suggestionCache.get(currentWord);
-      console.log("WordServe: Ghost text cache lookup for:", currentWord, "result:", suggestion);
+      console.log(
+        "WordServe: Ghost text cache lookup for:",
+        currentWord,
+        "result:",
+        suggestion
+      );
 
-      if (!suggestion) {
-        // Cancel previous request
+      if (!suggestion && this.options.getSuggestion) {
         if (this.abortController) {
           this.abortController.abort();
         }
-
         this.abortController = new AbortController();
-
         try {
           const result = await this.options.getSuggestion(
             currentWord,
@@ -318,20 +322,16 @@ export class GhostTextManager {
           return;
         }
       }
-
       if (suggestion && !this.abortController?.signal.aborted) {
         this.showGhostText(suggestion);
       }
-    }, this.options.debounceMs);
+    }, this.options.debounceMs || 300);
   }
 
   private acceptSuggestion(): void {
     if (!this.currentSuggestion) return;
-
     const suggestion = this.currentSuggestion;
     this.hideGhostText();
-
-    // Insert suggestion into target element
     if (
       this.targetElement instanceof HTMLInputElement ||
       this.targetElement instanceof HTMLTextAreaElement
@@ -339,15 +339,12 @@ export class GhostTextManager {
       const start = this.targetElement.selectionStart || 0;
       const end = this.targetElement.selectionEnd || 0;
       const currentValue = this.targetElement.value;
-
       this.targetElement.value =
         currentValue.substring(0, start) +
         suggestion +
         currentValue.substring(end);
       this.targetElement.selectionStart = this.targetElement.selectionEnd =
         start + suggestion.length;
-
-      // Trigger input event
       this.targetElement.dispatchEvent(new Event("input", { bubbles: true }));
     } else if (this.targetElement.isContentEditable) {
       const selection = window.getSelection();
@@ -371,7 +368,10 @@ export class GhostTextManager {
     const handleKeyDown = (event: KeyboardEvent) => {
       console.log("WordServe: Ghost text keydown event:", event.key);
       if (event.key === this.options.acceptKey && this.currentSuggestion) {
-        console.log("WordServe: Ghost text accepting suggestion:", this.currentSuggestion);
+        console.log(
+          "WordServe: Ghost text accepting suggestion:",
+          this.currentSuggestion
+        );
         event.preventDefault();
         this.acceptSuggestion();
       } else if (event.key === this.options.rejectKey) {
@@ -406,18 +406,31 @@ export class GhostTextManager {
   private injectStyles(): void {
     if (document.getElementById("wordserve-ghost-styles")) return;
 
+    const { colorIntensity, fontStyle } = this.options.settings.ghostText;
+
     const style = document.createElement("style");
     style.id = "wordserve-ghost-styles";
     style.textContent = `
-      .${this.options.ghostTextClass} {
-        color: #999 !important;
+      .${this.options.ghostTextClass || "wordserve-ghost-text"} {
+        color: var(--wordserve-ghost-color-${colorIntensity}, #999) !important;
         opacity: 0.6 !important;
-        font-style: italic !important;
+        font-style: ${fontStyle} !important;
+        font-weight: ${fontStyle === "bold" ? "bold" : "inherit"} !important;
+      }
+      
+      :root {
+        --wordserve-ghost-color-normal: #333;
+        --wordserve-ghost-color-muted: #666;
+        --wordserve-ghost-color-faint: #999;
+        --wordserve-ghost-color-accent: #0066cc;
       }
       
       @media (prefers-color-scheme: dark) {
-        .${this.options.ghostTextClass} {
-          color: #666 !important;
+        :root {
+          --wordserve-ghost-color-normal: #ccc;
+          --wordserve-ghost-color-muted: #999;
+          --wordserve-ghost-color-faint: #666;
+          --wordserve-ghost-color-accent: #4da6ff;
         }
       }
     `;
@@ -441,5 +454,29 @@ export class GhostTextManager {
     }
 
     this.suggestionCache.clear();
+  }
+
+  public updateSettings(settings: WordServeSettings): void {
+    this.options.settings = settings;
+
+    // Re-inject styles with new settings
+    const existingStyles = document.getElementById("wordserve-ghost-styles");
+    if (existingStyles) {
+      existingStyles.remove();
+    }
+    this.injectStyles();
+
+    // Hide ghost text if disabled
+    if (!settings.ghostText.enabled) {
+      this.hideGhostText();
+    }
+  }
+
+  public forceUpdate(): void {
+    if (this.options.settings.ghostText.enabled) {
+      this.getSuggestionDebounced();
+    } else {
+      this.hideGhostText();
+    }
   }
 }

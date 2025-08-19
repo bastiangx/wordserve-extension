@@ -3,7 +3,7 @@ import { DEFAULT_SETTINGS } from "@/types";
 import { normalizeSettings } from "@/lib/settings";
 import type { WordServeSettings } from "@/types";
 import { browser } from "wxt/browser";
-import { GhostTextManager } from "@/lib/ghost-text";
+import { GhostTextManager } from "@/lib/ghost/ghost";
 
 export default defineContentScript({
   matches: ["<all_urls>"],
@@ -47,7 +47,7 @@ export default defineContentScript({
             );
             setTimeout(() => this.checkWASMStatus(), 2000);
           } else {
-            console.log("WordServe: WASM is ready!");
+            return;
           }
         } catch (error) {
           console.error("WordServe: Failed to check WASM status:", error);
@@ -61,7 +61,6 @@ export default defineContentScript({
           if (stored.wordserveSettings) {
             this.settings = normalizeSettings(stored.wordserveSettings);
           }
-          console.log("WordServe: Loaded settings:", this.settings);
         } catch (error) {
           console.error("Failed to load settings:", error);
         }
@@ -196,14 +195,9 @@ export default defineContentScript({
         if (this.domainEnabledCache !== null) {
           return this.domainEnabledCache;
         }
-
         const hostname = window.location.hostname;
         const domainSettings = this.settings.domains;
-
-        console.log("WordServe: Checking domain enablement for:", hostname);
-
         if (domainSettings.blacklistMode) {
-          // Blacklist mode: check if domain is blocked
           for (const pattern of domainSettings.blacklist) {
             if (this.matchesDomainPattern(hostname, pattern)) {
               console.log("WordServe: Domain blocked by pattern:", pattern);
@@ -213,14 +207,12 @@ export default defineContentScript({
           }
           console.log("WordServe: Domain not blocked, enabled");
           this.domainEnabledCache = true;
-          return true; // Not blocked, so enabled
+          return true;
         } else {
-          // Whitelist mode: check if domain is allowed
           if (domainSettings.whitelist.length > 0) {
             const allowed = domainSettings.whitelist.some((pattern) =>
               this.matchesDomainPattern(hostname, pattern)
             );
-            console.log("WordServe: Whitelist mode, allowed:", allowed);
             this.domainEnabledCache = allowed;
             return allowed;
           }
@@ -233,9 +225,7 @@ export default defineContentScript({
       }
 
       private matchesDomainPattern(hostname: string, pattern: string): boolean {
-        // Simple wildcard matching
         const regexPattern = pattern.replace(/\./g, "\\.").replace(/\*/g, ".*");
-
         const regex = new RegExp(`^${regexPattern}$`, "i");
         return regex.test(hostname);
       }
@@ -251,8 +241,11 @@ export default defineContentScript({
           const controller = new AutocompleteController({
             element,
             settings: this.settings,
-            onSelectionMade: (word, originalWord) => {
-              this.logSelection(word, originalWord);
+            onSelectionChanged: () => {
+              const ghostManager = this.ghostManagers.get(element);
+              if (ghostManager) {
+                ghostManager.forceUpdate();
+              }
             },
           });
           this.controllers.set(element, controller);
@@ -295,36 +288,45 @@ export default defineContentScript({
           this.ghostManagers.has(element) ||
           !this.shouldAttachGhostText(element)
         ) {
-          console.log("WordServe: Skipping ghost text attachment for element:", element.tagName, 
-                     "Already has ghost text:", this.ghostManagers.has(element),
-                     "Suitable:", this.shouldAttachGhostText(element));
           return;
         }
-        
-        console.log("WordServe: Attaching ghost text to element:", element.tagName);
-        
         try {
-          // Get the corresponding autocomplete controller
           const controller = this.controllers.get(element);
           if (!controller) {
-            console.warn("WordServe: No controller found for ghost text element");
             return;
           }
-
           const ghostManager = new GhostTextManager(element, {
-            getSuggestion: async (text: string, signal: AbortSignal) => {
-              // Instead of making API calls, get the current suggestion from the controller
-              return this.getCurrentSuggestionFromController(element);
-            },
-            debounceMs: 50, // Much faster response
+            settings: this.settings,
+            debounceMs: 1,
             acceptKey: "Tab",
             rejectKey: "Escape",
+            isMenuActive: () => controller.isMenuVisible(),
+            getSelectedSuggestion: () => {
+              if (!controller.isMenuVisible()) {
+                return null;
+              }
+              const suggestions = controller.getCurrentSuggestions();
+              if (!suggestions || suggestions.length === 0) {
+                return null;
+              }
+              const selectedIndex = controller.getSelectedIndex() || 0;
+              const suggestion = suggestions[selectedIndex];
+              if (!suggestion) {
+                return null;
+              }
+              const currentWord = controller.getCurrentWord();
+              if (suggestion.word.startsWith(currentWord)) {
+                const completion = suggestion.word.substring(
+                  currentWord.length
+                );
+                return completion;
+              }
+              return null;
+            },
           });
-          
           this.ghostManagers.set(element, ghostManager);
-          console.log("WordServe: Successfully attached ghost text to element");
         } catch (error) {
-          console.warn("Failed to attach ghost text to element:", error);
+          console.warn("Failed to attach ghost to element:", error);
         }
       }
 
@@ -337,6 +339,7 @@ export default defineContentScript({
       }
 
       private shouldAttachGhostText(element: HTMLElement): boolean {
+        if (!this.settings.ghostText.enabled) return false;
         if ((element as HTMLInputElement).type === "password") return false;
         const rect = element.getBoundingClientRect();
         if (rect.width < 50 || rect.height < 20) return false;
@@ -347,47 +350,10 @@ export default defineContentScript({
           "[data-slate-editor]",
           ".prosemirror-editor",
         ];
-
         for (const selector of skipContainers) {
           if (element.closest(selector)) return false;
         }
         return true;
-      }
-
-      private getCurrentSuggestionFromController(element: HTMLElement): string | null {
-        const controller = this.controllers.get(element);
-        if (!controller) {
-          return null;
-        }
-
-        // Only show ghost text when the menu is visible
-        if (!controller.isMenuVisible()) {
-          return null;
-        }
-
-        // Get the current suggestions from the controller
-        const suggestions = controller.getCurrentSuggestions();
-        if (!suggestions || suggestions.length === 0) {
-          return null;
-        }
-
-        // Get the selected/first suggestion
-        const selectedIndex = controller.getSelectedIndex() || 0;
-        const suggestion = suggestions[selectedIndex];
-        
-        if (!suggestion) {
-          return null;
-        }
-
-        // Return just the completion part (remove the prefix that was already typed)
-        const currentWord = controller.getCurrentWord();
-        if (suggestion.word.startsWith(currentWord)) {
-          const completion = suggestion.word.substring(currentWord.length);
-          console.log("WordServe: Ghost text showing completion:", `"${completion}"`, "for word:", `"${currentWord}"`);
-          return completion;
-        }
-
-        return null;
       }
 
       private async getSuggestionForGhostText(
@@ -395,7 +361,6 @@ export default defineContentScript({
         signal: AbortSignal
       ): Promise<string | null> {
         if (!this.isEnabled || !text.trim()) return null;
-
         try {
           // Use the same API as the main controller
           const response = await browser.runtime.sendMessage({
@@ -405,7 +370,6 @@ export default defineContentScript({
           });
 
           if (signal.aborted) return null;
-
           if (response?.suggestions && response.suggestions.length > 0) {
             // Return the first suggestion word
             return response.suggestions[0].word;
@@ -415,7 +379,6 @@ export default defineContentScript({
             console.warn("Ghost text suggestion error:", error);
           }
         }
-
         return null;
       }
 
@@ -425,6 +388,9 @@ export default defineContentScript({
         console.log("WordServe: Updated settings:", this.settings);
         this.controllers.forEach((controller) => {
           controller.updateSettings(this.settings);
+        });
+        this.ghostManagers.forEach((ghostManager) => {
+          ghostManager.updateSettings(this.settings);
         });
       }
 
@@ -440,33 +406,18 @@ export default defineContentScript({
       }
 
       private reload(): void {
-        // Destroy all existing controllers and ghost managers
         this.controllers.forEach((controller) => controller.destroy());
         this.controllers.clear();
-
         this.ghostManagers.forEach((manager) => manager.destroy());
         this.ghostManagers.clear();
-
-        // Reload settings and reattach
         this.initializeSettings().then(() => {
           this.attachToExistingInputs();
         });
       }
 
-      private logSelection(word: string, originalWord: string): void {
-        if (this.settings.debugMode) {
-          console.log(
-            `WordServe: Selected "${word}" to replace "${originalWord}"`
-          );
-        }
-      }
-
       public destroy(): void {
-        // Cleanup all controllers
         this.controllers.forEach((controller) => controller.destroy());
         this.controllers.clear();
-
-        // Disconnect observer
         if (this.observer) {
           this.observer.disconnect();
           this.observer = null;

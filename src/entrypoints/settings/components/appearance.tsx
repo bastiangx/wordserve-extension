@@ -257,6 +257,90 @@ export function AppearanceSettings({
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold">Ghost text</h3>
+              <p className="text-sm text-muted-foreground">
+                Preview completion as you type
+              </p>
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label>Enable ghost text</Label>
+                <p className="text-sm text-muted-foreground">
+                  Show preview of selected suggestion while typing
+                </p>
+              </div>
+              <Switch
+                checked={pendingSettings.ghostText.enabled}
+                onCheckedChange={(checked) =>
+                  updatePendingSetting("ghostText", {
+                    ...pendingSettings.ghostText,
+                    enabled: checked,
+                  })
+                }
+              />
+            </div>
+
+            <div className="space-y-2 max-w-xs">
+              <Label htmlFor="ghostFontStyle">Font style</Label>
+              <Select
+                value={pendingSettings.ghostText.fontStyle}
+                onValueChange={(value: "normal" | "italic" | "bold") =>
+                  updatePendingSetting("ghostText", {
+                    ...pendingSettings.ghostText,
+                    fontStyle: value,
+                  })
+                }
+              >
+                <SelectTrigger id="ghostFontStyle">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="italic">Italic</SelectItem>
+                  <SelectItem value="bold">Bold</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                Style of ghost text preview
+              </p>
+            </div>
+
+            <div className="space-y-2 max-w-xs">
+              <Label htmlFor="ghostColorIntensity">Color intensity</Label>
+              <Select
+                value={pendingSettings.ghostText.colorIntensity}
+                onValueChange={(
+                  value: "normal" | "muted" | "faint" | "accent"
+                ) =>
+                  updatePendingSetting("ghostText", {
+                    ...pendingSettings.ghostText,
+                    colorIntensity: value,
+                  })
+                }
+              >
+                <SelectTrigger id="ghostColorIntensity">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="muted">Muted</SelectItem>
+                  <SelectItem value="faint">Faint</SelectItem>
+                  <SelectItem value="accent">Accent</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                How prominent the ghost text appears
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
