@@ -20,6 +20,7 @@ import { KeyboardSettings } from "@/entrypoints/settings/components/keyboard";
 import { AppearanceSettings } from "@/entrypoints/settings/components/appearance";
 import { AccessibilitySettings } from "@/entrypoints/settings/components/accessibility";
 import { DomainSettingsComponent } from "@/entrypoints/settings/components/domain";
+import { MenuPreview } from "@/components/preview";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -270,9 +271,7 @@ function SettingsApp() {
     }
   };
 
-  const currentSection = menuItems.find(
-    (item) => item.id === activeSection
-  );
+  const currentSection = menuItems.find((item) => item.id === activeSection);
 
   return (
     <SidebarProvider>
@@ -345,6 +344,15 @@ function SettingsApp() {
                   </AlertDialog>
                 </SidebarMenuItem>
               </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Live preview</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <div className="p-2">
+                <MenuPreview settings={pendingSettings} className="w-full" />
+              </div>
             </SidebarGroupContent>
           </SidebarGroup>
 
