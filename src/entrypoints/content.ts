@@ -2,10 +2,12 @@ import { AutocompleteController } from "@/lib/controller";
 import { DEFAULT_SETTINGS } from "@/types";
 import { normalizeSettings } from "@/lib/settings";
 import type { WordServeSettings } from "@/types";
+import { shouldActivateForDomain } from "@/lib/domains";
 import { browser } from "wxt/browser";
 
 export default defineContentScript({
   matches: ["<all_urls>"],
+  includeGlobs: ["chrome-extension://*/settings.html", "moz-extension://*/settings.html"],
   main() {
     console.log("WordServe content script loaded");
 
@@ -193,39 +195,16 @@ export default defineContentScript({
         if (this.domainEnabledCache !== null) {
           return this.domainEnabledCache;
         }
+        
         const hostname = window.location.hostname;
         const domainSettings = this.settings.domains;
-        if (domainSettings.blacklistMode) {
-          for (const pattern of domainSettings.blacklist) {
-            if (this.matchesDomainPattern(hostname, pattern)) {
-              console.log("WordServe: Domain blocked by pattern:", pattern);
-              this.domainEnabledCache = false;
-              return false;
-            }
-          }
-          console.log("WordServe: Domain not blocked, enabled");
-          this.domainEnabledCache = true;
-          return true;
-        } else {
-          if (domainSettings.whitelist.length > 0) {
-            const allowed = domainSettings.whitelist.some((pattern) =>
-              this.matchesDomainPattern(hostname, pattern)
-            );
-            this.domainEnabledCache = allowed;
-            return allowed;
-          }
-          console.log(
-            "WordServe: Whitelist mode with empty whitelist, disabled"
-          );
-          this.domainEnabledCache = false;
-          return false; // No whitelist entries, so disabled
-        }
-      }
-
-      private matchesDomainPattern(hostname: string, pattern: string): boolean {
-        const regexPattern = pattern.replace(/\./g, "\\.").replace(/\*/g, ".*");
-        const regex = new RegExp(`^${regexPattern}$`, "i");
-        return regex.test(hostname);
+        
+        // Use the centralized domain activation logic which includes extension page exception
+        const isEnabled = shouldActivateForDomain(hostname, domainSettings);
+        
+        this.domainEnabledCache = isEnabled;
+        
+        return isEnabled;
       }
 
       private attachToInput(element: HTMLElement): void {
