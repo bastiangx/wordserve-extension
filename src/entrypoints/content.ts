@@ -3,7 +3,6 @@ import { DEFAULT_SETTINGS } from "@/types";
 import { normalizeSettings } from "@/lib/settings";
 import type { WordServeSettings } from "@/types";
 import { browser } from "wxt/browser";
-import { GhostTextManager } from "@/lib/ghost/ghost";
 
 export default defineContentScript({
   matches: ["<all_urls>"],
@@ -12,7 +11,6 @@ export default defineContentScript({
 
     class WordServeContentScript {
       private controllers = new Map<HTMLElement, AutocompleteController>();
-      private ghostManagers = new Map<HTMLElement, GhostTextManager>();
       private settings: WordServeSettings = DEFAULT_SETTINGS;
       private isEnabled = true;
       private observer: MutationObserver | null = null;
@@ -241,15 +239,9 @@ export default defineContentScript({
           const controller = new AutocompleteController({
             element,
             settings: this.settings,
-            onSelectionChanged: () => {
-              const ghostManager = this.ghostManagers.get(element);
-              if (ghostManager) {
-                ghostManager.forceUpdate();
-              }
-            },
+            onSelectionChanged: () => {},
           });
           this.controllers.set(element, controller);
-          this.attachGhostText(element);
           const observer = new MutationObserver((mutations) => {
             for (const mutation of mutations) {
               if (mutation.type === "childList") {
@@ -280,106 +272,6 @@ export default defineContentScript({
           controller.destroy();
           this.controllers.delete(element);
         }
-        this.detachGhostText(element);
-      }
-
-      private attachGhostText(element: HTMLElement): void {
-        if (
-          this.ghostManagers.has(element) ||
-          !this.shouldAttachGhostText(element)
-        ) {
-          return;
-        }
-        try {
-          const controller = this.controllers.get(element);
-          if (!controller) {
-            return;
-          }
-          const ghostManager = new GhostTextManager(element, {
-            settings: this.settings,
-            debounceMs: 1,
-            acceptKey: "Tab",
-            rejectKey: "Escape",
-            isMenuActive: () => controller.isMenuVisible(),
-            getSelectedSuggestion: () => {
-              if (!controller.isMenuVisible()) {
-                return null;
-              }
-              const suggestions = controller.getCurrentSuggestions();
-              if (!suggestions || suggestions.length === 0) {
-                return null;
-              }
-              const selectedIndex = controller.getSelectedIndex() || 0;
-              const suggestion = suggestions[selectedIndex];
-              if (!suggestion) {
-                return null;
-              }
-              const currentWord = controller.getCurrentWord();
-              if (suggestion.word.startsWith(currentWord)) {
-                const completion = suggestion.word.substring(
-                  currentWord.length
-                );
-                return completion;
-              }
-              return null;
-            },
-          });
-          this.ghostManagers.set(element, ghostManager);
-        } catch (error) {
-          console.warn("Failed to attach ghost to element:", error);
-        }
-      }
-
-      private detachGhostText(element: HTMLElement): void {
-        const ghostManager = this.ghostManagers.get(element);
-        if (ghostManager) {
-          ghostManager.destroy();
-          this.ghostManagers.delete(element);
-        }
-      }
-
-      private shouldAttachGhostText(element: HTMLElement): boolean {
-        if (!this.settings.ghostText.enabled) return false;
-        if ((element as HTMLInputElement).type === "password") return false;
-        const rect = element.getBoundingClientRect();
-        if (rect.width < 50 || rect.height < 20) return false;
-        const skipContainers = [
-          ".CodeMirror",
-          ".monaco-editor",
-          ".ace_editor",
-          "[data-slate-editor]",
-          ".prosemirror-editor",
-        ];
-        for (const selector of skipContainers) {
-          if (element.closest(selector)) return false;
-        }
-        return true;
-      }
-
-      private async getSuggestionForGhostText(
-        text: string,
-        signal: AbortSignal
-      ): Promise<string | null> {
-        if (!this.isEnabled || !text.trim()) return null;
-        try {
-          // Use the same API as the main controller
-          const response = await browser.runtime.sendMessage({
-            type: "wordserve-complete",
-            prefix: text.trim(),
-            limit: 1,
-          });
-
-          if (signal.aborted) return null;
-          if (response?.suggestions && response.suggestions.length > 0) {
-            // Return the first suggestion word
-            return response.suggestions[0].word;
-          }
-        } catch (error) {
-          if (!signal.aborted) {
-            console.warn("Ghost text suggestion error:", error);
-          }
-        }
-        return null;
       }
 
       private updateSettings(newSettings: Partial<WordServeSettings>): void {
@@ -388,9 +280,6 @@ export default defineContentScript({
         console.log("WordServe: Updated settings:", this.settings);
         this.controllers.forEach((controller) => {
           controller.updateSettings(this.settings);
-        });
-        this.ghostManagers.forEach((ghostManager) => {
-          ghostManager.updateSettings(this.settings);
         });
       }
 
@@ -408,8 +297,6 @@ export default defineContentScript({
       private reload(): void {
         this.controllers.forEach((controller) => controller.destroy());
         this.controllers.clear();
-        this.ghostManagers.forEach((manager) => manager.destroy());
-        this.ghostManagers.clear();
         this.initializeSettings().then(() => {
           this.attachToExistingInputs();
         });

@@ -139,11 +139,6 @@ export function normalizeSettings(input: any): WordServeSettings {
     )
       ? merged.accessibility.prefixColorIntensity
       : DEFAULT_SETTINGS.accessibility.prefixColorIntensity,
-    ghostTextColorIntensity: ["normal", "muted", "faint", "accent"].includes(
-      merged.accessibility?.ghostTextColorIntensity
-    )
-      ? merged.accessibility.ghostTextColorIntensity
-      : DEFAULT_SETTINGS.accessibility.ghostTextColorIntensity,
     customColor:
       typeof merged.accessibility?.customColor === "string"
         ? merged.accessibility.customColor
@@ -156,23 +151,6 @@ export function normalizeSettings(input: any): WordServeSettings {
       typeof merged.accessibility?.customFontSize === "number"
         ? merged.accessibility.customFontSize
         : DEFAULT_SETTINGS.accessibility.customFontSize,
-  };
-
-  const ghostText = {
-    enabled: toBool(
-      merged.ghostText?.enabled,
-      DEFAULT_SETTINGS.ghostText.enabled
-    ),
-    fontStyle: ["normal", "italic", "bold"].includes(
-      merged.ghostText?.fontStyle
-    )
-      ? merged.ghostText.fontStyle
-      : DEFAULT_SETTINGS.ghostText.fontStyle,
-    colorIntensity: ["normal", "muted", "faint", "accent"].includes(
-      merged.ghostText?.colorIntensity
-    )
-      ? merged.ghostText.colorIntensity
-      : DEFAULT_SETTINGS.ghostText.colorIntensity,
   };
 
   const domains = merged.domains ?? DEFAULT_SETTINGS.domains;
@@ -196,7 +174,6 @@ export function normalizeSettings(input: any): WordServeSettings {
     themeMode,
     keyBindings,
     accessibility,
-    ghostText,
     domains,
   };
 }
