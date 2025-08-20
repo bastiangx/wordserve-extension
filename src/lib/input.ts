@@ -79,22 +79,16 @@ export class InputHandler {
     if (!context) {
       return;
     }
-
     // Only invalidate smart backspace if this wasn't from our suggestion system
     // AND if the user typed a space or punctuation (indicating they moved on from the last word)
     if (!this.lastInputWasFromSuggestion && this.settings.smartBackspace) {
       // Check the last character typed to see if it's a space or punctuation
       const lastChar = this.getLastTypedCharacter();
       if (lastChar && (/\s/.test(lastChar) || /[^\w]/.test(lastChar))) {
-        console.log("WordServe: Smart backspace invalidated due to space/punctuation:", lastChar);
         smartBackspace.invalidateForElement(this.element);
       }
     }
-    
-    // Reset the flag for next input
     this.lastInputWasFromSuggestion = false;
-
-    // Check if we should trigger autocomplete
     if (context.currentWord.length >= this.settings.minWordLength) {
       if (context.currentWord !== this.lastWord) {
         console.log("WordServe: Word change detected:", context.currentWord);
@@ -133,6 +127,13 @@ export class InputHandler {
           event.preventDefault();
           event.stopPropagation();
           this.callbacks.onNavigate(key === "ArrowDown" ? "down" : "up");
+        }
+        return;
+      case "ArrowLeft":
+      case "ArrowRight":
+        // Close menu when left/right arrow keys are pressed
+        if (this.menuVisible) {
+          this.callbacks.onHideMenu();
         }
         return;
       case "Escape":
