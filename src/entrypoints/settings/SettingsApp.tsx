@@ -253,19 +253,11 @@ function SettingsApp() {
             }
           />
         );
-      case "domains":
+  case "domain":
         return (
           <DomainSettingsComponent
             pendingSettings={pendingSettings.domains}
             updatePendingDomainSetting={updatePendingDomainSetting}
-          />
-        );
-      default:
-        return (
-          <GeneralSettings
-            pendingSettings={pendingSettings}
-            updatePendingSetting={updatePendingSetting}
-            adjustNumber={adjustNumber}
           />
         );
     }
