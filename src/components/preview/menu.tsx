@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { WordServeSettings } from "@/types";
-
-export interface Suggestion {
-  word: string;
-  rank: number;
-  id: string;
-}
+import type { WordServeSettings, DisplaySuggestion } from "@/types";
+import { browser } from "wxt/browser";
 
 export interface MenuPreviewProps {
   settings: WordServeSettings;
@@ -19,73 +20,98 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
   settings,
   className,
 }) => {
-  const [inputValue, setInputValue] = useState("pro");
-  const [showMenu, setShowMenu] = useState(true);
+  const [inputValue, setInputValue] = useState(() => {
+    // Load saved preview text from storage or default to "pro"
+    return localStorage.getItem("wordserve-preview-text") || "pro";
+  });
+  const [suggestions, setSuggestions] = useState<DisplaySuggestion[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [key, setKey] = useState(0); // Force re-render when needed
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // All available suggestions
-  const allSuggestions: Suggestion[] = useMemo(
-    () => [
-      { word: "programming", rank: 1, id: "1" },
-      { word: "program", rank: 2, id: "2" },
-      { word: "progress", rank: 3, id: "3" },
-      { word: "project", rank: 4, id: "4" },
-      { word: "promise", rank: 5, id: "5" },
-      { word: "property", rank: 6, id: "6" },
-      { word: "protocol", rank: 7, id: "7" },
-      { word: "prototype", rank: 8, id: "8" },
-      { word: "provider", rank: 9, id: "9" },
-      { word: "professional", rank: 10, id: "10" },
-      { word: "processor", rank: 11, id: "11" },
-      { word: "production", rank: 12, id: "12" },
-      // Different prefixes for variety
-      { word: "development", rank: 1, id: "13" },
-      { word: "developer", rank: 2, id: "14" },
-      { word: "design", rank: 3, id: "15" },
-      { word: "desktop", rank: 4, id: "16" },
-      { word: "deployment", rank: 5, id: "17" },
-      { word: "database", rank: 6, id: "18" },
-      { word: "testing", rank: 1, id: "19" },
-      { word: "technology", rank: 2, id: "20" },
-      { word: "terminal", rank: 3, id: "21" },
-      { word: "typescript", rank: 4, id: "22" },
-      { word: "function", rank: 1, id: "23" },
-      { word: "framework", rank: 2, id: "24" },
-      { word: "frontend", rank: 3, id: "25" },
-    ],
-    []
+  // Save input value to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("wordserve-preview-text", inputValue);
+  }, [inputValue]);
+
+  // Fetch suggestions from the background script
+  const fetchSuggestions = useCallback(
+    async (prefix: string) => {
+      if (!prefix.trim() || prefix.length < (settings.minWordLength || 2)) {
+        setSuggestions([]);
+        setShowMenu(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const response = await browser.runtime.sendMessage({
+          type: "wordserve-complete",
+          prefix: prefix.trim(),
+          limit: settings.maxSuggestions || 20,
+        });
+
+        if (response?.suggestions) {
+          const displaySuggestions: DisplaySuggestion[] =
+            response.suggestions.map((s: any, index: number) => ({
+              word: s.word,
+              rank: s.rank || index + 1,
+            }));
+
+          setSuggestions(displaySuggestions);
+          setShowMenu(displaySuggestions.length > 0);
+        } else if (response?.error) {
+          console.warn(
+            "WordServe preview: Error fetching suggestions:",
+            response.error
+          );
+          setSuggestions([]);
+          setShowMenu(false);
+        }
+      } catch (error) {
+        console.warn("WordServe preview: Failed to fetch suggestions:", error);
+        setSuggestions([]);
+        setShowMenu(false);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [settings.minWordLength, settings.maxSuggestions]
   );
 
-  // Filter suggestions based on input
-  const filteredSuggestions = useMemo(() => {
-    if (!inputValue.trim()) return [];
+  // Debounced input handler
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setInputValue(value);
 
-    const lowerInput = inputValue.toLowerCase();
-    return allSuggestions
-      .filter(
-        (suggestion) =>
-          suggestion.word.toLowerCase().startsWith(lowerInput) &&
-          suggestion.word.toLowerCase() !== lowerInput
-      )
-      .slice(0, Math.min(settings.maxSuggestions || 9, 9));
-  }, [inputValue, allSuggestions, settings.maxSuggestions]);
+      // Clear existing timeout
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
 
-  // Reset to default prefix when component mounts or when settings change
+      // Set new timeout for debounced fetch
+      debounceTimeoutRef.current = setTimeout(() => {
+        fetchSuggestions(value);
+      }, settings.debounceTime || 100);
+    },
+    [fetchSuggestions, settings.debounceTime]
+  );
+
+  // Fetch initial suggestions when component mounts or settings change
   useEffect(() => {
-    setInputValue("pro");
-    setShowMenu(true);
-    setKey((prev) => prev + 1); // Force re-render
-  }, [settings]); // Reset when settings change (like when page reopens)
+    fetchSuggestions(inputValue);
+  }, [inputValue, fetchSuggestions]);
 
-  // Show/hide menu based on suggestions
+  // Cleanup timeout on unmount
   useEffect(() => {
-    setShowMenu(filteredSuggestions.length > 0);
-  }, [filteredSuggestions]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Convert fontSize to number if it's a string
   const fontSize =
@@ -115,10 +141,8 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
 
   return (
     <div className={cn("relative w-full", className)}>
-      {/* Interactive Input */}
       <div className="mb-2">
         <Input
-          key={key}
           ref={inputRef}
           value={inputValue}
           onChange={handleInputChange}
@@ -128,7 +152,7 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
       </div>
 
       {/* Menu Preview */}
-      {showMenu && (
+      {showMenu && suggestions.length > 0 && (
         <div
           className={cn(
             "border shadow-lg overflow-hidden font-mono",
@@ -158,13 +182,15 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
             overflowY: "auto" as const,
           }}
         >
-          {filteredSuggestions.map((suggestion, index) => {
+          {suggestions.map((suggestion, index) => {
             const isSelected = index === selectedIndex;
-            const showRanking = index < 9; // Only show ranking for first 9 items
+            const showRanking =
+              settings.showRankingOverride ||
+              (settings.numberSelection && index < 9);
 
             return (
               <div
-                key={suggestion.id}
+                key={`${suggestion.word}-${index}`}
                 className={cn(
                   "flex items-center cursor-default transition-colors duration-75",
                   settings.compactMode ? "px-3 py-1" : "px-4 py-2",
@@ -188,7 +214,7 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                           fontSize: `${Math.max(10, fontSize - 2)}px`,
                         }}
                       >
-                        {suggestion.rank}
+                        {settings.numberSelection ? index + 1 : suggestion.rank}
                       </Badge>
                     )}
 
@@ -217,7 +243,7 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                           fontSize: `${Math.max(10, fontSize - 2)}px`,
                         }}
                       >
-                        {suggestion.rank}
+                        {settings.numberSelection ? index + 1 : suggestion.rank}
                       </Badge>
                     )}
                   </>
