@@ -1,4 +1,5 @@
 import type { SensitivityResult } from "@/types";
+import browser from "webextension-polyfill";
 
 export interface DomainSettings {
   blacklistMode: boolean; // true => treat list as block list; false => treat as allow list
@@ -148,6 +149,35 @@ export function isExtensionId(hostname: string): boolean {
 export function isProtectedPage(hostname: string): boolean {
   const url = window.location.href.toLowerCase();
   const host = normalizeHostname(hostname);
+  
+  // Allow our own extension pages (settings, popup, etc.)
+  try {
+    if (browser?.runtime?.getURL) {
+      const extensionBaseUrl = browser.runtime.getURL("").toLowerCase();
+      if (url.startsWith(extensionBaseUrl)) {
+        return false; // Allow our own extension pages
+      }
+    }
+  } catch (e) {
+    // Fallback if browser.runtime.getURL fails
+  }
+  
+  // Check if this is our own extension ID by comparing with runtime URL
+  if (isExtensionId(host)) {
+    try {
+      if (browser?.runtime?.getURL) {
+        const extensionBaseUrl = browser.runtime.getURL("").toLowerCase();
+        const ownExtensionId = extensionBaseUrl.match(/chrome-extension:\/\/([^\/]+)/)?.[1];
+        
+        if (ownExtensionId && host === ownExtensionId) {
+          return false; // Allow our own extension
+        }
+      }
+    } catch (e) {
+      // Fallback if comparison fails
+    }
+  }
+  
   const protectedSchemes = [
     "chrome://",
     "moz-extension://",
@@ -162,8 +192,9 @@ export function isProtectedPage(hostname: string): boolean {
     "devtools://",
     "view-source:",
   ];
+  
   if (protectedSchemes.some((p) => url.startsWith(p))) return true;
-  return isExtensionId(host);
+  return isExtensionId(host); // Block other extensions but not our own
 }
 
 export function shouldActivateForDomain(
