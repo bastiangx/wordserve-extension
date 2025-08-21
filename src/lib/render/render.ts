@@ -1,4 +1,6 @@
 import "@/components/styles.css";
+import { getRowHeight } from "@/lib/utils";
+import { AUTOCOMPLETE_DEFAULTS } from "@/types";
 
 export interface Suggestion {
   word: string;
@@ -16,6 +18,14 @@ export interface AutocompleteMenuOptions {
   maxHeight?: number;
   maxItems?: number;
   compact?: boolean;
+  fontSize?: number;
+  fontWeight?: string;
+  menuBorder?: boolean;
+  menuBorderRadius?: boolean;
+  // ranking and digit-selection settings
+  numberSelection?: boolean;
+  showRankingOverride?: boolean;
+  rankingPosition?: "left" | "right";
 }
 
 export class AutocompleteMenuRenderer {
@@ -51,61 +61,39 @@ export class AutocompleteMenuRenderer {
       this.hide();
       return;
     }
-
-    // Create or reuse menu
     if (!this.menu) {
-      console.log("WordServe: Creating new menu");
       this.menu = this.createMenu();
       this.container!.appendChild(this.menu);
-      
-      // Debug: Add click listeners to containers
-      this.container!.addEventListener("click", (e) => {
-        console.log("WordServe: Container clicked, target:", e.target);
-      });
-      
-      this.menu.addEventListener("click", (e) => {
-        console.log("WordServe: Menu clicked, target:", e.target);
-      });
     }
-
-    // Update container classes
     this.container!.className = `wordserve-menu-container ${
       options.compact ? "compact" : ""
     }`;
-
-    // Position the container
+    const fontSize = options.fontSize ?? 14;
+    const fontWeight = options.fontWeight ?? "400";
+    const showBorder = options.menuBorder ?? true;
+    const useRadius = options.menuBorderRadius ?? true;
+    const menuEl = this.menu!;
+    menuEl.style.fontSize = `${fontSize}px`;
+    menuEl.style.fontWeight = fontWeight;
+    menuEl.style.borderColor = showBorder ? "#403d52" : "transparent";
+    menuEl.style.borderRadius = useRadius ? "6px" : "0px";
     this.container!.style.left = `${options.position.x}px`;
     this.container!.style.top = `${options.position.y}px`;
     this.container!.style.display = "block";
-    console.log("WordServe: Positioned container at:", options.position);
-
-    // Set menu max height
     if (options.maxHeight) {
       this.menu.style.maxHeight = `${options.maxHeight}px`;
     }
-
-    // Clear existing items
     this.menu.innerHTML = "";
-
-    // Limit suggestions for digit key navigation
     const displaySuggestions = options.suggestions.slice(
       0,
       options.maxItems || 9
     );
-
-    console.log("WordServe: Creating", displaySuggestions.length, "menu items");
-
-    // Create menu items
     displaySuggestions.forEach((suggestion, index) => {
       const item = this.createMenuItem(suggestion, index, options);
       this.menu!.appendChild(item);
     });
-
-    // Scroll to selected item
     this.scrollToSelected(options.selectedIndex);
-
     this.isVisible = true;
-    console.log("WordServe: Menu should now be visible");
   }
 
   private createMenuItem(
@@ -114,41 +102,49 @@ export class AutocompleteMenuRenderer {
     options: AutocompleteMenuOptions
   ): HTMLElement {
     const isSelected = index === options.selectedIndex;
-    const showRanking = index < 9; // Only show ranking for first 9 items
+    const showRanking =
+      !!options.showRankingOverride ||
+      (options.numberSelection &&
+        index < AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE);
 
-    const item = document.createElement("div");
-    item.className = `wordserve-menu-item ${isSelected ? "selected" : ""}`;
-
-    // Content container
+  const item = document.createElement("div");
+    item.className = `wordserve-menu-item ${isSelected ? "selected" : ""} ${
+      options.rankingPosition === "right" ? "justify-between" : ""
+    }`;
+    // remove left padding when badge on left to align content
+    if (options.rankingPosition === "left") {
+      item.style.paddingLeft = "0px";
+    }
+    const fontSize = options.fontSize ?? 14;
+    const compact = options.compact ?? false;
+    const rowHeight = getRowHeight(fontSize, compact);
+    item.style.height = `${rowHeight}px`;
     const content = document.createElement("div");
     content.className = "wordserve-menu-item-content";
-
-    // Word
-    const word = document.createElement("span");
-    word.className = "wordserve-menu-item-word";
-    word.textContent = suggestion.word;
-    content.appendChild(word);
-
-    item.appendChild(content);
-
-    // Rank badge - only for first 9 items
-    if (showRanking) {
-      const rank = document.createElement("span");
-      rank.className = "wordserve-menu-item-rank";
-      rank.textContent = suggestion.rank.toString();
-      item.appendChild(rank);
+    const badgeEl = document.createElement("span");
+    badgeEl.className = "wordserve-menu-item-rank";
+    badgeEl.textContent = suggestion.rank.toString();
+    if (options.rankingPosition === "left" && showRanking) {
+      content.appendChild(badgeEl);
     }
-
-    // Event listeners
-    item.addEventListener("click", (e) => {
-      console.log("WordServe: Click event triggered on item:", suggestion.word);
-      e.preventDefault();
-      e.stopPropagation();
-      console.log("WordServe: About to call onSelect with:", suggestion);
-      options.onSelect(suggestion, true);
-      console.log("WordServe: onSelect called successfully");
-    }, { capture: true });
-
+    const wordEl = document.createElement("span");
+    wordEl.className = "wordserve-menu-item-word";
+    wordEl.textContent = suggestion.word;
+    wordEl.style.fontWeight = options.fontWeight || "400";
+    content.appendChild(wordEl);
+    item.appendChild(content);
+    if (options.rankingPosition === "right" && showRanking) {
+      item.appendChild(badgeEl);
+    }
+    item.addEventListener(
+      "click",
+      (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        options.onSelect(suggestion, true);
+      },
+      { capture: true }
+    );
     item.addEventListener("mouseenter", () => {
       options.onHover(index);
     });
@@ -158,13 +154,10 @@ export class AutocompleteMenuRenderer {
 
   private scrollToSelected(selectedIndex: number): void {
     if (!this.menu) return;
-
     const selectedItem = this.menu.children[selectedIndex] as HTMLElement;
-    if (!selectedItem) return;
-
     const menuRect = this.menu.getBoundingClientRect();
     const itemRect = selectedItem.getBoundingClientRect();
-
+    if (!selectedItem) return;
     if (itemRect.bottom > menuRect.bottom) {
       this.menu.scrollTop += itemRect.bottom - menuRect.bottom;
     } else if (itemRect.top < menuRect.top) {

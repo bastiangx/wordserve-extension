@@ -5,6 +5,7 @@ import {
   type InputHandlerCallbacks,
 } from "@/lib/input/input";
 import { calculateMenuPosition } from "@/lib/input/caret";
+import { getRowHeight } from "@/lib/utils";
 import { smartBackspace } from "@/lib/input/backspace";
 import type { DefaultConfig, RawSuggestion } from "@/types";
 import { browser } from "wxt/browser";
@@ -147,9 +148,17 @@ export class AutocompleteController {
     this.isVisible = true;
     this.keyboardNavigationActive = false;
     this.inputHandler.setMenuVisible(true);
+    const rawFontSize = this.settings.fontSize;
+    const fontSize =
+      typeof rawFontSize === "string"
+        ? parseInt(rawFontSize, 10) || 14
+        : rawFontSize;
+    const rowHeight = getRowHeight(fontSize, this.settings.compactMode);
+    const containerPadding = this.settings.compactMode ? 8 : 0;
+    const calcHeight = suggestions.length * rowHeight + containerPadding;
     const menuSize = {
       width: 300,
-      height: Math.min(suggestions.length * 32 + 16, 200),
+      height: Math.min(calcHeight, 200),
     };
     const position = calculateMenuPosition(context.caretCoords, menuSize);
     this.renderMenu(position);
@@ -159,12 +168,23 @@ export class AutocompleteController {
   }
 
   private renderMenu(position: { x: number; y: number }): void {
-    console.log(
-      "WordServe: renderMenu called with position:",
-      position,
-      "suggestions:",
-      this.suggestions.length
-    );
+    const rawFontSize = this.settings.fontSize;
+    const fontSize =
+      typeof rawFontSize === "string"
+        ? parseInt(rawFontSize, 10) || 14
+        : rawFontSize;
+    const weightMap: Record<string, string> = {
+      thin: "100",
+      extralight: "200",
+      light: "300",
+      normal: "400",
+      medium: "500",
+      semibold: "600",
+      bold: "700",
+      extrabold: "800",
+      black: "900",
+    };
+    const fontWeight = weightMap[this.settings.fontWeight] || "400";
     this.menuRenderer.render({
       suggestions: this.suggestions,
       selectedIndex: this.selectedIndex,
@@ -174,8 +194,14 @@ export class AutocompleteController {
       visible: this.isVisible,
       maxItems: this.settings.maxSuggestions,
       compact: this.settings.compactMode,
+      fontSize,
+      fontWeight,
+      menuBorder: this.settings.menuBorder,
+      menuBorderRadius: this.settings.menuBorderRadius,
+      numberSelection: this.settings.numberSelection,
+      showRankingOverride: this.settings.showRankingOverride,
+      rankingPosition: this.settings.rankingPosition,
     });
-    console.log("WordServe: Menu render called");
   }
 
   private handleMenuSelect(

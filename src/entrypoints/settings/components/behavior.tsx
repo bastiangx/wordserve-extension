@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,10 @@ export interface BehaviorSettingsProps {
   updatePendingSetting: (key: keyof DefaultConfig, value: any) => void;
 }
 
-export function BehaviorSettings({ pendingSettings, updatePendingSetting }: BehaviorSettingsProps) {
+export function BehaviorSettings({
+  pendingSettings,
+  updatePendingSetting,
+}: BehaviorSettingsProps) {
   return (
     <div className="space-y-6">
       <Card className="rounded-md card">
@@ -18,33 +21,29 @@ export function BehaviorSettings({ pendingSettings, updatePendingSetting }: Beha
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label>Abbreviations</Label>
-                <p className="text-sm text-muted-foreground">Enable expansion of common abbreviations</p>
+                <p className="text-sm text-muted-foreground">
+                  Enable expansion of common abbreviations
+                </p>
               </div>
               <Switch
                 checked={pendingSettings.abbreviationsEnabled}
-                onCheckedChange={(checked) => updatePendingSetting("abbreviationsEnabled", checked)}
+                onCheckedChange={(checked) =>
+                  updatePendingSetting("abbreviationsEnabled", checked)
+                }
               />
             </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Auto insertion</Label>
-                <p className="text-sm text-muted-foreground">Automatically insert suggestions when typing</p>
-              </div>
-              <Switch
-                checked={pendingSettings.autoInsertion}
-                onCheckedChange={(checked) => updatePendingSetting("autoInsertion", checked)}
-              />
-            </div>
-
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label>Smart backspace</Label>
-                <p className="text-sm text-muted-foreground">Intelligently handle backspace in suggestions</p>
+                <p className="text-sm text-muted-foreground">
+                  Intelligently handle backspace in suggestions
+                </p>
               </div>
               <Switch
                 checked={pendingSettings.smartBackspace}
-                onCheckedChange={(checked) => updatePendingSetting("smartBackspace", checked)}
+                onCheckedChange={(checked) =>
+                  updatePendingSetting("smartBackspace", checked)
+                }
               />
             </div>
           </div>

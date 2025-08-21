@@ -2,10 +2,7 @@ import { clamp, toNumber, toBool } from "@/lib/utils";
 import type { DefaultConfig } from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
 
-function coerceKBD(
-  obj: any,
-  fallback: DefaultConfig["keyBindings"]
-) {
+function coerceKBD(obj: any, fallback: DefaultConfig["keyBindings"]) {
   if (!obj || typeof obj !== "object") return fallback;
   const allowedKeys = ["enter", "tab", "space"] as const;
   const makeBinding = (b: any, def: any) => {
@@ -66,7 +63,7 @@ export function normalizeConfig(input: any): DefaultConfig {
   const fontSizeRaw = merged.fontSize;
   const fontSize =
     typeof fontSizeRaw === "number"
-      ? clamp(fontSizeRaw, 8, 72)
+      ? clamp(fontSizeRaw, 12, 28)
       : typeof fontSizeRaw === "string" && fontSizeRaw.trim() !== ""
       ? fontSizeRaw
       : DEFAULT_SETTINGS.fontSize;

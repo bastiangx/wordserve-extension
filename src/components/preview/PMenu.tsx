@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { DefaultConfig, DisplaySuggestion } from "@/types";
+import { getRowHeight, clamp, toNumber } from "@/lib/utils";
 import { browser } from "wxt/browser";
 
 export interface MenuPreviewProps {
@@ -112,10 +113,8 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
     }
   }, [selectedIndex]);
 
-  const fontSize =
-    typeof settings.fontSize === "string"
-      ? Math.max(8, Math.min(32, parseInt(settings.fontSize) || 14))
-      : Math.max(8, Math.min(32, settings.fontSize || 14));
+  // derive numeric font size, clamp to sensible range (12-28)
+  const fontSize = clamp(toNumber(settings.fontSize, 15), 12, 28);
 
   const getFontWeight = (weight: string): string => {
     const weightMap: Record<string, string> = {
@@ -254,7 +253,7 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
           )}
           style={{
             backgroundColor: "#191724",
-            borderColor: "#403d52",
+            borderColor: settings.menuBorder ? "#403d52" : "transparent",
             color: "#e0def4",
             fontSize: `${fontSize}px`,
             fontWeight: getFontWeight(settings.fontWeight),
@@ -267,6 +266,7 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
             const showRanking =
               settings.showRankingOverride ||
               (settings.numberSelection && index < 9);
+            const rowHeight = getRowHeight(fontSize, settings.compactMode);
 
             return (
               <div
@@ -274,12 +274,13 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                 ref={isSelected ? selectedItemRef : null}
                 className={cn(
                   "flex items-center cursor-default transition-colors duration-75",
-                  settings.compactMode ? "px-3 py-1" : "px-4 py-2",
+                  settings.compactMode ? "px-3" : "px-4",
                   settings.rankingPosition === "right" ? "justify-between" : ""
                 )}
                 style={{
                   backgroundColor: isSelected ? "#21202e" : "transparent",
                   color: "#e0def4",
+                  height: `${rowHeight}px`,
                 }}
                 role="option"
                 aria-selected={isSelected}
