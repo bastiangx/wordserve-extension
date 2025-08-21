@@ -40,7 +40,7 @@ export default defineConfig({
                 "data/*.bin",
                 "asset-manifest.json",
               ],
-              matches: ["<all_urls>"],
+              matches: ["http://*/*", "https://*/*"],
             },
           ]
         : [
