@@ -15,7 +15,7 @@ import type { DefaultConfig } from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
 import { normalizeConfig } from "@/lib/config";
 import { GeneralSettings } from "@/entrypoints/settings/components/general";
-import { BehaviorSettings } from "@/entrypoints/settings/components/behavior.tsx";
+import { BehaviorSettings } from "@/entrypoints/settings/components/behavior";
 import { KeyboardSettings } from "@/entrypoints/settings/components/keyboard";
 import { AppearanceSettings } from "@/entrypoints/settings/components/appearance";
 import { AccessibilitySettings } from "@/entrypoints/settings/components/accessibility";
@@ -174,9 +174,7 @@ function SettingsApp() {
     }));
   };
 
-  const updatePendingDomainSetting = <
-    K extends keyof DefaultConfig["domains"]
-  >(
+  const updatePendingDomainSetting = <K extends keyof DefaultConfig["domains"]>(
     key: K,
     value: DefaultConfig["domains"][K]
   ) => {
@@ -253,7 +251,7 @@ function SettingsApp() {
             }
           />
         );
-  case "domain":
+      case "domain":
         return (
           <DomainSettingsComponent
             pendingSettings={pendingSettings.domains}

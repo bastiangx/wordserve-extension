@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useRef,
-  useCallback,
-} from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -21,16 +15,17 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
   className,
 }) => {
   const [inputValue, setInputValue] = useState(() => {
-    // Load saved preview text from storage or default to "pro"
     return localStorage.getItem("wordserve-preview-text") || "pro";
   });
   const [suggestions, setSuggestions] = useState<DisplaySuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const debounceTimeoutRef = useRef<number | undefined>(undefined);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const selectedItemRef = useRef<HTMLDivElement>(null);
 
-  // Save input value to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("wordserve-preview-text", inputValue);
   }, [inputValue]);
@@ -59,6 +54,7 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
 
           setSuggestions(displaySuggestions);
           setShowMenu(displaySuggestions.length > 0);
+          setSelectedIndex(0);
         } else if (response?.error) {
           console.warn(
             "WordServe preview: Error fetching suggestions:",
@@ -84,40 +80,47 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
       const value = e.target.value;
       setInputValue(value);
 
-      // Clear existing timeout
-      if (debounceTimeoutRef.current) {
+      if (debounceTimeoutRef.current !== undefined) {
         clearTimeout(debounceTimeoutRef.current);
       }
-
-      // Set new timeout for debounced fetch
-      debounceTimeoutRef.current = setTimeout(() => {
+      debounceTimeoutRef.current = window.setTimeout(() => {
         fetchSuggestions(value);
       }, settings.debounceTime || 100);
     },
     [fetchSuggestions, settings.debounceTime]
   );
 
-  // Fetch initial suggestions when component mounts or settings change
   useEffect(() => {
     fetchSuggestions(inputValue);
-  }, [inputValue, fetchSuggestions]);
+  }, [fetchSuggestions]);
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (debounceTimeoutRef.current) {
+      if (debounceTimeoutRef.current !== undefined) {
         clearTimeout(debounceTimeoutRef.current);
       }
     };
   }, []);
 
-  // Convert fontSize to number if it's a string
+  // scrolling into view
+  useEffect(() => {
+    const menu = menuRef.current;
+    const item = selectedItemRef.current;
+    if (!menu || !item) return;
+    const menuRect = menu.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    if (itemRect.bottom > menuRect.bottom) {
+      menu.scrollTop += itemRect.bottom - menuRect.bottom;
+    } else if (itemRect.top < menuRect.top) {
+      menu.scrollTop -= menuRect.top - itemRect.top;
+    }
+  }, [selectedIndex]);
+
   const fontSize =
     typeof settings.fontSize === "string"
       ? Math.max(8, Math.min(32, parseInt(settings.fontSize) || 14))
       : Math.max(8, Math.min(32, settings.fontSize || 14));
 
-  // Map font weight values to CSS
   const getFontWeight = (weight: string): string => {
     const weightMap: Record<string, string> = {
       thin: "100",
@@ -133,9 +136,96 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
     return weightMap[weight] || "400";
   };
 
-  // Determine if we should show blur based on theme mode
   const enableBlur = settings.themeMode === "adaptive";
-  const selectedIndex = 0; // Always highlight first item for preview
+  const selectByIndex = useCallback(
+    (index: number) => {
+      if (!suggestions.length) return;
+      const clamped = Math.max(0, Math.min(index, suggestions.length - 1));
+      const chosen = suggestions[clamped];
+      if (!chosen) return;
+      setInputValue(chosen.word);
+      localStorage.setItem("wordserve-preview-text", chosen.word);
+      setShowMenu(false);
+      setSelectedIndex(clamped);
+      // Optionally refetch for the new word after a short delay to simulate flow
+      if (settings.debounceTime && settings.debounceTime > 0) {
+        window.setTimeout(
+          () => fetchSuggestions(chosen.word),
+          settings.debounceTime
+        );
+      }
+      // Keep focus on the input for a smooth preview
+      inputRef.current?.focus();
+    },
+    [suggestions, settings.debounceTime, fetchSuggestions]
+  );
+
+  const onKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (!showMenu || suggestions.length === 0) return;
+      // Arrow navigation
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedIndex((i) => Math.min(i + 1, suggestions.length - 1));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedIndex((i) => Math.max(i - 1, 0));
+        return;
+      }
+      if (e.key === "Home") {
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedIndex(0);
+        return;
+      }
+      if (e.key === "End") {
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedIndex(suggestions.length - 1);
+        return;
+      }
+      // Digit selection (1-9)
+      if (
+        settings.numberSelection &&
+        /^[1-9]$/.test(e.key) &&
+        !e.altKey &&
+        !e.ctrlKey &&
+        !e.metaKey
+      ) {
+        const idx = parseInt(e.key, 10) - 1;
+        if (idx >= 0 && idx < suggestions.length) {
+          e.preventDefault();
+          e.stopPropagation();
+          selectByIndex(idx);
+        }
+        return;
+      }
+      // Accept selection
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        selectByIndex(selectedIndex);
+        return;
+      }
+      // Close menu
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowMenu(false);
+      }
+    },
+    [
+      showMenu,
+      suggestions.length,
+      selectedIndex,
+      selectByIndex,
+      settings.numberSelection,
+    ]
+  );
 
   return (
     <div className={cn("relative w-full", className)}>
@@ -144,6 +234,14 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
           ref={inputRef}
           value={inputValue}
           onChange={handleInputChange}
+          onKeyDown={onKeyDown}
+          onFocus={() => {
+            if (suggestions.length > 0) setShowMenu(true);
+          }}
+          onBlur={() => {
+            // Close the menu when input loses focus
+            setShowMenu(false);
+          }}
           placeholder="Type here..."
           className="font-mono"
         />
@@ -152,6 +250,7 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
       {/* Menu Preview */}
       {showMenu && suggestions.length > 0 && (
         <div
+          ref={menuRef}
           className={cn(
             "border shadow-lg overflow-hidden font-mono",
             settings.menuBorderRadius ? "rounded-md" : "rounded-none",
@@ -189,6 +288,7 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
             return (
               <div
                 key={`${suggestion.word}-${index}`}
+                ref={isSelected ? selectedItemRef : null}
                 className={cn(
                   "flex items-center cursor-default transition-colors duration-75",
                   settings.compactMode ? "px-3 py-1" : "px-4 py-2",
@@ -197,6 +297,14 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                 style={{
                   backgroundColor: isSelected ? "#21202e" : "transparent",
                   color: "#e0def4",
+                }}
+                role="option"
+                aria-selected={isSelected}
+                onMouseEnter={() => setSelectedIndex(index)}
+                onMouseDown={(e) => {
+                  // Prevent input blur so click selects properly
+                  e.preventDefault();
+                  selectByIndex(index);
                 }}
               >
                 {settings.rankingPosition === "left" && (
