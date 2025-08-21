@@ -79,7 +79,6 @@ function SettingsApp() {
   const [activeSection, setActiveSection] = useState("general");
 
   useEffect(() => {
-    // Fix promise handling
     (async () => {
       await loadSettings();
     })();

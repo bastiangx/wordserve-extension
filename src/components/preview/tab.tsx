@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MenuPreview } from "./menu";
+import { MenuPreview } from "./PMenu";
 import type { DefaultConfig } from "@/types";
 
 export interface PreviewTabProps {
