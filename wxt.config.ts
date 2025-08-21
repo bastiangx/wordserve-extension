@@ -1,4 +1,4 @@
-import {defineConfig} from "wxt";
+import { defineConfig } from "wxt";
 
 export default defineConfig({
   modules: ["@wxt-dev/module-react"],
@@ -13,17 +13,41 @@ export default defineConfig({
       },
     },
   }),
-  manifest: {
+  manifest: ({ manifestVersion }) => ({
     options_ui: {
       page: "settings.html",
       open_in_tab: true,
     },
     permissions: ["tabs", "scripting", "storage"],
-    web_accessible_resources: [
-      {
-        resources: ["wasm_exec.js", "wordserve.wasm", "data/*.bin"],
-        matches: ["<all_urls>"],
-      },
-    ],
-  },
+    ...(manifestVersion === 3
+      ? {
+          content_security_policy: {
+            extension_pages:
+              "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; upgrade-insecure-requests;",
+          },
+        }
+      : {
+          content_security_policy:
+            "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+        }),
+    web_accessible_resources:
+      manifestVersion === 3
+        ? [
+            {
+              resources: [
+                "wasm_exec.js",
+                "wordserve.wasm",
+                "data/*.bin",
+                "asset-manifest.json",
+              ],
+              matches: ["<all_urls>"],
+            },
+          ]
+        : [
+            "wasm_exec.js",
+            "wordserve.wasm",
+            "data/*.bin",
+            "asset-manifest.json",
+          ],
+  }),
 });
