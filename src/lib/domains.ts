@@ -149,7 +149,7 @@ export function isExtensionId(hostname: string): boolean {
 export function isProtectedPage(hostname: string): boolean {
   const url = window.location.href.toLowerCase();
   const host = normalizeHostname(hostname);
-  
+
   // Allow our own extension pages (settings, popup, etc.)
   try {
     if (browser?.runtime?.getURL) {
@@ -161,23 +161,23 @@ export function isProtectedPage(hostname: string): boolean {
   } catch (e) {
     // Fallback if browser.runtime.getURL fails
   }
-  
+
   // Check if this is our own extension ID by comparing with runtime URL
   if (isExtensionId(host)) {
     try {
       if (browser?.runtime?.getURL) {
         const extensionBaseUrl = browser.runtime.getURL("").toLowerCase();
-        const ownExtensionId = extensionBaseUrl.match(/chrome-extension:\/\/([^\/]+)/)?.[1];
-        
+        const ownExtensionId = extensionBaseUrl.match(
+          /chrome-extension:\/\/([^\/]+)/
+        )?.[1];
+
         if (ownExtensionId && host === ownExtensionId) {
           return false; // Allow our own extension
         }
       }
-    } catch (e) {
-      // Fallback if comparison fails
-    }
+    } catch (e) {}
   }
-  
+
   const protectedSchemes = [
     "chrome://",
     "moz-extension://",
@@ -192,9 +192,8 @@ export function isProtectedPage(hostname: string): boolean {
     "devtools://",
     "view-source:",
   ];
-  
   if (protectedSchemes.some((p) => url.startsWith(p))) return true;
-  return isExtensionId(host); // Block other extensions but not our own
+  return isExtensionId(host);
 }
 
 export function shouldActivateForDomain(
@@ -211,7 +210,6 @@ export function shouldActivateForDomain(
   }
 }
 
-// Heuristic weights for signals
 const SIGNAL_WEIGHTS: Record<string, number> = {
   passwordField: 5,
   creditField: 3,
