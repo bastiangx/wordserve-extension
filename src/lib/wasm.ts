@@ -31,6 +31,10 @@ export interface WasmLoadResult {
     sizeValid: boolean;
     originValid: boolean;
   };
+  workerEnvironment?: {
+    executeInWorker: <T>(operation: string, data?: any) => Promise<T>;
+    cleanup: () => void;
+  };
 }
 
 export class WasmManager {
@@ -113,16 +117,135 @@ export class WasmManager {
     return results;
   }
 
-  async loadWasmModule(
+  /**
+   * WASM worker env
+   */
+  makeWorkerEnv(): {
+    executeInWorker: <T>(operation: string, data?: any) => Promise<T>;
+    cleanup: () => void;
+  } {
+    const workerCode = `
+      let wasmInstance = null;
+      let wasmModule = null;
+      
+      self.onmessage = async function(e) {
+        const { id, operation, data, wasmBinary, importObject } = e.data;
+        
+        try {
+          switch (operation) {
+            case 'init':
+              wasmModule = await WebAssembly.compile(wasmBinary);
+              wasmInstance = await WebAssembly.instantiate(wasmModule, importObject || {});
+              self.postMessage({ id, success: true, result: 'initialized' });
+              break;
+              
+            case 'complete':
+              if (!wasmInstance || !wasmInstance.exports.completeMsgPack) {
+                throw new Error('WASM not initialized or completeMsgPack not available');
+              }
+              const result = wasmInstance.exports.completeMsgPack(data);
+              self.postMessage({ id, success: true, result });
+              break;
+              
+            case 'completeRaw':
+              if (!wasmInstance || !wasmInstance.exports.completeRaw) {
+                throw new Error('WASM not initialized or completeRaw not available');
+              }
+              const rawResult = wasmInstance.exports.completeRaw(data.prefix, data.limit);
+              self.postMessage({ id, success: true, result: rawResult });
+              break;
+              
+            case 'getStats':
+              if (!wasmInstance || !wasmInstance.exports.stats) {
+                throw new Error('WASM not initialized or stats not available');
+              }
+              const stats = wasmInstance.exports.stats();
+              self.postMessage({ id, success: true, result: stats });
+              break;
+              
+            default:
+              throw new Error('Unknown operation: ' + operation);
+          }
+        } catch (error) {
+          self.postMessage({ 
+            id, 
+            success: false, 
+            error: error.message || String(error) 
+          });
+        }
+      };
+    `;
+
+    const blob = new Blob([workerCode], { type: "application/javascript" });
+    const worker = new Worker(URL.createObjectURL(blob));
+    const pendingOperations = new Map<
+      string,
+      { resolve: Function; reject: Function }
+    >();
+    worker.onmessage = (e) => {
+      const { id, success, result, error } = e.data;
+      const pending = pendingOperations.get(id);
+      if (pending) {
+        pendingOperations.delete(id);
+        if (success) {
+          pending.resolve(result);
+        } else {
+          pending.reject(new Error(error));
+        }
+      }
+    };
+    worker.onerror = (error) => {
+      console.error("[WASM Worker] Error:", error);
+      pendingOperations.forEach(({ reject }) => {
+        reject(new Error("Worker error"));
+      });
+      pendingOperations.clear();
+    };
+    return {
+      executeInWorker: <T>(operation: string, data?: any): Promise<T> => {
+        return new Promise((resolve, reject) => {
+          const id = Math.random().toString(36).substring(2, 11);
+          pendingOperations.set(id, { resolve, reject });
+
+          const timeout = setTimeout(() => {
+            pendingOperations.delete(id);
+            reject(new Error("Worker operation timeout"));
+          }, 10000);
+          pendingOperations.set(id, {
+            resolve: (result: T) => {
+              clearTimeout(timeout);
+              resolve(result);
+            },
+            reject: (error: Error) => {
+              clearTimeout(timeout);
+              reject(error);
+            },
+          });
+          worker.postMessage({ id, operation, data });
+        });
+      },
+      cleanup: () => {
+        pendingOperations.clear();
+        worker.terminate();
+        URL.revokeObjectURL(blob as any);
+      },
+    };
+  }
+
+  /**
+   * Load WASM worker
+   */
+  async loadWasmWorker(
     wasmUrl: string,
+    manifestUrl: string,
     importObject?: WebAssembly.Imports
   ): Promise<WasmLoadResult> {
-    const startTime = Date.now();
     try {
-      if (!this.validateOrigin(wasmUrl)) {
+      const manifestResponse = await fetch(manifestUrl);
+      if (!manifestResponse.ok) {
         return {
           success: false,
-          error: "Invalid origin for WASM resource",
+          error: `Manifest loading failed: ${manifestResponse.status} ${manifestResponse.statusText}`,
           verificationDetails: {
             hashVerified: false,
             sizeValid: false,
@@ -130,55 +253,71 @@ export class WasmManager {
           },
         };
       }
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(
-          () => reject(new Error("WASM loading timeout")),
-          this.config.timeout
-        );
-      });
-      const fetchPromise = fetch(wasmUrl).then(async (response) => {
-        if (!response.ok) {
-          throw new Error(
-            `WASM fetch failed: ${response.status} ${response.statusText}`
-          );
-        }
-        return response.arrayBuffer();
-      });
-      const wasmBinary = await Promise.race([fetchPromise, timeoutPromise]);
+      const manifest = await manifestResponse.json();
+      const wasmPath = new URL(wasmUrl).pathname.replace(/^\//, "");
+      const wasmEntry = manifest.assets?.find(
+        (asset: any) => asset.path === wasmPath
+      );
+      if (!wasmEntry?.sha256) {
+        return {
+          success: false,
+          error: `No SHA-256 hash found in manifest for ${wasmPath}`,
+          verificationDetails: {
+            hashVerified: false,
+            sizeValid: false,
+            originValid: false,
+          },
+        };
+      }
+      const wasmResponse = await fetch(wasmUrl);
+      if (!wasmResponse.ok) {
+        return {
+          success: false,
+          error: `WASM fetch failed: ${wasmResponse.status} ${wasmResponse.statusText}`,
+        };
+      }
+      const wasmBinary = await wasmResponse.arrayBuffer();
       const verificationDetails = await this.verifyWasmBinary(
         wasmBinary,
         wasmUrl
       );
-      const verificationPassed =
-        verificationDetails.hashVerified &&
-        verificationDetails.sizeValid &&
-        verificationDetails.originValid;
-      if (!verificationPassed) {
+      const actualHash = await this.compHash(wasmBinary);
+      if (actualHash !== wasmEntry.sha256) {
         return {
           success: false,
-          error: "WASM binary verification failed",
-          verificationDetails,
+          error: `WASM hash verification failed. Expected: ${wasmEntry.sha256}, Got: ${actualHash}`,
+          verificationDetails: {
+            ...verificationDetails,
+            hashVerified: false,
+          },
         };
       }
-      // sandboxing
-      const module = await WebAssembly.compile(wasmBinary);
-      const instance = await WebAssembly.instantiate(
-        module,
-        importObject || {}
-      );
-      const loadTime = Date.now() - startTime;
-      return {
-        success: true,
-        module,
-        instance,
-        verificationDetails,
-      };
+      const workerEnv = this.makeWorkerEnv();
+      try {
+        await workerEnv.executeInWorker("init", { wasmBinary, importObject });
+        return {
+          success: true,
+          workerEnvironment: workerEnv,
+          verificationDetails: {
+            ...verificationDetails,
+            hashVerified: true,
+          },
+        };
+      } catch (error) {
+        workerEnv.cleanup();
+        return {
+          success: false,
+          error: `Worker initialization failed: ${error}`,
+          verificationDetails: {
+            ...verificationDetails,
+            hashVerified: false,
+          },
+        };
+      }
     } catch (error) {
-      const loadTime = Date.now() - startTime;
-      console.error(`WASM: Loading failed after ${loadTime}ms:`, error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error),
+        error: `Worker-based WASM loading failed: ${error}`,
         verificationDetails: {
           hashVerified: false,
           sizeValid: false,
@@ -187,87 +326,10 @@ export class WasmManager {
       };
     }
   }
-
-  /**
-   * Create a sandboxed execution env for WASM
-   */
-  createSandboxedEnvironment(): {
-    executeInSandbox: <T>(fn: () => T) => Promise<T>;
-    cleanup: () => void;
-  } {
-    const sandbox = {
-      console: {
-        log: (...args: any[]) => console.log("[WASM Sandbox]", ...args),
-        warn: (...args: any[]) => console.warn("[WASM Sandbox]", ...args),
-        error: (...args: any[]) => console.error("[WASM Sandbox]", ...args),
-      },
-      setTimeout: (fn: Function, delay: number) => {
-        return setTimeout(() => {
-          try {
-            fn();
-          } catch (error) {
-            console.error("[WASM] Timeout execution error:", error);
-          }
-        }, Math.min(delay, 5000));
-      },
-      clearTimeout,
-    };
-    return {
-      executeInSandbox: async <T>(fn: () => T): Promise<T> => {
-        try {
-          return await Promise.resolve(fn.call(sandbox));
-        } catch (error) {
-          console.error("[WASM Sandbox] Execution error:", error);
-          throw error;
-        }
-      },
-      cleanup: () => {
-        Object.keys(sandbox).forEach((key) => {
-          delete (sandbox as any)[key];
-        });
-      },
-    };
-  }
-
-  /**
-   * Load WASM with manifest integrity verification
-   */
-  async loadWasmWithManifest(
-    wasmUrl: string,
-    manifestUrl: string,
-    importObject?: WebAssembly.Imports
-  ): Promise<WasmLoadResult> {
-    try {
-      const manifestResponse = await fetch(manifestUrl);
-      if (!manifestResponse.ok) {
-        console.warn(
-          "WASM: Manifest not available, proceeding without integrity check"
-        );
-        return this.loadWasmModule(wasmUrl, importObject);
-      }
-      const manifest = await manifestResponse.json();
-      const wasmPath = new URL(wasmUrl).pathname.replace(/^\//, "");
-      const wasmEntry = manifest.assets?.find(
-        (asset: any) => asset.path === wasmPath
-      );
-      if (wasmEntry?.sha256) {
-        const wasmController = new WasmManager({
-          ...this.config,
-          expectedHash: wasmEntry.sha256,
-        });
-        return wasmController.loadWasmModule(wasmUrl, importObject);
-      }
-      console.warn("WASM: No hash found in manifest for", wasmPath);
-      return this.loadWasmModule(wasmUrl, importObject);
-    } catch (error) {
-      console.error("WASM: Manifest loading failed:", error);
-      return this.loadWasmModule(wasmUrl, importObject);
-    }
-  }
 }
 
-export const defaultWasmManager = new WasmManager({
+export const workerWasmManager = new WasmManager({
   maxSize: 50 * 1024 * 1024, // 50MB
-  timeout: 15000, // 15 seconds
+  timeout: 20000, // 20sec
   strictOrigin: true,
 });
