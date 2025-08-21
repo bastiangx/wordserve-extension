@@ -18,7 +18,6 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
     return localStorage.getItem("wordserve-preview-text") || "pro";
   });
   const [suggestions, setSuggestions] = useState<DisplaySuggestion[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -37,7 +36,6 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
         return;
       }
 
-      setIsLoading(true);
       try {
         const response = await browser.runtime.sendMessage({
           type: "wordserve-complete",
@@ -67,8 +65,6 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
         console.warn("WordServe preview: Failed to fetch suggestions:", error);
         setSuggestions([]);
         setShowMenu(false);
-      } finally {
-        setIsLoading(false);
       }
     },
     [settings.minWordLength, settings.maxSuggestions]
