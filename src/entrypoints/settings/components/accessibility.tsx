@@ -9,12 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { WordServeSettings } from "@/types";
+import type { DefaultConfig } from "@/types";
 
 export interface AccessibilitySettingsProps {
-  pendingSettings: WordServeSettings["accessibility"];
+  pendingSettings: DefaultConfig["accessibility"];
   updatePendingAccessibilitySetting: (
-    key: keyof WordServeSettings["accessibility"],
+    key: keyof DefaultConfig["accessibility"],
     value: any
   ) => void;
 }

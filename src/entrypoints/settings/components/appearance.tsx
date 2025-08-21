@@ -13,13 +13,13 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Minus, Plus } from "lucide-react";
-import type { WordServeSettings } from "@/types";
+import type { DefaultConfig } from "@/types";
 
 export interface AppearanceSettingsProps {
-  pendingSettings: WordServeSettings;
-  updatePendingSetting: (key: keyof WordServeSettings, value: any) => void;
+  pendingSettings: DefaultConfig;
+  updatePendingSetting: (key: keyof DefaultConfig, value: any) => void;
   adjustNumber: (
-    key: keyof WordServeSettings,
+    key: keyof DefaultConfig,
     delta: number,
     min: number,
     max: number
@@ -49,7 +49,7 @@ export function AppearanceSettings({
   }, [pendingSettings.fontSize]);
 
   const validateAndUpdateSetting = (
-    key: keyof WordServeSettings,
+    key: keyof DefaultConfig,
     value: string,
     min: number,
     max: number,
@@ -134,7 +134,7 @@ export function AppearanceSettings({
               <Label htmlFor="fontWeight">Font weight</Label>
               <Select
                 value={pendingSettings.fontWeight}
-                onValueChange={(value: WordServeSettings["fontWeight"]) =>
+                onValueChange={(value: DefaultConfig["fontWeight"]) =>
                   updatePendingSetting("fontWeight", value)
                 }
               >

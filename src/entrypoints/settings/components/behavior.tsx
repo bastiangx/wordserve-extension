@@ -2,11 +2,11 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import type { WordServeSettings } from "@/types";
+import type { DefaultConfig } from "@/types";
 
 export interface BehaviorSettingsProps {
-  pendingSettings: WordServeSettings;
-  updatePendingSetting: (key: keyof WordServeSettings, value: any) => void;
+  pendingSettings: DefaultConfig;
+  updatePendingSetting: (key: keyof DefaultConfig, value: any) => void;
 }
 
 export function BehaviorSettings({ pendingSettings, updatePendingSetting }: BehaviorSettingsProps) {

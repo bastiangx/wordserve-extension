@@ -9,11 +9,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { WordServeSettings } from "@/types";
+import type { DefaultConfig } from "@/types";
 
 export interface KeyboardSettingsProps {
-  pendingSettings: WordServeSettings;
-  updatePendingSetting: (key: keyof WordServeSettings, value: any) => void;
+  pendingSettings: DefaultConfig;
+  updatePendingSetting: (key: keyof DefaultConfig, value: any) => void;
 }
 
 export function KeyboardSettings({

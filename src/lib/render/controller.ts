@@ -1,24 +1,24 @@
-import { AutocompleteMenuRenderer, type Suggestion } from "@/lib/render";
+import { AutocompleteMenuRenderer, type Suggestion } from "@/lib/render/render";
 import {
   InputHandler,
   type InputContext,
   type InputHandlerCallbacks,
-} from "@/lib/input";
-import { calculateMenuPosition } from "@/lib/caret";
-import { smartBackspace } from "@/lib/backspace";
-import type { WordServeSettings, RawSuggestion } from "@/types";
+} from "@/lib/input/input";
+import { calculateMenuPosition } from "@/lib/input/caret";
+import { smartBackspace } from "@/lib/input/backspace";
+import type { DefaultConfig, RawSuggestion } from "@/types";
 import { browser } from "wxt/browser";
 
 export interface AutocompleteControllerOptions {
   element: HTMLElement;
-  settings: WordServeSettings;
+  settings: DefaultConfig;
   onSelectionMade?: (word: string, originalWord: string) => void;
   onSelectionChanged?: () => void;
 }
 
 export class AutocompleteController {
   private element: HTMLElement;
-  private settings: WordServeSettings;
+  private settings: DefaultConfig;
   private inputHandler: InputHandler;
   private menuRenderer: AutocompleteMenuRenderer;
   private isVisible = false;
@@ -383,7 +383,7 @@ export class AutocompleteController {
     this.menuRenderer.destroy();
   }
 
-  public updateSettings(settings: Partial<WordServeSettings>): void {
+  public updateSettings(settings: Partial<DefaultConfig>): void {
     this.settings = { ...this.settings, ...settings };
     this.inputHandler.updateSettings(this.settings);
     this.hideMenu();

@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
 import { DEFAULT_SETTINGS } from "@/types";
-import { normalizeSettings } from "@/lib/settings";
+import { normalizeConfig } from "@/lib/config";
 
 async function cryptoDigestSHA256(data: Uint8Array): Promise<string> {
   try {
@@ -467,7 +467,7 @@ export default defineBackground(() => {
     if (details.reason === "install") {
       try {
         await browser.storage.sync.set({
-          wordserveSettings: normalizeSettings(DEFAULT_SETTINGS),
+          wordserveSettings: normalizeConfig(DEFAULT_SETTINGS),
         });
       } catch (e) {
         await recordError(`Default settings init failed: ${String(e)}`);

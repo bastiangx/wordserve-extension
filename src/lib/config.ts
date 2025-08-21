@@ -1,32 +1,10 @@
-import type { WordServeSettings } from "@/types";
+import { clamp, toNumber, toBool } from "@/lib/utils";
+import type { DefaultConfig } from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
 
-function toNumber(value: any, fallback: number) {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
-    const n = parseInt(value, 10);
-    if (!isNaN(n)) return n;
-  }
-  return fallback;
-}
-
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
-}
-
-function toBool(value: any, fallback: boolean) {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "string") {
-    const s = value.toLowerCase().trim();
-    if (s === "true") return true;
-    if (s === "false") return false;
-  }
-  return Boolean(value) ?? fallback;
-}
-
-function coerceKeyBinding(
+function coerceKBD(
   obj: any,
-  fallback: WordServeSettings["keyBindings"]
+  fallback: DefaultConfig["keyBindings"]
 ) {
   if (!obj || typeof obj !== "object") return fallback;
   const allowedKeys = ["enter", "tab", "space"] as const;
@@ -51,9 +29,8 @@ function coerceKeyBinding(
   };
 }
 
-export function normalizeSettings(input: any): WordServeSettings {
+export function normalizeConfig(input: any): DefaultConfig {
   const merged = { ...DEFAULT_SETTINGS, ...(input || {}) } as any;
-
   const minWordLength = clamp(
     toNumber(merged.minWordLength, DEFAULT_SETTINGS.minWordLength),
     1,
@@ -69,7 +46,6 @@ export function normalizeSettings(input: any): WordServeSettings {
     0,
     10000
   );
-
   const numberSelection = toBool(
     merged.numberSelection,
     DEFAULT_SETTINGS.numberSelection
@@ -87,7 +63,6 @@ export function normalizeSettings(input: any): WordServeSettings {
     merged.menuBorderRadius,
     DEFAULT_SETTINGS.menuBorderRadius ?? false
   );
-
   const fontSizeRaw = merged.fontSize;
   const fontSize =
     typeof fontSizeRaw === "number"
@@ -116,15 +91,12 @@ export function normalizeSettings(input: any): WordServeSettings {
     merged.smartBackspace,
     DEFAULT_SETTINGS.smartBackspace
   );
-
   const rankingPosition = merged.rankingPosition === "left" ? "left" : "right";
   const themeMode = merged.themeMode === "adaptive" ? "adaptive" : "isolated";
-
-  const keyBindings = coerceKeyBinding(
+  const keyBindings = coerceKBD(
     merged.keyBindings,
     DEFAULT_SETTINGS.keyBindings
   );
-
   const accessibility = {
     boldSuffix: toBool(
       merged.accessibility?.boldSuffix,
@@ -152,9 +124,7 @@ export function normalizeSettings(input: any): WordServeSettings {
         ? merged.accessibility.customFontSize
         : DEFAULT_SETTINGS.accessibility.customFontSize,
   };
-
   const domains = merged.domains ?? DEFAULT_SETTINGS.domains;
-
   return {
     minWordLength,
     maxSuggestions,
@@ -176,25 +146,4 @@ export function normalizeSettings(input: any): WordServeSettings {
     accessibility,
     domains,
   };
-}
-
-export async function getSettings(): Promise<WordServeSettings> {
-  try {
-    const { settings } = await browser.storage.sync.get({
-      settings: DEFAULT_SETTINGS,
-    });
-    return normalizeSettings(settings);
-  } catch (error) {
-    console.error("Failed to load settings:", error);
-    return DEFAULT_SETTINGS;
-  }
-}
-
-export async function saveSettings(settings: WordServeSettings): Promise<void> {
-  try {
-    await browser.storage.sync.set({ settings });
-  } catch (error) {
-    console.error("Failed to save settings:", error);
-    throw error;
-  }
 }

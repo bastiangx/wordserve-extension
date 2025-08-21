@@ -13,7 +13,7 @@ import {
   validateUserDomainInput,
   isExtensionId,
 } from "@/lib/domains";
-import { normalizeSettings } from "@/lib/settings";
+import { normalizeConfig } from "@/lib/config";
 import "../../globals.css";
 import "./App.css";
 
@@ -44,7 +44,7 @@ export default function App() {
       result.globalEnabled !== undefined ? result.globalEnabled : true
     );
 
-    const normalized = normalizeSettings(result.wordserveSettings || {});
+    const normalized = normalizeConfig(result.wordserveSettings || {});
     setDomainSettings(normalized.domains);
 
     const tabs = await browser.tabs.query({
@@ -80,8 +80,8 @@ export default function App() {
     setDomainSettings(newDomainSettings);
 
     const result = await browser.storage.sync.get("wordserveSettings");
-    const current = normalizeSettings(result.wordserveSettings || {});
-    const updated = normalizeSettings({ ...current, domains: newDomainSettings });
+    const current = normalizeConfig(result.wordserveSettings || {});
+    const updated = normalizeConfig({ ...current, domains: newDomainSettings });
     await browser.storage.sync.set({ wordserveSettings: updated });
   };
 
@@ -111,8 +111,8 @@ export default function App() {
     setNewDomainError(null);
 
     const result = await browser.storage.sync.get("wordserveSettings");
-    const current = normalizeSettings(result.wordserveSettings || {});
-    const updated = normalizeSettings({ ...current, domains: newDomainSettings });
+    const current = normalizeConfig(result.wordserveSettings || {});
+    const updated = normalizeConfig({ ...current, domains: newDomainSettings });
     await browser.storage.sync.set({ wordserveSettings: updated });
 
     // Inform the active tab so content scripts can react immediately
@@ -142,8 +142,8 @@ export default function App() {
     setDomainSettings(newDomainSettings);
 
     const result = await browser.storage.sync.get("wordserveSettings");
-    const current = normalizeSettings(result.wordserveSettings || {});
-    const updated = normalizeSettings({ ...current, domains: newDomainSettings });
+    const current = normalizeConfig(result.wordserveSettings || {});
+    const updated = normalizeConfig({ ...current, domains: newDomainSettings });
     await browser.storage.sync.set({ wordserveSettings: updated });
 
     // Inform the active tab so content scripts can react immediately
@@ -209,8 +209,8 @@ export default function App() {
     setDomainSettings(newDomainSettings);
 
     const result = await browser.storage.sync.get("wordserveSettings");
-    const current = normalizeSettings(result.wordserveSettings || {});
-    const updated = normalizeSettings({ ...current, domains: newDomainSettings });
+    const current = normalizeConfig(result.wordserveSettings || {});
+    const updated = normalizeConfig({ ...current, domains: newDomainSettings });
     await browser.storage.sync.set({ wordserveSettings: updated });
 
     const tabs = await browser.tabs.query({
@@ -259,8 +259,8 @@ export default function App() {
     setDomainSettings(newDomainSettings);
 
     const result = await browser.storage.sync.get("wordserveSettings");
-    const current = normalizeSettings(result.wordserveSettings || {});
-    const updated = normalizeSettings({ ...current, domains: newDomainSettings });
+    const current = normalizeConfig(result.wordserveSettings || {});
+    const updated = normalizeConfig({ ...current, domains: newDomainSettings });
     await browser.storage.sync.set({ wordserveSettings: updated });
 
     const tabs = await browser.tabs.query({

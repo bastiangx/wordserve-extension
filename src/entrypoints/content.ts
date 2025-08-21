@@ -1,7 +1,7 @@
-import { AutocompleteController } from "@/lib/controller";
+import { AutocompleteController } from "@/lib/render/controller";
 import { DEFAULT_SETTINGS } from "@/types";
-import { normalizeSettings } from "@/lib/settings";
-import type { WordServeSettings } from "@/types";
+import { normalizeConfig } from "@/lib/config";
+import type { DefaultConfig } from "@/types";
 import { shouldActivateForDomain } from "@/lib/domains";
 import { browser } from "wxt/browser";
 
@@ -13,7 +13,7 @@ export default defineContentScript({
 
     class WordServeContentScript {
       private controllers = new Map<HTMLElement, AutocompleteController>();
-      private settings: WordServeSettings = DEFAULT_SETTINGS;
+      private settings: DefaultConfig = DEFAULT_SETTINGS;
       private isEnabled = true;
       private observer: MutationObserver | null = null;
       private domainEnabledCache: boolean | null = null;
@@ -59,7 +59,7 @@ export default defineContentScript({
         try {
           const stored = await browser.storage.sync.get("wordserveSettings");
           if (stored.wordserveSettings) {
-            this.settings = normalizeSettings(stored.wordserveSettings);
+            this.settings = normalizeConfig(stored.wordserveSettings);
           }
         } catch (error) {
           console.error("Failed to load settings:", error);
@@ -253,8 +253,8 @@ export default defineContentScript({
         }
       }
 
-      private updateSettings(newSettings: Partial<WordServeSettings>): void {
-        this.settings = normalizeSettings({ ...this.settings, ...newSettings });
+      private updateSettings(newSettings: Partial<DefaultConfig>): void {
+        this.settings = normalizeConfig({ ...this.settings, ...newSettings });
         this.domainEnabledCache = null;
         console.log("WordServe: Updated settings:", this.settings);
         this.controllers.forEach((controller) => {

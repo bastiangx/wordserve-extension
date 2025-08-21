@@ -1,11 +1,11 @@
-import type { WordServeSettings, InputState } from "@/types";
+import type { DefaultConfig, InputState } from "@/types";
 import { AUTOCOMPLETE_DEFAULTS } from "@/types";
 import {
   getCaretCoordinates,
   getCaretCoordinatesContentEditable,
   type CaretPosition,
-} from "@/lib/caret";
-import { smartBackspace } from "@/lib/backspace";
+} from "@/lib/input/caret";
+import { smartBackspace } from "@/lib/input/backspace";
 
 export interface InputContext {
   element: HTMLElement;
@@ -39,7 +39,7 @@ export interface InputHandlerCallbacks {
 
 export class InputHandler {
   private element: HTMLElement;
-  private settings: WordServeSettings;
+  private settings: DefaultConfig;
   private callbacks: InputHandlerCallbacks;
   private isActive = false;
   private lastWord = "";
@@ -49,14 +49,14 @@ export class InputHandler {
 
   constructor(
     element: HTMLElement,
-    settings: WordServeSettings,
+    settings: DefaultConfig,
     callbacks: InputHandlerCallbacks
   ) {
     this.element = element;
     this.settings = settings;
     this.callbacks = callbacks;
     this.autocompleteSeparator = /\s+/;
-    this.isActive = true; // Make active by default
+    this.isActive = true;
     this.attach();
   }
 
@@ -464,7 +464,7 @@ export class InputHandler {
     this.isActive = false;
   }
 
-  public updateSettings(settings: WordServeSettings): void {
+  public updateSettings(settings: DefaultConfig): void {
     this.settings = settings;
   }
 

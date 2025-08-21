@@ -34,7 +34,7 @@ export interface SensitivityResult {
   blocked: boolean;
 }
 
-export interface WordServeSettings {
+export interface DefaultConfig {
   minWordLength: number;
   maxSuggestions: number;
   debounceTime: number;
@@ -166,16 +166,16 @@ export const AUTOCOMPLETE_DEFAULTS = {
   MAX_WIDTH: 400,
 } as const;
 
-export const DEFAULT_SETTINGS: WordServeSettings = {
+export const DEFAULT_SETTINGS: DefaultConfig = {
   minWordLength: 3,
-  maxSuggestions: 32,
-  debounceTime: 10,
+  maxSuggestions: 16,
+  debounceTime: 5,
   numberSelection: true,
   showRankingOverride: false,
   compactMode: false,
   menuBorder: true,
   menuBorderRadius: true,
-  fontSize: 16,
+  fontSize: 15,
   fontWeight: "normal",
   debugMode: false,
   abbreviationsEnabled: false,

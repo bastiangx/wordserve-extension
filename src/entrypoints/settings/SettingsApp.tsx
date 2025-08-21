@@ -11,9 +11,9 @@ import {
   SettingsIcon,
   X,
 } from "lucide-react";
-import type { WordServeSettings } from "@/types";
+import type { DefaultConfig } from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
-import { normalizeSettings } from "@/lib/settings";
+import { normalizeConfig } from "@/lib/config";
 import { GeneralSettings } from "@/entrypoints/settings/components/general";
 import { BehaviorSettings } from "@/entrypoints/settings/components/behavior.tsx";
 import { KeyboardSettings } from "@/entrypoints/settings/components/keyboard";
@@ -71,9 +71,9 @@ const menuItems = [
 const LOGO_URL = "icon/48.png";
 
 function SettingsApp() {
-  const [settings, setSettings] = useState<WordServeSettings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<DefaultConfig>(DEFAULT_SETTINGS);
   const [pendingSettings, setPendingSettings] =
-    useState<WordServeSettings>(DEFAULT_SETTINGS);
+    useState<DefaultConfig>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
   const [activeSection, setActiveSection] = useState("general");
@@ -95,8 +95,8 @@ function SettingsApp() {
     try {
       const result = await browser.storage.sync.get("wordserveSettings");
       const loadedSettings = result.wordserveSettings
-        ? normalizeSettings(result.wordserveSettings)
-        : normalizeSettings({});
+        ? normalizeConfig(result.wordserveSettings)
+        : normalizeConfig({});
       setSettings(loadedSettings);
       setPendingSettings(loadedSettings);
     } catch (error) {
@@ -109,7 +109,7 @@ function SettingsApp() {
 
   const saveSettings = async () => {
     try {
-      const normalized = normalizeSettings(pendingSettings);
+      const normalized = normalizeConfig(pendingSettings);
       await browser.storage.sync.set({ wordserveSettings: normalized });
 
       // Only send messages to tabs that might have content scripts
@@ -155,18 +155,18 @@ function SettingsApp() {
     }, 0);
   };
 
-  const updatePendingSetting = <K extends keyof WordServeSettings>(
+  const updatePendingSetting = <K extends keyof DefaultConfig>(
     key: K,
-    value: WordServeSettings[K]
+    value: DefaultConfig[K]
   ) => {
     setPendingSettings((prev) => ({ ...prev, [key]: value }));
   };
 
   const updatePendingAccessibilitySetting = <
-    K extends keyof WordServeSettings["accessibility"]
+    K extends keyof DefaultConfig["accessibility"]
   >(
     key: K,
-    value: WordServeSettings["accessibility"][K]
+    value: DefaultConfig["accessibility"][K]
   ) => {
     setPendingSettings((prev) => ({
       ...prev,
@@ -175,10 +175,10 @@ function SettingsApp() {
   };
 
   const updatePendingDomainSetting = <
-    K extends keyof WordServeSettings["domains"]
+    K extends keyof DefaultConfig["domains"]
   >(
     key: K,
-    value: WordServeSettings["domains"][K]
+    value: DefaultConfig["domains"][K]
   ) => {
     setPendingSettings((prev) => ({
       ...prev,
@@ -191,7 +191,7 @@ function SettingsApp() {
   };
 
   const adjustNumber = (
-    key: keyof WordServeSettings,
+    key: keyof DefaultConfig,
     delta: number,
     min: number,
     max: number

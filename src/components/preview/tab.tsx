@@ -1,10 +1,10 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MenuPreview } from "./menu";
-import type { WordServeSettings } from "@/types";
+import type { DefaultConfig } from "@/types";
 
 export interface PreviewTabProps {
-  settings: WordServeSettings;
+  settings: DefaultConfig;
 }
 
 export const PreviewTab: React.FC<PreviewTabProps> = ({ settings }) => {

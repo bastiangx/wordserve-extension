@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Minus, Plus } from "lucide-react";
-import type { WordServeSettings } from "@/types";
+import type { DefaultConfig } from "@/types";
 
 export interface GeneralSettingsProps {
-  pendingSettings: WordServeSettings;
-  updatePendingSetting: (key: keyof WordServeSettings, value: any) => void;
+  pendingSettings: DefaultConfig;
+  updatePendingSetting: (key: keyof DefaultConfig, value: any) => void;
   adjustNumber: (
-    key: keyof WordServeSettings,
+    key: keyof DefaultConfig,
     delta: number,
     min: number,
     max: number
@@ -42,7 +42,7 @@ export function GeneralSettings({
   ]);
 
   const validateAndUpdateSetting = (
-    key: keyof WordServeSettings,
+    key: keyof DefaultConfig,
     value: string,
     min: number,
     max: number,

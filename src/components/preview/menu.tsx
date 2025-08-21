@@ -8,11 +8,11 @@ import React, {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { WordServeSettings, DisplaySuggestion } from "@/types";
+import type { DefaultConfig, DisplaySuggestion } from "@/types";
 import { browser } from "wxt/browser";
 
 export interface MenuPreviewProps {
-  settings: WordServeSettings;
+  settings: DefaultConfig;
   className?: string;
 }
 
@@ -34,8 +34,6 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
   useEffect(() => {
     localStorage.setItem("wordserve-preview-text", inputValue);
   }, [inputValue]);
-
-  // Fetch suggestions from the background script
   const fetchSuggestions = useCallback(
     async (prefix: string) => {
       if (!prefix.trim() || prefix.length < (settings.minWordLength || 2)) {
