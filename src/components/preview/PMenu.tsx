@@ -132,7 +132,6 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
     return weightMap[weight] || "400";
   };
 
-  const enableBlur = settings.themeMode === "adaptive";
   const selectByIndex = useCallback(
     (index: number) => {
       if (!suggestions.length) return;
@@ -235,7 +234,6 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
             if (suggestions.length > 0) setShowMenu(true);
           }}
           onBlur={() => {
-            // Close the menu when input loses focus
             setShowMenu(false);
           }}
           placeholder="Type here..."
@@ -252,23 +250,12 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
             settings.menuBorderRadius ? "rounded-md" : "rounded-none",
             settings.menuBorder ? "" : "border-transparent",
             settings.compactMode ? "py-1" : "py-2",
-            enableBlur && "backdrop-blur-md",
             "transition-all duration-100 ease-out"
           )}
           style={{
-            backgroundColor: enableBlur ? "rgba(25, 23, 36, 0.75)" : "#191724",
-            borderColor: settings.menuBorder
-              ? enableBlur
-                ? "rgba(64, 61, 82, 0.8)"
-                : "#403d52"
-              : "transparent",
+            backgroundColor: "#191724",
+            borderColor: "#403d52",
             color: "#e0def4",
-            backdropFilter: enableBlur
-              ? "blur(16px) saturate(180%)"
-              : undefined,
-            WebkitBackdropFilter: enableBlur
-              ? "blur(16px) saturate(180%)"
-              : undefined,
             fontSize: `${fontSize}px`,
             fontWeight: getFontWeight(settings.fontWeight),
             maxHeight: "200px",
@@ -298,7 +285,6 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                 aria-selected={isSelected}
                 onMouseEnter={() => setSelectedIndex(index)}
                 onMouseDown={(e) => {
-                  // Prevent input blur so click selects properly
                   e.preventDefault();
                   selectByIndex(index);
                 }}

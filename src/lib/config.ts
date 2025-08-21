@@ -92,7 +92,6 @@ export function normalizeConfig(input: any): DefaultConfig {
     DEFAULT_SETTINGS.smartBackspace
   );
   const rankingPosition = merged.rankingPosition === "left" ? "left" : "right";
-  const themeMode = merged.themeMode === "adaptive" ? "adaptive" : "isolated";
   const keyBindings = coerceKBD(
     merged.keyBindings,
     DEFAULT_SETTINGS.keyBindings
@@ -141,7 +140,6 @@ export function normalizeConfig(input: any): DefaultConfig {
     autoInsertion,
     smartBackspace,
     rankingPosition,
-    themeMode,
     keyBindings,
     accessibility,
     domains,

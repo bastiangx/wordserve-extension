@@ -75,7 +75,7 @@ export function AppearanceSettings({
         <CardContent className="space-y-6 p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2 max-w-xs">
-              <Label htmlFor="fontSize">Font size (px)</Label>
+              <Label htmlFor="fontSize">Font size [px]</Label>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -162,8 +162,6 @@ export function AppearanceSettings({
           <Separator />
 
           <div className="space-y-4">
-            <h3 className="font-medium">Layout & Visual</h3>
-
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label>Compact mode</Label>
@@ -230,29 +228,6 @@ export function AppearanceSettings({
                   updatePendingSetting("menuBorderRadius", checked)
                 }
               />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Theme mode</Label>
-                <p className="text-sm text-muted-foreground">
-                  How the menu integrates with page themes
-                </p>
-              </div>
-              <Select
-                value={pendingSettings.themeMode}
-                onValueChange={(value: "adaptive" | "isolated") =>
-                  updatePendingSetting("themeMode", value)
-                }
-              >
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="adaptive">Adaptive</SelectItem>
-                  <SelectItem value="isolated">Isolated</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
         </CardContent>

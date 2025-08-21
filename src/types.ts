@@ -50,7 +50,6 @@ export interface DefaultConfig {
   autoInsertion: boolean;
   smartBackspace: boolean;
   rankingPosition: "left" | "right";
-  themeMode: "adaptive" | "isolated";
   keyBindings: {
     insertWithoutSpace: {
       key: "enter" | "tab" | "space";
@@ -182,7 +181,6 @@ export const DEFAULT_SETTINGS: DefaultConfig = {
   autoInsertion: false,
   smartBackspace: true,
   rankingPosition: "right",
-  themeMode: "isolated",
   keyBindings: {
     insertWithoutSpace: {
       key: "enter",
