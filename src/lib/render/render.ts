@@ -65,9 +65,8 @@ export class AutocompleteMenuRenderer {
       this.menu = this.createMenu();
       this.container!.appendChild(this.menu);
     }
-    this.container!.className = `wordserve-menu-container ${
-      options.compact ? "compact" : ""
-    }`;
+    this.container!.className = `wordserve-menu-container ${options.compact ? "compact" : ""
+      }`;
     const fontSize = options.fontSize ?? 14;
     const fontWeight = options.fontWeight ?? "400";
     const showBorder = options.menuBorder ?? true;
@@ -83,7 +82,10 @@ export class AutocompleteMenuRenderer {
     if (options.maxHeight) {
       this.menu.style.maxHeight = `${options.maxHeight}px`;
     }
-    this.menu.innerHTML = "";
+    while (this.menu.firstChild) {
+      this.menu.removeChild(this.menu.firstChild);
+    }
+
     const displaySuggestions = options.suggestions.slice(
       0,
       options.maxItems || 9
@@ -107,10 +109,9 @@ export class AutocompleteMenuRenderer {
       (options.numberSelection &&
         index < AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE);
 
-  const item = document.createElement("div");
-    item.className = `wordserve-menu-item ${isSelected ? "selected" : ""} ${
-      options.rankingPosition === "right" ? "justify-between" : ""
-    }`;
+    const item = document.createElement("div");
+    item.className = `wordserve-menu-item ${isSelected ? "selected" : ""} ${options.rankingPosition === "right" ? "justify-between" : ""
+      }`;
     // remove left padding when badge on left to align content
     if (options.rankingPosition === "left") {
       item.style.paddingLeft = "0px";
