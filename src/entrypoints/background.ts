@@ -1,7 +1,7 @@
 import browser from "webextension-polyfill";
 import { DEFAULT_SETTINGS } from "@/types";
 import { normalizeConfig } from "@/lib/config";
-import { defaultWasmManager, WasmManager } from "@/lib/wasm";
+import { workerWasmManager, WasmManager } from "@/lib/wasm";
 
 async function cryptoDigestSHA256(data: Uint8Array): Promise<string> {
   try {
@@ -18,8 +18,8 @@ export default defineBackground(() => {
   class BackgroundWordServeWASM {
     private isInitialized = false;
     private isLoading = false;
-    private sandbox: ReturnType<
-      WasmManager["createSandboxedEnvironment"]
+    private workerEnv: ReturnType<
+      WasmManager["createWorkerBasedEnvironment"]
     > | null = null;
 
     get ready(): boolean {
@@ -30,42 +30,28 @@ export default defineBackground(() => {
       if (this.isInitialized || this.isLoading) return;
       this.isLoading = true;
       try {
-        self.importScripts(browser.runtime.getURL("wasm_exec.js" as any));
-        this.sandbox = defaultWasmManager.createSandboxedEnvironment();
         const wasmUrl = browser.runtime.getURL("wordserve.wasm" as any);
         const manifestUrl = browser.runtime.getURL(
           "asset-manifest.json" as any
         );
-        const go = new (globalThis as any).Go();
-        const wasmResult = await defaultWasmManager.loadWasmWithManifest(
+
+        // Use Worker-based WASM loading for stronger isolation
+        const wasmResult = await workerWasmManager.loadWasmWorker(
           wasmUrl,
           manifestUrl,
-          go.importObject
+          {} // No importObject needed for Worker-based execution
         );
+
         if (!wasmResult.success) {
           throw new Error(`WASM loading failed: ${wasmResult.error}`);
         }
 
-        await new Promise<void>((resolve, reject) => {
-          const timeout = setTimeout(
-            () => reject(new Error("WASM initialization timeout")),
-            10000
-          );
-          (globalThis as any).wasmReady = () => {
-            clearTimeout(timeout);
-            this.isInitialized = true;
-            resolve();
-          };
-          if (this.sandbox && wasmResult.instance) {
-            this.sandbox.executeInSandbox(() => {
-              go.run(wasmResult.instance!).catch((error: any) => {
-                console.error("WordServe: Go failed:", error);
-                clearTimeout(timeout);
-                reject(new Error(`Go failed: ${error}`));
-              });
-            });
-          }
-        });
+        if (!wasmResult.workerEnvironment) {
+          throw new Error("Worker environment not created");
+        }
+
+        this.workerEnv = wasmResult.workerEnvironment;
+        this.isInitialized = true;
       } catch (e) {
         console.error("WASM init failed:", e);
         this.isLoading = false;
@@ -74,89 +60,55 @@ export default defineBackground(() => {
         this.isLoading = false;
       }
     }
-    async completeMsgPack(packed: Uint8Array) {
-      if (!this.isInitialized) {
+    async completeMsgPack(data: Uint8Array) {
+      if (!this.isInitialized || !this.workerEnv) {
         console.error("WASM not initialized for completeMsgPack");
         throw new Error("WASM not initialized");
       }
-      console.debug(
-        "[WordServe] WASM calling wasmCompleter.complete with:",
-        packed
-      );
-
-      try {
-        if (this.sandbox) {
-          return await this.sandbox.executeInSandbox(() => {
-            const result = (globalThis as any).wasmCompleter.complete(packed);
-            if (result && typeof result === "object" && result.error) {
-              console.error("completer returned error:", result.error);
-              throw new Error(result.error);
-            }
-            return result;
-          });
-        } else {
-          const result = (globalThis as any).wasmCompleter.complete(packed);
-          if (result && typeof result === "object" && result.error) {
-            console.error("completer returned error:", result.error);
-            throw new Error(result.error);
-          }
-          return result;
-        }
-      } catch (error) {
-        console.error("[WS] WASM completer error:", error);
-        throw error;
+      const result = (await this.workerEnv.executeInWorker("complete", {
+        data,
+      })) as any;
+      if (result.error) {
+        console.error("Completion error:", result.error);
+        throw new Error(result.error);
       }
+      return result;
     }
 
     async getStats() {
-      if (!this.isInitialized) {
+      if (!this.isInitialized || !this.workerEnv) {
         console.error("WASM not initialized for getStats");
         throw new Error("WASM not initialized");
       }
-      if (this.sandbox) {
-        return await this.sandbox.executeInSandbox(() => {
-          return (globalThis as any).wasmCompleter.stats();
-        });
-      } else {
-        return (globalThis as any).wasmCompleter.stats();
+      const result = (await this.workerEnv.executeInWorker("getStats")) as any;
+      if (result.error) {
+        console.error("Stats error:", result.error);
+        throw new Error(result.error);
       }
+      return result;
     }
     async completeRaw(prefix: string, limit: number) {
-      if (!this.isInitialized) {
+      if (!this.isInitialized || !this.workerEnv) {
         console.error("WASM not initialized for completeRaw");
         throw new Error("WASM not initialized");
       }
-      if (this.sandbox) {
-        return await this.sandbox.executeInSandbox(() => {
-          const result = (globalThis as any).wasmCompleter.completeRaw(
-            prefix,
-            limit
-          );
-          if (result.error) {
-            console.error("Raw completion error:", result.error);
-            throw new Error(result.error);
-          }
-          return result.suggestions;
-        });
-      } else {
-        const result = (globalThis as any).wasmCompleter.completeRaw(
-          prefix,
-          limit
-        );
-        if (result.error) {
-          console.error("Raw completion error:", result.error);
-          throw new Error(result.error);
-        }
-        return result.suggestions;
+      const result = (await this.workerEnv.executeInWorker("completeRaw", {
+        prefix,
+        limit,
+      })) as any;
+      if (result.error) {
+        console.error("Raw completion error:", result.error);
+        throw new Error(result.error);
       }
+      return result.suggestions;
     }
 
-    async dispose(): Promise<void> {
-      if (this.sandbox) {
-        this.sandbox.cleanup();
-        this.sandbox = null;
-      }
+    dispose() {
       this.isInitialized = false;
+      if (this.workerEnv) {
+        this.workerEnv.cleanup();
+        this.workerEnv = null;
+      }
     }
   }
 
@@ -168,7 +120,7 @@ export default defineBackground(() => {
         if (tab.id)
           browser.tabs
             .sendMessage(tab.id, { type, ...payload })
-            .catch(() => { });
+            .catch(() => {});
     });
   }
 
@@ -177,7 +129,7 @@ export default defineBackground(() => {
       await browser.storage.local.set({
         wordserveLastError: { message, ts: Date.now() },
       });
-    } catch { }
+    } catch {}
     console.error("WordServe error:", message);
     broadcast("wordserve-error", { message });
   }
@@ -201,9 +153,7 @@ export default defineBackground(() => {
           }
         }
       } catch {
-        console.warn(
-          "[WS] No asset manifest, continuing without checks"
-        );
+        console.warn("[WS] No asset manifest, continuing without checks");
       }
       const chunkPromises: Promise<Uint8Array>[] = [];
       for (let i = 1; i <= EXPECTED_CHUNKS; i++) {
@@ -422,7 +372,7 @@ export default defineBackground(() => {
                     type: "settingsUpdated",
                     settings: message.settings,
                   })
-                  .catch(() => { });
+                  .catch(() => {});
             sendResponse({ success: true });
           } catch (e) {
             sendResponse({ success: false, error: String(e) });
