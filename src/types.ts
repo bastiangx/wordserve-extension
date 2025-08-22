@@ -11,7 +11,7 @@ export interface DisplaySuggestion {
   rank: number;
 }
 
-export interface WASMCompleterStats {
+export interface EngineStats {
   totalWords: number;
   maxFrequency: number;
   [key: string]: number;

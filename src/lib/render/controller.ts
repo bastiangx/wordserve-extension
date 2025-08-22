@@ -73,47 +73,28 @@ export class AutocompleteController {
     }
     this.debounceTimer = setTimeout(async () => {
       try {
-        console.log(
-          "WordServe: Fetching suggestions for:",
-          context.currentWord
-        );
         const suggestions = await this.fetchSuggestions(context.currentWord);
-        console.log("WordServe: Got suggestions:", suggestions);
         this.showSuggestions(suggestions, context);
       } catch (error) {
-        console.error("Failed to fetch suggestions:", error);
         this.hideMenu();
       }
     }, this.settings.debounceTime) as any;
   }
 
   private async fetchSuggestions(word: string): Promise<Suggestion[]> {
-    console.log(
-      "WordServe: fetchSuggestions called with:",
-      word,
-      "minLength:",
-      this.settings.minWordLength
-    );
     if (word.length < this.settings.minWordLength) {
-      console.log("WordServe: Word too short, returning empty suggestions");
       return [];
     }
     try {
-      console.log("WordServe: Calling background service for completion");
       const response = await browser.runtime.sendMessage({
         type: "wordserve-complete",
         prefix: word,
         limit: this.settings.maxSuggestions,
       });
       if (response?.error) {
-        console.error("WordServe: Background service error:", response.error);
         return [];
       }
       const rawSuggestions = response?.suggestions || [];
-      console.log(
-        "WordServe: Raw suggestions from background:",
-        rawSuggestions
-      );
       const suggestions = rawSuggestions.map(
         (raw: RawSuggestion, index: number) => ({
           word: raw.word,
@@ -121,10 +102,8 @@ export class AutocompleteController {
           id: `${raw.word}-${index}`,
         })
       );
-      console.log("WordServe: Converted suggestions:", suggestions);
       return suggestions;
     } catch (error) {
-      console.error("Failed to fetch suggestions:", error);
       return [];
     }
   }

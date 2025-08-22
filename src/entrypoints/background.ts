@@ -1,7 +1,7 @@
 import browser from "webextension-polyfill";
 import { DEFAULT_SETTINGS } from "@/types";
 import { normalizeConfig } from "@/lib/config";
-import { workerWasmManager, WasmManager } from "@/lib/wasm";
+import { SuggestEngine } from "@/lib/suggest";
 
 async function cryptoDigestSHA256(data: Uint8Array): Promise<string> {
   try {
@@ -15,12 +15,10 @@ async function cryptoDigestSHA256(data: Uint8Array): Promise<string> {
 }
 
 export default defineBackground(() => {
-  class BackgroundWordServeWASM {
+  class BackgroundSuggest {
     private isInitialized = false;
     private isLoading = false;
-    private workerEnv: ReturnType<
-      WasmManager["createWorkerBasedEnvironment"]
-    > | null = null;
+    private engine: SuggestEngine | null = null;
 
     get ready(): boolean {
       return this.isInitialized;
@@ -30,89 +28,36 @@ export default defineBackground(() => {
       if (this.isInitialized || this.isLoading) return;
       this.isLoading = true;
       try {
-        const wasmUrl = browser.runtime.getURL("wordserve.wasm" as any);
-        const manifestUrl = browser.runtime.getURL(
-          "asset-manifest.json" as any
-        );
-
-        // Use Worker-based WASM loading for stronger isolation
-        const wasmResult = await workerWasmManager.loadWasmWorker(
-          wasmUrl,
-          manifestUrl,
-          {} // No importObject needed for Worker-based execution
-        );
-
-        if (!wasmResult.success) {
-          throw new Error(`WASM loading failed: ${wasmResult.error}`);
-        }
-
-        if (!wasmResult.workerEnvironment) {
-          throw new Error("Worker environment not created");
-        }
-
-        this.workerEnv = wasmResult.workerEnvironment;
+        this.engine = new SuggestEngine();
         this.isInitialized = true;
       } catch (e) {
-        console.error("WASM init failed:", e);
+        console.error("Engine init failed:", e);
         this.isLoading = false;
         throw e;
       } finally {
         this.isLoading = false;
       }
     }
-    async completeMsgPack(data: Uint8Array) {
-      if (!this.isInitialized || !this.workerEnv) {
-        console.error("WASM not initialized for completeMsgPack");
-        throw new Error("WASM not initialized");
-      }
-      const result = (await this.workerEnv.executeInWorker("complete", {
-        data,
-      })) as any;
-      if (result.error) {
-        console.error("Completion error:", result.error);
-        throw new Error(result.error);
-      }
-      return result;
+    getStats() {
+      if (!this.engine) throw new Error("engine not ready");
+      return this.engine.stats();
     }
-
-    async getStats() {
-      if (!this.isInitialized || !this.workerEnv) {
-        console.error("WASM not initialized for getStats");
-        throw new Error("WASM not initialized");
-      }
-      const result = (await this.workerEnv.executeInWorker("getStats")) as any;
-      if (result.error) {
-        console.error("Stats error:", result.error);
-        throw new Error(result.error);
-      }
-      return result;
+    completeRaw(prefix: string, limit: number) {
+      if (!this.engine) throw new Error("engine not ready");
+      return this.engine.complete(prefix, limit);
     }
-    async completeRaw(prefix: string, limit: number) {
-      if (!this.isInitialized || !this.workerEnv) {
-        console.error("WASM not initialized for completeRaw");
-        throw new Error("WASM not initialized");
-      }
-      const result = (await this.workerEnv.executeInWorker("completeRaw", {
-        prefix,
-        limit,
-      })) as any;
-      if (result.error) {
-        console.error("Raw completion error:", result.error);
-        throw new Error(result.error);
-      }
-      return result.suggestions;
+    loadChunks(chunks: Uint8Array[]) {
+      if (!this.engine) throw new Error("engine not ready");
+      return this.engine.initializeFromChunks(chunks);
     }
 
     dispose() {
       this.isInitialized = false;
-      if (this.workerEnv) {
-        this.workerEnv.cleanup();
-        this.workerEnv = null;
-      }
+      this.engine = null;
     }
   }
 
-  let wasmInstance: BackgroundWordServeWASM | null = null;
+  let engineInstance: BackgroundSuggest | null = null;
 
   function broadcast(type: string, payload: any = {}) {
     browser.tabs.query({}).then((tabs) => {
@@ -138,7 +83,7 @@ export default defineBackground(() => {
   const EXPECTED_CHUNKS = 7;
 
   async function loadDictionaryData() {
-    if (!wasmInstance) return;
+    if (!engineInstance) return;
     try {
       let manifest: Record<string, { sha256?: string }> | null = null;
       try {
@@ -200,20 +145,13 @@ export default defineBackground(() => {
           }
         }
       }
-      if ((globalThis as any).wasmCompleter?.initWithBinaryData) {
-        const result = (globalThis as any).wasmCompleter.initWithBinaryData(
-          chunks
-        );
-        if (!result?.success) {
-          console.error("Failed to load dictionary:", result?.error);
-          throw new Error(result?.error || "Failed to load dictionary");
-        }
+      if (engineInstance) {
+        const result = engineInstance.loadChunks(chunks);
+        if (!result || !result.success)
+          throw new Error("dictionary parse failed");
         await browser.storage.local.set({
           wordserveDictMeta: { words: result.wordCount, chunks: result.chunks },
         });
-      } else {
-        console.error("WASM completer not available");
-        throw new Error("WASM completer not available");
       }
     } catch (err) {
       console.error("WordServe: Dictionary load error:", err);
@@ -221,14 +159,14 @@ export default defineBackground(() => {
     }
   }
 
-  async function initializeWASM() {
+  async function initializeEngine() {
     try {
-      wasmInstance = new BackgroundWordServeWASM();
-      await wasmInstance.initialize();
+      engineInstance = new BackgroundSuggest();
+      await engineInstance.initialize();
       await loadDictionaryData();
       broadcast("wordserve-ready");
     } catch (e) {
-      console.error("WordServe: WASM initialization failed:", e);
+      console.error("WordServe: engine initialization failed:", e);
       await recordError(`Initialization failed: ${String(e)}`);
     }
   }
@@ -241,7 +179,7 @@ export default defineBackground(() => {
       sendResponse: (response: any) => void
     ): true => {
       if (message.type === "wordserve-status") {
-        sendResponse({ ready: !!(wasmInstance && wasmInstance.ready) });
+        sendResponse({ ready: !!(engineInstance && engineInstance.ready) });
         return true;
       }
       if (message.type === "wordserve-last-error") {
@@ -258,84 +196,22 @@ export default defineBackground(() => {
         })();
         return true;
       }
-      if (message.type === "wordserve-complete-msgpack") {
-        (async () => {
-          try {
-            if (!wasmInstance?.ready) {
-              sendResponse({ error: "WASM not ready" });
-              return;
-            }
-            // Accept base64 payload (preferred) or legacy forms
-            let packed: Uint8Array | null = null;
-            if (typeof message.payloadB64 === "string") {
-              try {
-                const bin = atob(message.payloadB64);
-                const arr = new Uint8Array(bin.length);
-                for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-                packed = arr;
-              } catch (e) {
-                console.error("[WordServe] Failed to decode base64 payload", e);
-              }
-            } else if (message.payload instanceof Uint8Array) {
-              packed = message.payload;
-            } else if (
-              message.payload &&
-              typeof message.payload === "object" &&
-              "length" in message.payload
-            ) {
-              const len = message.payload.length >>> 0;
-              const arr = new Uint8Array(len);
-              for (let i = 0; i < len; i++) arr[i] = message.payload[i] & 0xff;
-              packed = arr;
-            }
-            if (!packed) {
-              console.error(
-                "[WordServe] Invalid payload format",
-                message.payloadB64?.length,
-                typeof message.payload
-              );
-              sendResponse({ error: "Invalid payload format" });
-              return;
-            }
-
-            console.debug(
-              "[WordServe] Background calling wasmCompleter.complete with packed bytes len:",
-              packed.byteLength
-            );
-
-            const result = await wasmInstance.completeMsgPack(packed);
-            console.debug(
-              "[WordServe] Background received WASM result type:",
-              typeof result,
-              "isUint8",
-              result instanceof Uint8Array
-            );
-
-            let payloadB64: string | undefined;
-            if (result instanceof Uint8Array) {
-              let binary = "";
-              for (let i = 0; i < result.length; i++)
-                binary += String.fromCharCode(result[i]);
-              payloadB64 = btoa(binary);
-            }
-            sendResponse({ payloadB64 });
-          } catch (e) {
-            console.error("[WordServe] Background WASM error:", e);
-            sendResponse({ error: String(e) });
-          }
-        })();
-        return true;
-      }
+      // remove msgpack path; engine uses direct complete
       if (message.type === "wordserve-complete") {
         (async () => {
           try {
-            if (!wasmInstance?.ready) {
-              sendResponse({ error: "WASM not ready" });
+            if (!engineInstance?.ready) {
+              sendResponse({ error: "engine not ready" });
               return;
             }
             const { prefix, limit } = message;
             const clamped = Math.max(1, Math.min(limit || 20, 128));
-            const suggestions = await wasmInstance.completeRaw(prefix, clamped);
+            const base = engineInstance.completeRaw(prefix, clamped);
+            const suggestions = base.map((s, i) => ({
+              word: s.word,
+              rank: i + 1,
+              frequency: s.frequency,
+            }));
             sendResponse({ suggestions });
           } catch (e) {
             sendResponse({ error: String(e) });
@@ -346,11 +222,11 @@ export default defineBackground(() => {
       if (message.type === "wordserve-stats") {
         (async () => {
           try {
-            if (!wasmInstance?.ready) {
-              sendResponse({ error: "WASM not ready" });
+            if (!engineInstance?.ready) {
+              sendResponse({ error: "engine not ready" });
               return;
             }
-            const stats = await wasmInstance.getStats();
+            const stats = engineInstance.getStats();
             sendResponse({ stats });
           } catch (e) {
             sendResponse({ error: String(e) });
@@ -422,6 +298,6 @@ export default defineBackground(() => {
     }
   });
   (async () => {
-    await initializeWASM();
+    await initializeEngine();
   })();
 });

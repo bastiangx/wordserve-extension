@@ -7,7 +7,10 @@ import { browser } from "wxt/browser";
 
 export default defineContentScript({
   matches: ["<all_urls>"],
-  includeGlobs: ["chrome-extension://*/settings.html", "moz-extension://*/settings.html"],
+  includeGlobs: [
+    "chrome-extension://*/settings.html",
+    "moz-extension://*/settings.html",
+  ],
   main() {
     console.log("WordServe content script loaded");
 
@@ -23,15 +26,15 @@ export default defineContentScript({
         this.setupMessageListener();
         this.setupDOMObserver();
         this.attachToExistingInputs();
-        this.checkWASMStatus();
+        this.checkEngineStatus();
       }
 
-      private async checkWASMStatus(): Promise<void> {
+      private async checkEngineStatus(): Promise<void> {
         try {
           const response = await browser.runtime.sendMessage({
             type: "wordserve-status",
           });
-          console.log("WordServe: WASM status check:", response);
+          console.log("WordServe: engine status check:", response);
 
           if (!response?.ready) {
             // Also check for any error messages
@@ -42,16 +45,14 @@ export default defineContentScript({
               console.error("WordServe: Background error:", errorResponse);
             }
 
-            console.log(
-              "WordServe: WASM not ready, will check again in 2 seconds"
-            );
-            setTimeout(() => this.checkWASMStatus(), 2000);
+            console.log("WordServe: engine not ready, retrying in 2s");
+            setTimeout(() => this.checkEngineStatus(), 2000);
           } else {
             return;
           }
         } catch (error) {
-          console.error("WordServe: Failed to check WASM status:", error);
-          setTimeout(() => this.checkWASMStatus(), 2000);
+          console.error("WordServe: Failed to check engine status:", error);
+          setTimeout(() => this.checkEngineStatus(), 2000);
         }
       }
 
@@ -195,15 +196,10 @@ export default defineContentScript({
         if (this.domainEnabledCache !== null) {
           return this.domainEnabledCache;
         }
-        
         const hostname = window.location.hostname;
         const domainSettings = this.settings.domains;
-        
-        // Use the centralized domain activation logic which includes extension page exception
         const isEnabled = shouldActivateForDomain(hostname, domainSettings);
-        
         this.domainEnabledCache = isEnabled;
-        
         return isEnabled;
       }
 
