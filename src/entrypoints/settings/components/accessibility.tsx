@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { DefaultConfig } from "@/types";
+import { Separator } from "@/components/ui/separator";
 
 export interface AccessibilitySettingsProps {
   pendingSettings: DefaultConfig["accessibility"];
@@ -24,16 +25,13 @@ export function AccessibilitySettings({
   updatePendingAccessibilitySetting,
 }: AccessibilitySettingsProps) {
   return (
-    <div className="space-y-6">
-      <Card className="rounded-md card">
-        <CardContent className="space-y-6 p-6">
-          <div className="space-y-4">
+    <div className="space-y-2">
+      <Card className="border-transparent">
+        <CardContent className="space-y-2 p-4">
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <Label>Bold suffix</Label>
-                <p className="text-sm text-muted-foreground">
-                  Make the completion part of suggestions bold
-                </p>
               </div>
               <Switch
                 checked={pendingSettings.boldSuffix}
@@ -42,13 +40,10 @@ export function AccessibilitySettings({
                 }
               />
             </div>
-
+            <Separator />
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label>Uppercase suggestions</Label>
-                <p className="text-sm text-muted-foreground">
-                  Convert all suggestions to uppercase
-                </p>
+                <Label>Uppercase letters</Label>
               </div>
               <Switch
                 checked={pendingSettings.uppercaseSuggestions}
@@ -61,10 +56,12 @@ export function AccessibilitySettings({
               />
             </div>
 
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="prefixColorIntensity">
-                Prefix color intensity
-              </Label>
+            <Separator />
+
+            <div className="flex justify-between items-center">
+              <div className="space-y-1">
+                <Label htmlFor="prefixColorIntensity">Prefix color intensity</Label>
+              </div>
               <Select
                 value={pendingSettings.prefixColorIntensity}
                 onValueChange={(
@@ -76,7 +73,7 @@ export function AccessibilitySettings({
                   )
                 }
               >
-                <SelectTrigger id="prefixColorIntensity">
+                <SelectTrigger id="prefixColorIntensity" className="w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,14 +6,21 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2 } from "lucide-react";
-import type { DomainSettings } from '@/lib/domains';
+import type { DomainSettings } from "@/lib/domains";
+import { Separator } from "@/components/ui/separator";
 
 export interface DomainSettingsProps {
   pendingSettings: DomainSettings;
-  updatePendingDomainSetting: <K extends keyof DomainSettings>(key: K, value: DomainSettings[K]) => void;
+  updatePendingDomainSetting: <K extends keyof DomainSettings>(
+    key: K,
+    value: DomainSettings[K]
+  ) => void;
 }
 
-export function DomainSettingsComponent({ pendingSettings, updatePendingDomainSetting }: DomainSettingsProps) {
+export function DomainSettingsComponent({
+  pendingSettings,
+  updatePendingDomainSetting,
+}: DomainSettingsProps) {
   const [newDomainInput, setNewDomainInput] = useState("");
 
   const addDomain = (listType: "blacklist" | "whitelist") => {
@@ -29,21 +36,29 @@ export function DomainSettingsComponent({ pendingSettings, updatePendingDomainSe
     setNewDomainInput("");
   };
 
-  const removeDomain = (listType: "blacklist" | "whitelist", domain: string) => {
+  const removeDomain = (
+    listType: "blacklist" | "whitelist",
+    domain: string
+  ) => {
     const currentList = pendingSettings[listType];
-    updatePendingDomainSetting(listType, currentList.filter((d) => d !== domain));
+    updatePendingDomainSetting(
+      listType,
+      currentList.filter((d) => d !== domain)
+    );
   };
 
   return (
-    <div className="space-y-6">
-      <Card className="rounded-md card">
-        <CardContent className="space-y-6 p-6">
+    <div className="space-y-4">
+      <Card className="border-transparent">
+        <CardContent className="space-y-2 p-4">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
+            <div className="flex items-center justify-between ">
+              <div className="space-y-2">
                 <Label>Blacklist mode</Label>
                 <p className="text-sm text-muted-foreground">
-                  When enabled, blacklist patterns block domains. When disabled, whitelist patterns allow domains.
+                  When enabled, WordServe will work on all domains except those
+                  in the blacklist. When disabled, wordserve will only work on
+                  domains in the whitelist.
                 </p>
               </div>
               <Switch
@@ -54,12 +69,13 @@ export function DomainSettingsComponent({ pendingSettings, updatePendingDomainSe
               />
             </div>
 
-            <div className="space-y-4">
-              <div className="space-y-2">
+            <Separator />
+            <div className="space-y-8">
+              <div className="space-y-4">
                 <Label>Add domain</Label>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Enter domain pattern (e.g., *.example.com)"
+                    placeholder="Type here (*.example.com)"
                     value={newDomainInput}
                     onChange={(e) => setNewDomainInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -73,6 +89,7 @@ export function DomainSettingsComponent({ pendingSettings, updatePendingDomainSe
                     }}
                   />
                   <Button
+                    variant={"secondary"}
                     onClick={() =>
                       addDomain(
                         pendingSettings.blacklistMode
@@ -112,7 +129,8 @@ export function DomainSettingsComponent({ pendingSettings, updatePendingDomainSe
                     ))}
                     {pendingSettings.whitelist.length === 0 && (
                       <p className="text-sm text-muted-foreground">
-                        No domains in whitelist. Add domains to restrict suggestions to specific sites.
+                        No domains in whitelist. Add domains to restrict
+                        suggestions to specific sites.
                       </p>
                     )}
                   </div>
@@ -121,7 +139,11 @@ export function DomainSettingsComponent({ pendingSettings, updatePendingDomainSe
                 {pendingSettings.blacklistMode && (
                   <div className="flex flex-wrap gap-2">
                     {pendingSettings.blacklist.map((domain) => (
-                      <Badge key={domain} variant="destructive" className="gap-1">
+                      <Badge
+                        key={domain}
+                        variant="destructive"
+                        className="gap-1"
+                      >
                         {domain}
                         <Button
                           variant="ghost"
@@ -135,7 +157,8 @@ export function DomainSettingsComponent({ pendingSettings, updatePendingDomainSe
                     ))}
                     {pendingSettings.blacklist.length === 0 && (
                       <p className="text-sm text-muted-foreground">
-                        No domains blocked. Add domains to disable suggestions on specific sites.
+                        No domains blocked. Add domains to disable suggestions
+                        on specific sites.
                       </p>
                     )}
                   </div>
@@ -143,13 +166,26 @@ export function DomainSettingsComponent({ pendingSettings, updatePendingDomainSe
               </div>
             </div>
 
+            <Separator />
             <div className="text-sm text-muted-foreground space-y-1">
-              <p><strong>Pattern examples:</strong></p>
+              <p>
+                <strong>Pattern examples:</strong>
+              </p>
               <ul className="list-disc list-inside space-y-1 ml-4">
-                <li><code>*.paypal.com</code> - matches all paypal.com subdomains</li>
-                <li><code>*payment*</code> - matches any domain containing "payment"</li>
-                <li><code>secure.*</code> - matches any domain starting with "secure."</li>
-                <li><code>exact.domain.com</code> - matches only this exact domain</li>
+                <li>
+                  <code>*.paypal.com</code> - matches all paypal.com subdomains
+                </li>
+                <li>
+                  <code>*payment*</code> - matches any domain containing
+                  "payment"
+                </li>
+                <li>
+                  <code>secure.*</code> - matches any domain starting with
+                  "secure."
+                </li>
+                <li>
+                  <code>exact.domain.com</code> - matches only this exact domain
+                </li>
               </ul>
             </div>
           </div>

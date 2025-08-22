@@ -211,13 +211,8 @@ export function AbbreviationsSettings({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">
-            Create text shortcuts that expand into longer phrases
-          </p>
-        </div>
-        <div className="flex gap-2 items-center">
+      <div className="flex justify-between items-center">
+        <div className="flex gap-4 items-center">
           <Label>Sort</Label>
           <select
             className="border rounded-md px-2 py-1 text-sm bg-background"
@@ -229,17 +224,19 @@ export function AbbreviationsSettings({
             <option value="az">A → Z</option>
             <option value="za">Z → A</option>
           </select>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) importJSON(f);
-              e.currentTarget.value = ""; // reset
-            }}
-          />
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) importJSON(f);
+            e.currentTarget.value = ""; // reset
+          }}
+        />
+        <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -247,7 +244,7 @@ export function AbbreviationsSettings({
           >
             <Download className="h-4 w-4 mr-2" /> Import
           </Button>
-          <Button variant="secondary" size="sm" onClick={exportJSON}>
+          <Button variant="outline" size="sm" onClick={exportJSON}>
             <Upload className="h-4 w-4 mr-2" /> Export
           </Button>
         </div>
@@ -256,8 +253,8 @@ export function AbbreviationsSettings({
       <Separator />
 
       <div className="flex justify-end">
-        <Button variant="ghost" size="sm" onClick={addRow}>
-          <Plus className="h-4 w-4 mr-2" /> Add abbreviation
+        <Button variant="secondary" size="sm" onClick={addRow}>
+          <Plus className="h-4 w-4 mr-2" /> New
         </Button>
       </div>
 

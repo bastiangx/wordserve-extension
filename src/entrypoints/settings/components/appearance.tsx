@@ -71,12 +71,14 @@ export function AppearanceSettings({
 
   return (
     <div className="space-y-6">
-      <Card className="rounded-md card">
-        <CardContent className="space-y-6 p-">
-          <div className="flex md:grid-cols-2 gap-6">
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="fontSize">Font size [px]</Label>
-              <div className="flex items-center gap-1">
+      <Card className="border-transparent">
+        <CardContent className="space-y-6 p-4">
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div className="space-y-1">
+                <Label htmlFor="fontSize">Font size [px]</Label>
+              </div>
+              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -115,7 +117,7 @@ export function AppearanceSettings({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => adjustNumber("fontSize", 1, 8, 32)}
+                  onClick={() => adjustNumber("fontSize", 1, 12, 28)}
                   disabled={
                     typeof pendingSettings.fontSize === "number" &&
                     pendingSettings.fontSize >= 32
@@ -127,15 +129,17 @@ export function AppearanceSettings({
               </div>
             </div>
 
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="fontWeight">Font weight</Label>
+            <div className="flex justify-between items-center">
+              <div className="space-y-1">
+                <Label htmlFor="fontWeight">Font weight</Label>
+              </div>
               <Select
                 value={pendingSettings.fontWeight}
                 onValueChange={(value: DefaultConfig["fontWeight"]) =>
                   updatePendingSetting("fontWeight", value)
                 }
               >
-                <SelectTrigger id="fontWeight">
+                <SelectTrigger id="fontWeight" className="w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -157,10 +161,10 @@ export function AppearanceSettings({
 
           <div className="space-y-8">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <Label>Compact mode</Label>
                 <p className="text-sm text-muted-foreground">
-                  Reduce spacing and padding in suggestions
+                  Reduce spacing and padding
                 </p>
               </div>
               <Switch
@@ -174,10 +178,10 @@ export function AppearanceSettings({
             <Separator />
 
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Ranking position</Label>
+              <div className="space-y-2">
+                <Label>Ranking number position</Label>
                 <p className="text-sm text-muted-foreground">
-                  Position of ranking numbers in suggestion menu
+                  Relative to the suggestion texts
                 </p>
               </div>
               <Select
@@ -196,13 +200,26 @@ export function AppearanceSettings({
               </Select>
             </div>
 
-            <Separator />
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Menu border</Label>
+              <div className="space-y-2">
+                <Label>Ranking render override</Label>
                 <p className="text-sm text-muted-foreground">
-                  Show border around suggestion menu
+                  Always show rankings even when digit selection is off
                 </p>
+              </div>
+              <Switch
+                checked={pendingSettings.showRankingOverride}
+                onCheckedChange={(checked) =>
+                  updatePendingSetting("showRankingOverride", checked)
+                }
+              />
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Bordered Menu</Label>
               </div>
               <Switch
                 checked={pendingSettings.menuBorder}
@@ -211,13 +228,9 @@ export function AppearanceSettings({
                 }
               />
             </div>
-
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Rounded borders</Label>
-                <p className="text-sm text-muted-foreground">
-                  Use rounded corners for the suggestion menu
-                </p>
+              <div>
+                <Label>Rounded corners</Label>
               </div>
               <Switch
                 checked={pendingSettings.menuBorderRadius}

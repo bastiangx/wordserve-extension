@@ -9,8 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import type { DefaultConfig } from "@/types";
+import { Separator } from "@/components/ui/separator";
 
 export interface BehaviorSettingsProps {
   pendingSettings: DefaultConfig;
@@ -23,14 +23,14 @@ export function BehaviorSettings({
 }: BehaviorSettingsProps) {
   return (
     <div className="space-y-6">
-      <Card className="rounded-md card">
-        <CardContent className="space-y-6 p-6">
-          <div className="space-y-4">
+      <Card className="border-transparent">
+        <CardContent className="space-y-2 p-2">
+          <div className="space-y-8">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <Label>Abbreviations</Label>
                 <p className="text-sm text-muted-foreground">
-                  Enable expansion of common abbreviations
+                  Custom shortcut words (cAsE SensItiVe)
                 </p>
               </div>
               <Switch
@@ -40,12 +40,19 @@ export function BehaviorSettings({
                 }
               />
             </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Abbreviation insert mode</Label>
-                <p className="text-sm text-muted-foreground">
-                  Choose how abbreviations expand
-                </p>
+            <div className="flex justify-between">
+              <div className="space-y-2">
+                <Label>Abbrv. insert mode</Label>
+                <Label className="text-sm text-muted-foreground">
+                  How abbreviations are inserted
+                </Label>
+                <div className="h-1" />
+                <Label className="text-sm text-muted-foreground">
+                  Immediate: Inserts as soon as shortcut is typed.
+                </Label>
+                <Label className="text-sm text-muted-foreground">
+                  Space: insert only upon pressing [space] key.
+                </Label>
               </div>
               <Select
                 value={pendingSettings.abbreviationInsertMode}
@@ -62,11 +69,13 @@ export function BehaviorSettings({
                 </SelectContent>
               </Select>
             </div>
+            <Separator />
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <Label>Smart backspace</Label>
                 <p className="text-sm text-muted-foreground">
-                  Intelligently handle backspace in suggestions
+                  Restores original text when backspacing over an inserted
+                  suggestion
                 </p>
               </div>
               <Switch
