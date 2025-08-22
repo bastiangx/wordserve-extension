@@ -42,7 +42,7 @@ export function AccessibilitySettings({
             </div>
             <Separator />
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <Label>Uppercase letters</Label>
               </div>
               <Switch
