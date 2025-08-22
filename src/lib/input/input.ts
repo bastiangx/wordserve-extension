@@ -6,6 +6,7 @@ import {
   type CaretPosition,
 } from "@/lib/input/caret";
 import { smartBackspace } from "@/lib/input/backspace";
+import { findAbbreviation } from "@/lib/input/abbrv";
 
 export interface InputContext {
   element: HTMLElement;
@@ -89,6 +90,29 @@ export class InputHandler {
       }
     }
     this.lastInputWasFromSuggestion = false;
+    if (
+      this.settings.abbreviationsEnabled &&
+      this.settings.abbreviationInsertMode === "immediate"
+    ) {
+      const match = findAbbreviation(context.currentWord, this.settings);
+      if (match) {
+        this.replaceCurrentWord(match.value, true);
+        this.markInputFromSuggestion();
+        const newContext = this.getCurrentContext();
+        if (
+          newContext &&
+          newContext.currentWord.length >= this.settings.minWordLength
+        ) {
+          this.lastWord = newContext.currentWord;
+          this.callbacks.onWordChange(newContext);
+        } else {
+          this.lastWord = "";
+          this.callbacks.onHideMenu();
+        }
+        return;
+      }
+    }
+
     if (context.currentWord.length >= this.settings.minWordLength) {
       if (context.currentWord !== this.lastWord) {
         console.log("WordServe: Word change detected:", context.currentWord);
@@ -183,6 +207,26 @@ export class InputHandler {
             this.settings.keyBindings.insertWithSpace.key === "space";
           this.callbacks.onSelect(addSpace);
         } else {
+          if (
+            this.settings.abbreviationsEnabled &&
+            this.settings.abbreviationInsertMode === "space"
+          ) {
+            const context = this.getCurrentContext();
+            if (context && context.currentWord) {
+              const match = findAbbreviation(
+                context.currentWord,
+                this.settings
+              );
+              if (match) {
+                event.preventDefault();
+                event.stopPropagation();
+                this.replaceCurrentWord(match.value, true);
+                this.markInputFromSuggestion();
+                this.callbacks.onHideMenu();
+                return;
+              }
+            }
+          }
           if (this.settings.smartBackspace) {
             smartBackspace.invalidateForElement(this.element);
             console.log(

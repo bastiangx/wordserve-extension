@@ -18,7 +18,7 @@ export default defineConfig({
       page: "settings.html",
       open_in_tab: true,
     },
-    permissions: ["tabs", "scripting", "storage"],
+  permissions: ["tabs", "scripting", "storage", "downloads"],
     ...(manifestVersion === 3
       ? {
           content_security_policy: {

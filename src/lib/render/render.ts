@@ -1,6 +1,7 @@
 import "@/components/styles.css";
 import { getRowHeight } from "@/lib/utils";
 import { AUTOCOMPLETE_DEFAULTS } from "@/types";
+import { ABBREVIATION_CONFIG } from "@/types";
 
 export interface Suggestion {
   word: string;
@@ -65,8 +66,9 @@ export class AutocompleteMenuRenderer {
       this.menu = this.createMenu();
       this.container!.appendChild(this.menu);
     }
-    this.container!.className = `wordserve-menu-container ${options.compact ? "compact" : ""
-      }`;
+    this.container!.className = `wordserve-menu-container ${
+      options.compact ? "compact" : ""
+    }`;
     const fontSize = options.fontSize ?? 14;
     const fontWeight = options.fontWeight ?? "400";
     const showBorder = options.menuBorder ?? true;
@@ -110,8 +112,9 @@ export class AutocompleteMenuRenderer {
         index < AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE);
 
     const item = document.createElement("div");
-    item.className = `wordserve-menu-item ${isSelected ? "selected" : ""} ${options.rankingPosition === "right" ? "justify-between" : ""
-      }`;
+    item.className = `wordserve-menu-item ${isSelected ? "selected" : ""} ${
+      options.rankingPosition === "right" ? "justify-between" : ""
+    }`;
     // remove left padding when badge on left to align content
     if (options.rankingPosition === "left") {
       item.style.paddingLeft = "0px";
@@ -124,7 +127,19 @@ export class AutocompleteMenuRenderer {
     content.className = "wordserve-menu-item-content";
     const badgeEl = document.createElement("span");
     badgeEl.className = "wordserve-menu-item-rank";
-    badgeEl.textContent = suggestion.rank.toString();
+
+    // Check if this is an abbreviation hint (special badge)
+    if (
+      suggestion.rank === (ABBREVIATION_CONFIG.SPACE_BADGE as unknown as number)
+    ) {
+      // Simple text badge instead of icon
+      badgeEl.textContent = "abbrv";
+      badgeEl.style.fontSize = "10px";
+      badgeEl.style.fontWeight = "500";
+    } else {
+      // For normal suggestions, show the menu position (1-based)
+      badgeEl.textContent = (index + 1).toString();
+    }
     if (options.rankingPosition === "left" && showRanking) {
       content.appendChild(badgeEl);
     }

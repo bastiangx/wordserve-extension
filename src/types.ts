@@ -47,6 +47,10 @@ export interface DefaultConfig {
   fontWeight: string;
   debugMode?: boolean;
   abbreviationsEnabled: boolean;
+  abbreviations: Record<string, string>;
+  maxAbbreviationLength: number;
+  abbreviationInsertMode: "immediate" | "space";
+  abbreviationHintClamp: number;
   autoInsertion: boolean;
   smartBackspace: boolean;
   rankingPosition: "left" | "right";
@@ -165,6 +169,12 @@ export const AUTOCOMPLETE_DEFAULTS = {
   MAX_WIDTH: 400,
 } as const;
 
+export const ABBREVIATION_CONFIG = {
+  MAX_LENGTH: 16,
+  HINT_CLAMP: 12,
+  SPACE_BADGE: "abbrv",
+} as const;
+
 export const DEFAULT_SETTINGS: DefaultConfig = {
   minWordLength: 3,
   maxSuggestions: 16,
@@ -177,7 +187,13 @@ export const DEFAULT_SETTINGS: DefaultConfig = {
   fontSize: 15,
   fontWeight: "normal",
   debugMode: false,
-  abbreviationsEnabled: false,
+  abbreviationsEnabled: true,
+  abbreviations: {
+    STR: "Star WordServe on github!!",
+  },
+  maxAbbreviationLength: ABBREVIATION_CONFIG.MAX_LENGTH,
+  abbreviationInsertMode: "immediate",
+  abbreviationHintClamp: ABBREVIATION_CONFIG.HINT_CLAMP,
   autoInsertion: false,
   smartBackspace: true,
   rankingPosition: "right",

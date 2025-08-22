@@ -8,6 +8,8 @@ import { calculateMenuPosition } from "@/lib/input/caret";
 import { getRowHeight } from "@/lib/utils";
 import { smartBackspace } from "@/lib/input/backspace";
 import type { DefaultConfig, RawSuggestion } from "@/types";
+import { ABBREVIATION_CONFIG } from "@/types";
+import { findAbbreviation } from "@/lib/input/abbrv";
 import { browser } from "wxt/browser";
 
 export interface AutocompleteControllerOptions {
@@ -117,6 +119,28 @@ export class AutocompleteController {
       suggestions.length,
       "suggestions"
     );
+    if (
+      this.settings.abbreviationsEnabled &&
+      this.settings.abbreviationInsertMode === "space"
+    ) {
+      const match = findAbbreviation(context.currentWord, this.settings);
+      if (match) {
+        const clamp = Math.max(
+          8,
+          Math.min(200, this.settings.abbreviationHintClamp)
+        );
+        const hint =
+          match.value.length > clamp
+            ? match.value.slice(0, clamp - 1) + "…"
+            : match.value;
+        const hintSuggestion: Suggestion = {
+          word: hint,
+          rank: ABBREVIATION_CONFIG.SPACE_BADGE as unknown as number,
+          id: `abbr-hint-${context.currentWord}`,
+        } as any;
+        suggestions = [hintSuggestion, ...suggestions];
+      }
+    }
     if (suggestions.length === 0) {
       console.log("WordServe: No suggestions, hiding menu");
       this.hideMenu();
@@ -187,7 +211,16 @@ export class AutocompleteController {
     suggestion: Suggestion,
     addSpace: boolean = false
   ): void {
-    this.insertSuggestion(suggestion.word, addSpace);
+    // Check if this is an abbreviation hint
+    if (suggestion.rank === (ABBREVIATION_CONFIG.SPACE_BADGE as unknown as number)) {
+      // For abbreviation hints, we need to get the full expansion text
+      const match = findAbbreviation(this.currentWord, this.settings);
+      if (match) {
+        this.insertSuggestion(match.value, addSpace);
+      }
+    } else {
+      this.insertSuggestion(suggestion.word, addSpace);
+    }
     this.hideMenu();
   }
 
@@ -238,7 +271,16 @@ export class AutocompleteController {
     if (!this.isVisible || this.suggestions.length === 0) return;
     const selectedSuggestion = this.suggestions[this.selectedIndex];
     if (selectedSuggestion) {
-      this.insertSuggestion(selectedSuggestion.word, addSpace);
+      // Check if this is an abbreviation hint
+      if (selectedSuggestion.rank === (ABBREVIATION_CONFIG.SPACE_BADGE as unknown as number)) {
+        // For abbreviation hints, we need to get the full expansion text
+        const match = findAbbreviation(this.currentWord, this.settings);
+        if (match) {
+          this.insertSuggestion(match.value, addSpace);
+        }
+      } else {
+        this.insertSuggestion(selectedSuggestion.word, addSpace);
+      }
       this.hideMenu();
     }
   }
@@ -255,7 +297,16 @@ export class AutocompleteController {
     if (!this.isVisible || this.suggestions.length === 0) return;
     if (index >= 0 && index < this.suggestions.length) {
       const suggestion = this.suggestions[index];
-      this.insertSuggestion(suggestion.word, true);
+      // Check if this is an abbreviation hint
+      if (suggestion.rank === (ABBREVIATION_CONFIG.SPACE_BADGE as unknown as number)) {
+        // For abbreviation hints, we need to get the full expansion text
+        const match = findAbbreviation(this.currentWord, this.settings);
+        if (match) {
+          this.insertSuggestion(match.value, true);
+        }
+      } else {
+        this.insertSuggestion(suggestion.word, true);
+      }
       this.hideMenu();
     }
   }

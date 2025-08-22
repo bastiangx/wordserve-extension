@@ -72,11 +72,11 @@ export function AppearanceSettings({
   return (
     <div className="space-y-6">
       <Card className="rounded-md card">
-        <CardContent className="space-y-6 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <CardContent className="space-y-6 p-">
+          <div className="flex md:grid-cols-2 gap-6">
             <div className="space-y-2 max-w-xs">
               <Label htmlFor="fontSize">Font size [px]</Label>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <Button
                   variant="outline"
                   size="sm"
@@ -125,9 +125,6 @@ export function AppearanceSettings({
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Size of text in suggestions
-              </p>
             </div>
 
             <div className="space-y-2 max-w-xs">
@@ -153,15 +150,12 @@ export function AppearanceSettings({
                   <SelectItem value="black">Black</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-sm text-muted-foreground">
-                Weight of text in suggestions
-              </p>
             </div>
           </div>
 
           <Separator />
 
-          <div className="space-y-4">
+          <div className="space-y-8">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label>Compact mode</Label>
@@ -176,6 +170,8 @@ export function AppearanceSettings({
                 }
               />
             </div>
+
+            <Separator />
 
             <div className="flex items-center justify-between">
               <div className="space-y-1">
@@ -200,6 +196,7 @@ export function AppearanceSettings({
               </Select>
             </div>
 
+            <Separator />
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label>Menu border</Label>

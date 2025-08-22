@@ -88,11 +88,41 @@ export function normalizeConfig(input: any): DefaultConfig {
     merged.smartBackspace,
     DEFAULT_SETTINGS.smartBackspace
   );
+  const maxAbbreviationLength = clamp(
+    toNumber(
+      merged.maxAbbreviationLength,
+      DEFAULT_SETTINGS.maxAbbreviationLength
+    ),
+    1,
+    64
+  );
+  const abbreviationInsertMode =
+    merged.abbreviationInsertMode === "space" ? "space" : "immediate";
+  const abbreviationHintClamp = clamp(
+    toNumber(
+      merged.abbreviationHintClamp,
+      DEFAULT_SETTINGS.abbreviationHintClamp
+    ),
+    8,
+    200
+  );
   const rankingPosition = merged.rankingPosition === "left" ? "left" : "right";
   const keyBindings = coerceKBD(
     merged.keyBindings,
     DEFAULT_SETTINGS.keyBindings
   );
+  const abbreviations: Record<string, string> = {};
+  if (merged.abbreviations && typeof merged.abbreviations === "object") {
+    for (const [k, v] of Object.entries(merged.abbreviations)) {
+      if (typeof k === "string" && typeof v === "string") {
+        abbreviations[k] = v;
+      } else if (typeof k === "string") {
+        abbreviations[k] = String(v);
+      }
+    }
+  } else {
+    Object.assign(abbreviations, DEFAULT_SETTINGS.abbreviations);
+  }
   const accessibility = {
     boldSuffix: toBool(
       merged.accessibility?.boldSuffix,
@@ -134,6 +164,10 @@ export function normalizeConfig(input: any): DefaultConfig {
     fontWeight,
     debugMode,
     abbreviationsEnabled,
+    abbreviations,
+    maxAbbreviationLength,
+    abbreviationInsertMode,
+    abbreviationHintClamp,
     autoInsertion,
     smartBackspace,
     rankingPosition,

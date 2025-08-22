@@ -10,6 +10,7 @@ import {
   Save,
   SettingsIcon,
   X,
+  FastForward,
 } from "lucide-react";
 import type { DefaultConfig } from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
@@ -58,14 +59,46 @@ import {
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
 import { Label } from "@radix-ui/react-label";
+import { AbbreviationsSettings } from "@/entrypoints/settings/components/abbreviations";
 
 const menuItems = [
-  { id: "general", label: "General", icon: SettingsIcon },
-  { id: "behavior", label: "Behavior", icon: BookType },
-  { id: "appearance", label: "Appearance", icon: Palette },
-  { id: "keyboard", label: "Keyboard", icon: Keyboard },
-  { id: "domain", label: "Domain", icon: Globe },
-  { id: "accessibility", label: "Accessibility", icon: Glasses },
+  { id: "general", label: "General", icon: SettingsIcon, desc: "" },
+  {
+    id: "behavior",
+    label: "Behavior",
+    icon: BookType,
+    desc: "Insertions & input control",
+  },
+  {
+    id: "abbreviations",
+    label: "Abbreviations",
+    icon: FastForward,
+    desc: "Make text shortcuts that expand into longer phrases",
+  },
+  {
+    id: "appearance",
+    label: "Appearance",
+    icon: Palette,
+    desc: "Suggestion menu's UI",
+  },
+  {
+    id: "keyboard",
+    label: "Keyboard",
+    icon: Keyboard,
+    desc: "Bindings & control",
+  },
+  {
+    id: "domain",
+    label: "Domain",
+    icon: Globe,
+    desc: "Control when WordServe comes to life",
+  },
+  {
+    id: "accessibility",
+    label: "Accessibility",
+    icon: Glasses,
+    desc: "Various accessiblity improvements",
+  },
 ];
 
 const LOGO_URL = "icon/48.png";
@@ -130,7 +163,6 @@ function SettingsApp() {
           }
         }
       }
-
       setSettings(pendingSettings);
       showNotification("success", "Preference saved!");
     } catch (error) {
@@ -138,13 +170,10 @@ function SettingsApp() {
       showNotification("error", "Failed to save preference");
     }
   };
-
   const discardChanges = () => {
     setPendingSettings(settings);
   };
-
   const showNotification = (type: "success" | "error", message: string) => {
-    // Use setTimeout to defer toast rendering and avoid blocking the main thread
     setTimeout(() => {
       if (type === "success") {
         toast.success(message, { duration: 2000 });
@@ -255,6 +284,13 @@ function SettingsApp() {
           <DomainSettingsComponent
             pendingSettings={pendingSettings.domains}
             updatePendingDomainSetting={updatePendingDomainSetting}
+          />
+        );
+      case "abbreviations":
+        return (
+          <AbbreviationsSettings
+            pendingSettings={pendingSettings}
+            updatePendingSetting={updatePendingSetting}
           />
         );
     }
@@ -402,10 +438,10 @@ function SettingsApp() {
 
         <div className="flex flex-1 flex-col gap-4 p-4">
           <div className="mb-4">
-            <h1 className="text-2xl font-bold">{currentSection?.label}</h1>
-            <p className="text-muted-foreground">
-              Configure {currentSection?.label.toLowerCase()} settings
-            </p>
+            <h1 className="text-2xl font-bold mb-1">{currentSection?.label}</h1>
+            <h4 className="text-sm text-muted-foreground">
+              {currentSection?.desc}
+            </h4>
           </div>
 
           {renderContent()}
