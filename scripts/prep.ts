@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 /**
- * Fetches all WordServe assets: WASM files and dictionary data
+ * Fetches WordServe dictionary data assets.
  */
 
 import { createHash } from "crypto";
@@ -86,26 +86,6 @@ export class WordServeDownloader {
     this.log(`✓ ${name} (${sizeMB}MB, SHA256: ${hash.substring(0, 12)}...)`);
   }
 
-  private async downloadWasmFiles(release: GitHubRelease): Promise<void> {
-    const wasmAsset = release.assets.find(
-      (asset) => asset.name === "wordserve.wasm"
-    );
-    if (!wasmAsset) {
-      throw new Error("wordserve.wasm not found in release assets");
-    }
-
-    const wasmPath = join(this.publicDir, "wordserve.wasm");
-    await this.downloadFile(
-      wasmAsset.browser_download_url,
-      wasmPath,
-      "wordserve.wasm"
-    );
-    const tinygoWasmExecUrl =
-      "https://raw.githubusercontent.com/tinygo-org/tinygo/release/targets/wasm_exec.js";
-    const wasmExecPath = join(this.publicDir, "wasm_exec.js");
-    await this.downloadFile(tinygoWasmExecUrl, wasmExecPath, "wasm_exec.js");
-  }
-
   private async downloadDataFiles(): Promise<void> {
     const baseUrl = `https://github.com/${GITHUB_REPO}/releases/download/${TARGET_RELEASE_VERSION}`;
     const dataZipUrl = `${baseUrl}/data.zip`;
@@ -139,8 +119,6 @@ export class WordServeDownloader {
 
   private checkExistingAssets(): { missing: string[]; existing: string[] } {
     const requiredAssets = [
-      "public/wordserve.wasm",
-      "public/wasm_exec.js",
       "public/data/dict_0001.bin",
       "public/data/dict_0002.bin",
       "public/data/dict_0003.bin",
@@ -164,7 +142,7 @@ export class WordServeDownloader {
 
   public async downloadAssets(force = false): Promise<DownloadResult> {
     try {
-      const { missing, existing } = this.checkExistingAssets();
+      const { missing } = this.checkExistingAssets();
       if (!force && missing.length === 0) {
         this.log("All assets already exist");
         return { success: true, assetsDownloaded: [] };
@@ -173,14 +151,6 @@ export class WordServeDownloader {
         mkdirSync(this.publicDir, { recursive: true });
       }
       const release = await this.getLatestRelease();
-      this.log(`Downloading assets from ${release.tag_name}`);
-
-      const wasmMissing = missing.some(
-        (path) => path.includes("wasm") || path.includes("wasm_exec")
-      );
-      if (force || wasmMissing) {
-        await this.downloadWasmFiles(release);
-      }
       const dataMissing = missing.some((path) => path.includes("dict_"));
       if (force || dataMissing) {
         await this.downloadDataFiles();
@@ -205,7 +175,7 @@ async function main() {
   const result = await downloader.downloadAssets(force);
 
   if (!result.success) {
-    console.error("Download failed:", result.error);
+    console.error("Fetch failed:", result.error);
     process.exit(1);
   }
 }

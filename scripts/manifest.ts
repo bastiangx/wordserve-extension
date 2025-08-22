@@ -15,8 +15,6 @@ interface ManifestEntry {
 }
 
 const assets = [
-  "public/wordserve.wasm",
-  "public/wasm_exec.js",
   "public/data/dict_0001.bin",
   "public/data/dict_0002.bin",
   "public/data/dict_0003.bin",
