@@ -3,6 +3,7 @@ import type { ThemeId } from "@/lib/render/themes";
 import type { DefaultConfig } from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
 
+// coerceKBD coerces an object into a keyBindings config, using fallback for missing/invalid values
 function coerceKBD(obj: any, fallback: DefaultConfig["keyBindings"]) {
   if (!obj || typeof obj !== "object") return fallback;
   const allowedKeys = ["enter", "tab", "space"] as const;
@@ -10,7 +11,7 @@ function coerceKBD(obj: any, fallback: DefaultConfig["keyBindings"]) {
     if (!b || typeof b !== "object") return def;
     const key =
       typeof b.key === "string" &&
-      (allowedKeys as readonly string[]).includes(b.key)
+        (allowedKeys as readonly string[]).includes(b.key)
         ? b.key
         : def.key;
     const modifiers = Array.isArray(b.modifiers)
@@ -27,6 +28,10 @@ function coerceKBD(obj: any, fallback: DefaultConfig["keyBindings"]) {
   };
 }
 
+/**
+*  normalizeConfig takes an input config object (possibly partial, possibly with wrong types)
+*  and returns a fully populated DefaultConfig object with all values validated and sanitized.
+*/
 export function normalizeConfig(input: any): DefaultConfig {
   const merged = { ...DEFAULT_SETTINGS, ...(input || {}) } as any;
   const minWordLength = clamp(
@@ -84,9 +89,8 @@ export function normalizeConfig(input: any): DefaultConfig {
     typeof fontSizeRaw === "number"
       ? clamp(fontSizeRaw, 12, 28)
       : typeof fontSizeRaw === "string" && fontSizeRaw.trim() !== ""
-      ? fontSizeRaw
-      : DEFAULT_SETTINGS.fontSize;
-
+        ? fontSizeRaw
+        : DEFAULT_SETTINGS.fontSize;
   const fontWeight =
     typeof merged.fontWeight === "string"
       ? merged.fontWeight
@@ -94,8 +98,8 @@ export function normalizeConfig(input: any): DefaultConfig {
   const allowedFonts = new Set(["Geist Mono", "Atkinson Hyperlegible", "Monaco"]);
   const fontFamilyList = Array.isArray(merged.fontFamilyList)
     ? merged.fontFamilyList
-        .map((s: any) => (typeof s === "string" ? s : ""))
-        .filter((s: string) => allowedFonts.has(s))
+      .map((s: any) => (typeof s === "string" ? s : ""))
+      .filter((s: string) => allowedFonts.has(s))
     : DEFAULT_SETTINGS.fontFamilyList;
   const customFontList =
     typeof merged.customFontList === "string"
@@ -205,7 +209,7 @@ export function normalizeConfig(input: any): DefaultConfig {
     minWordLength,
     maxSuggestions,
     debounceTime,
-  theme,
+    theme,
     numberSelection,
     showRankingOverride,
     compactMode,
@@ -213,8 +217,8 @@ export function normalizeConfig(input: any): DefaultConfig {
     menuBorderRadius,
     fontSize,
     fontWeight,
-  fontFamilyList,
-  customFontList,
+    fontFamilyList,
+    customFontList,
     debugMode,
     abbreviationsEnabled,
     abbreviations,

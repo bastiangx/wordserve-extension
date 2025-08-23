@@ -7,11 +7,12 @@ export interface DomainSettings {
   whitelist: string[]; // patterns to allow (if !blacklistMode)
 }
 
-// Internal compiled pattern cache to avoid recompiling on every keystroke / check
+// Compiled pattern cache to avoid recompiling on every keystroke / check
 interface CompiledPattern {
   raw: string;
   regex: RegExp;
 }
+
 const patternCache: Map<string, CompiledPattern | null> = new Map();
 
 // Normalize hostname (lowercase + trim trailing dot + punycode placeholder)
@@ -23,7 +24,7 @@ export function normalizeHostname(hostname: string): string {
   return h;
 }
 
-// Very restrictive pattern rules for safety & predictability:
+// Very restrictive pattern rules:
 // 1. Either an exact domain (e.g. example.com)
 // 2. Or a leading wildcard subdomain pattern of the form *.example.com
 // No other '*' placements permitted. No regex meta allowed beyond dots, dashes, alphanumerics.
@@ -50,21 +51,23 @@ function sanitizePattern(pattern: string): string | null {
 }
 
 function compilePattern(raw: string): CompiledPattern | null {
-  if (patternCache.has(raw)) return patternCache.get(raw)!;
   const sanitized = sanitizePattern(raw);
+  let source: string;
+  if (patternCache.has(raw)) return patternCache.get(raw)!;
   if (!sanitized) {
     patternCache.set(raw, null);
     return null;
   }
-  let source: string;
+  // Match any one or more subdomain levels before the root, or the root itself?
+  // ONLY subdomains, NOT the root.
+  // Example: [*.example.com] matches [a.example.com], [a.b.example.com] but NOT [example.com]
   if (sanitized.startsWith("*.")) {
-    // Match any one or more subdomain levels before the root, or the root itself? We choose: ONLY subdomains, NOT the root.
-    // Example: *.example.com matches a.example.com, a.b.example.com but NOT example.com
     const root = sanitized.slice(2).replace(/[-/\\^$+?.()|[\]{}]/g, "\\$&");
     source = `^(?:[a-z0-9-]+\.)+${root}$`;
   } else {
     const exact = sanitized.replace(/[-/\\^$+?.()|[\]{}]/g, "\\$&");
-    // Match the exact domain OR any subdomain (common expectation). Users can force only subdomains via *.
+    // Match the exact domain OR any subdomain (common expectation).
+    // Users can force only subdomains via *.
     source = `^(?:${exact}|(?:[a-z0-9-]+\.)+${exact})$`;
   }
   try {
@@ -89,7 +92,7 @@ export function matchesDomainPattern(
 }
 
 /**
- * Validate and normalize user input for domain patterns.
+ * Validate and normalize input for domain patterns.
  * Accepts either:
  * - exact domain: example.com
  * - leading wildcard: *.example.com
@@ -149,20 +152,15 @@ export function isExtensionId(hostname: string): boolean {
 export function isProtectedPage(hostname: string): boolean {
   const url = window.location.href.toLowerCase();
   const host = normalizeHostname(hostname);
-
   // Allow our own extension pages (settings, popup, etc.)
   try {
     if (browser?.runtime?.getURL) {
       const extensionBaseUrl = browser.runtime.getURL("").toLowerCase();
       if (url.startsWith(extensionBaseUrl)) {
-        return false; // Allow our own extension pages
+        return false;
       }
     }
-  } catch (e) {
-    // Fallback if browser.runtime.getURL fails
-  }
-
-  // Check if this is our own extension ID by comparing with runtime URL
+  } catch (e) { }
   if (isExtensionId(host)) {
     try {
       if (browser?.runtime?.getURL) {
@@ -172,10 +170,10 @@ export function isProtectedPage(hostname: string): boolean {
         )?.[1];
 
         if (ownExtensionId && host === ownExtensionId) {
-          return false; // Allow our own extension
+          return false;
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   const protectedSchemes = [
@@ -295,7 +293,7 @@ export function scanPageSensitivity(): SensitivityResult {
         reasons.push(`payment iframe (${host})`);
         break;
       }
-    } catch {}
+    } catch { }
   }
   if (location.protocol === "https:") {
     if (creditCount >= 2) {

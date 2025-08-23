@@ -1,7 +1,7 @@
-import browser from "webextension-polyfill";
-import { DEFAULT_SETTINGS } from "@/types";
 import { normalizeConfig } from "@/lib/config";
 import { SuggestEngine } from "@/lib/suggest";
+import browser from "webextension-polyfill";
+import { DEFAULT_SETTINGS } from "@/types";
 
 async function cryptoDigestSHA256(data: Uint8Array): Promise<string> {
   try {
@@ -50,7 +50,6 @@ export default defineBackground(() => {
       if (!this.engine) throw new Error("engine not ready");
       return this.engine.initializeFromChunks(chunks);
     }
-
     dispose() {
       this.isInitialized = false;
       this.engine = null;
@@ -97,9 +96,7 @@ export default defineBackground(() => {
             manifest[a.path] = { sha256: a.sha256 };
           }
         }
-      } catch {
-        console.warn("[WS] No asset manifest, continuing without checks");
-      }
+      } catch { }
       const chunkPromises: Promise<Uint8Array>[] = [];
       for (let i = 1; i <= EXPECTED_CHUNKS; i++) {
         const chunkNum = String(i).padStart(4, "0");
@@ -171,7 +168,6 @@ export default defineBackground(() => {
     }
   }
 
-  // Update onMessage listener to fix TypeScript typing errors
   browser.runtime.onMessage.addListener(
     (
       message: any,
@@ -196,7 +192,6 @@ export default defineBackground(() => {
         })();
         return true;
       }
-      // remove msgpack path; engine uses direct complete
       if (message.type === "wordserve-complete") {
         (async () => {
           try {
