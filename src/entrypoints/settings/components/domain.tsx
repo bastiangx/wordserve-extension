@@ -50,15 +50,15 @@ export function DomainSettingsComponent({
   return (
     <div className="space-y-4">
       <Card className="border-transparent">
-        <CardContent className="space-y-2 p-4">
-          <div className="space-y-4">
+        <CardContent className="space-y-2 p-2">
+          <div className="space-y-6">
             <div className="flex items-center justify-between ">
               <div className="space-y-2">
                 <Label>Blacklist mode</Label>
                 <p className="text-sm text-muted-foreground">
-                  When enabled, WordServe will work on all domains except those
-                  in the blacklist. When disabled, wordserve will only work on
-                  domains in the whitelist.
+                  Blacklist mode enables suggestions on all domains except the
+                  list below. IF turned off, WordServe will only work on the
+                  domains in the whitelist you specify.
                 </p>
               </div>
               <Switch
@@ -73,7 +73,7 @@ export function DomainSettingsComponent({
             <div className="space-y-8">
               <div className="space-y-4">
                 <Label>Add domain</Label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                   <Input
                     placeholder="Type here (*.example.com)"
                     value={newDomainInput}
@@ -105,7 +105,7 @@ export function DomainSettingsComponent({
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-6">
                 <Label>
                   {pendingSettings.blacklistMode
                     ? "Blocked domains (blacklist)"
@@ -129,8 +129,7 @@ export function DomainSettingsComponent({
                     ))}
                     {pendingSettings.whitelist.length === 0 && (
                       <p className="text-sm text-muted-foreground">
-                        No domains in whitelist. Add domains to restrict
-                        suggestions to specific sites.
+                        No domains found! Add new ones from the input above.
                       </p>
                     )}
                   </div>
@@ -167,7 +166,39 @@ export function DomainSettingsComponent({
             </div>
 
             <Separator />
-            <div className="text-sm text-muted-foreground space-y-1">
+            <Separator />
+            <Separator />
+
+            <div className="rounded-md border bg-muted/40 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Badge className="text-xs" variant="secondary">
+                  FAQ
+                </Badge>
+                <span className="font-bold text-base">How does this work?</span>
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                Normally, WordServe will work on <i>almost</i> all websites.
+                There are exceptions such as browser-protected pages or places
+                where you type passwords, addresses, or credit card details.
+              </p>
+
+              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                <li>
+                  <b>Blacklist:</b> Enables suggestions on all domains except
+                  those you add to the <i>naughty</i> list above. (ON by
+                  default)
+                </li>
+                <li>
+                  <b>Whitelist:</b> Disables suggestions on all domains except
+                  those you add to the whitelist above. (OFF by default)
+                </li>
+              </ul>
+            </div>
+
+            <Separator />
+
+            <div className="text-sm text-muted-foreground space-y-2">
               <p>
                 <strong>Pattern examples:</strong>
               </p>
