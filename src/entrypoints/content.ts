@@ -22,8 +22,14 @@ export default defineContentScript({
       private domainEnabledCache: boolean | null = null;
 
       constructor() {
-        this.initializeSettings();
         this.setupMessageListener();
+        // Ensure settings are loaded before we attach controllers so they don't
+        // render with defaults on first load in a new tab/site.
+        this.startup();
+      }
+
+      private async startup(): Promise<void> {
+        await this.initializeSettings();
         this.setupDOMObserver();
         this.attachToExistingInputs();
         this.checkEngineStatus();
@@ -61,6 +67,7 @@ export default defineContentScript({
           const stored = await browser.storage.sync.get("wordserveSettings");
           if (stored.wordserveSettings) {
             this.settings = normalizeConfig(stored.wordserveSettings);
+            this.domainEnabledCache = null;
           }
         } catch (error) {
           console.error("Failed to load settings:", error);
