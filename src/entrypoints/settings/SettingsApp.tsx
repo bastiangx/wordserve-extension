@@ -1,4 +1,12 @@
 "use client";
+import { AbbreviationsSettings } from "@/entrypoints/settings/components/abbreviations";
+import { AccessibilitySettings } from "@/entrypoints/settings/components/accessibility";
+import { DomainSettingsComponent } from "@/entrypoints/settings/components/domain";
+import { AppearanceSettings } from "@/entrypoints/settings/components/appearance";
+import { BehaviorSettings } from "@/entrypoints/settings/components/behavior";
+import { KeyboardSettings } from "@/entrypoints/settings/components/keyboard";
+import { GeneralSettings } from "@/entrypoints/settings/components/general";
+import { Label } from "@radix-ui/react-label";
 import { FaGithub } from "react-icons/fa";
 import {
   Glasses,
@@ -15,12 +23,6 @@ import {
 import type { DefaultConfig } from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
 import { normalizeConfig } from "@/lib/config";
-import { GeneralSettings } from "@/entrypoints/settings/components/general";
-import { BehaviorSettings } from "@/entrypoints/settings/components/behavior";
-import { KeyboardSettings } from "@/entrypoints/settings/components/keyboard";
-import { AppearanceSettings } from "@/entrypoints/settings/components/appearance";
-import { AccessibilitySettings } from "@/entrypoints/settings/components/accessibility";
-import { DomainSettingsComponent } from "@/entrypoints/settings/components/domain";
 import { MenuPreview } from "@/components/preview";
 import { useEffect, useState } from "react";
 import { browser } from "wxt/browser";
@@ -59,8 +61,6 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import { Label } from "@radix-ui/react-label";
-import { AbbreviationsSettings } from "@/entrypoints/settings/components/abbreviations";
 
 const menuItems = [
   { id: "general", label: "General", icon: SettingsIcon, desc: "Main options" },
@@ -104,6 +104,7 @@ const menuItems = [
 
 const LOGO_URL = "icon/48.png";
 
+// SettingsApp manages the config state
 function SettingsApp() {
   const [settings, setSettings] = useState<DefaultConfig>(DEFAULT_SETTINGS);
   const [pendingSettings, setPendingSettings] =
@@ -133,7 +134,6 @@ function SettingsApp() {
       setSettings(loadedSettings);
       setPendingSettings(loadedSettings);
     } catch (error) {
-      console.error("Failed to load settings:", error);
       showNotification("error", "Failed to load settings");
     } finally {
       setIsLoading(false);
@@ -144,8 +144,6 @@ function SettingsApp() {
     try {
       const normalized = normalizeConfig(pendingSettings);
       await browser.storage.sync.set({ wordserveSettings: normalized });
-
-      // Only send messages to tabs that might have content scripts
       const tabs = await browser.tabs.query({
         url: ["http://*/*", "https://*/*"],
       });
@@ -158,15 +156,12 @@ function SettingsApp() {
               settings: pendingSettings,
             });
             successfulUpdates++;
-          } catch (error) {
-            console.log(`Failed to update settings in tab ${tab.id}:`, error);
-          }
+          } catch (error) { }
         }
       }
       setSettings(pendingSettings);
       showNotification("success", "Preference saved!");
     } catch (error) {
-      console.error("Failed to save settings:", error);
       showNotification("error", "Failed to save preference");
     }
   };
@@ -232,7 +227,7 @@ function SettingsApp() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading settings...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );

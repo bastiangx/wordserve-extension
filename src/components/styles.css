@@ -1,5 +1,7 @@
 @import "../themes.css";
 
+/* Suggestions menu styling */
+
 .wordserve-menu-container {
   all: initial;
   font-family: "Geist Mono", "Monaco", monospace;
@@ -11,7 +13,6 @@
   position: fixed;
   pointer-events: none;
 
-  /* Default to dark theme tokens */
   --ws-bg: #191724; /* base */
   --ws-surface: #1f1d2e; /* surface */
   --ws-overlay: #26233a; /* overlay */
@@ -30,7 +31,7 @@
   --ws-intensity-accent: #c4a7e7; /* iris */
 }
 
-/* Generic theme scopes for reuse outside the injected container (e.g., previews) */
+/* base theme scopes for reuse outside the injected container (e.g., previews) */
 .ws-theme-dark {
   --ws-bg: #191724; /* base */
   --ws-surface: #1f1d2e; /* surface */
@@ -67,7 +68,7 @@
   --ws-intensity-accent: #907aa9; /* iris */
 }
 
-/* Light theme (Rosé Pine Dawn) */
+/* Light (Rosé Pine Dawn) */
 .wordserve-menu-container.ws-theme-light {
   --ws-bg: #faf4ed; /* base */
   --ws-surface: #fffaf3; /* surface */

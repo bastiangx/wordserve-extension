@@ -1,24 +1,24 @@
+import { Plus, Power, Shield, ShieldOff, X, CheckCheck } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
-import { browser } from "wxt/browser";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
+import { normalizeConfig } from "@/lib/config";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Power, Shield, ShieldOff, X, CheckCheck } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { FaGithub } from "react-icons/fa";
+import { browser } from "wxt/browser";
 import {
   type DomainSettings,
   matchesDomainPattern,
   validateUserDomainInput,
   isExtensionId,
 } from "@/lib/domains";
-import { normalizeConfig } from "@/lib/config";
 import "../../globals.css";
 import "./App.css";
 
-const LOGO_URL = "icon/48.png";
+const LOGO_URL = "icon/96.png";
 
 export default function App() {
   const [globalEnabled, setGlobalEnabled] = useState(true);
@@ -40,14 +40,11 @@ export default function App() {
       "globalEnabled",
       "wordserveSettings",
     ]);
-
     setGlobalEnabled(
       result.globalEnabled !== undefined ? result.globalEnabled : true
     );
-
     const normalized = normalizeConfig(result.wordserveSettings || {});
     setDomainSettings(normalized.domains);
-
     const tabs = await browser.tabs.query({
       active: true,
       currentWindow: true,
@@ -56,11 +53,9 @@ export default function App() {
     const host = new URL(url).hostname || "";
     setCurrentHost(host);
   };
-
   const toggleGlobal = async (val: boolean) => {
     setGlobalEnabled(val);
     await browser.storage.sync.set({ globalEnabled: val });
-
     const tabs = await browser.tabs.query({});
     for (const tab of tabs) {
       if (tab.id) {
@@ -69,9 +64,7 @@ export default function App() {
             type: "wordserve-toggle",
             enabled: val,
           });
-        } catch (error) {
-          console.warn(`Failed to send message to tab ${tab.id}:`, error);
-        }
+        } catch (error) { }
       }
     }
   };
@@ -79,7 +72,6 @@ export default function App() {
   const toggleDomainMode = async (blacklistMode: boolean) => {
     const newDomainSettings = { ...domainSettings, blacklistMode };
     setDomainSettings(newDomainSettings);
-
     const result = await browser.storage.sync.get("wordserveSettings");
     const current = normalizeConfig(result.wordserveSettings || {});
     const updated = normalizeConfig({ ...current, domains: newDomainSettings });
@@ -92,9 +84,7 @@ export default function App() {
             type: "settingsUpdated",
             settings: updated,
           });
-        } catch (error) {
-          console.warn(`Failed to send message to tab ${tab.id}:`, error);
-        }
+        } catch (error) { }
       }
     }
   };
@@ -107,9 +97,8 @@ export default function App() {
       return;
     }
     const cleaned = res.value;
-
     const list = domainSettings.blacklistMode ? "blacklist" : "whitelist";
-    // Prevent exact duplicates
+    // no exact duplicates
     if (domainSettings[list].some((d) => d.toLowerCase() === cleaned)) {
       setNewDomainError("Already added");
       return;
@@ -136,7 +125,7 @@ export default function App() {
             type: "settingsUpdated",
             settings: updated,
           });
-        } catch {}
+        } catch { }
       }
     }
 
@@ -145,16 +134,13 @@ export default function App() {
       active: true,
       currentWindow: true,
     });
-    // Keep explicit active-tab update for responsiveness
     if (tabs[0]?.id) {
       try {
         await browser.tabs.sendMessage(tabs[0].id, {
           type: "settingsUpdated",
           settings: updated,
         });
-      } catch (error) {
-        console.warn("Failed to send settings update:", error);
-      }
+      } catch (error) { }
     }
   };
 
@@ -179,11 +165,10 @@ export default function App() {
             type: "settingsUpdated",
             settings: updated,
           });
-        } catch {}
+        } catch { }
       }
     }
 
-    // Inform the active tab so content scripts can react immediately
     const tabs = await browser.tabs.query({
       active: true,
       currentWindow: true,
@@ -202,9 +187,7 @@ export default function App() {
 
   const addCurrentDomain = async () => {
     if (!currentHost) return;
-
     let newDomainSettings = { ...domainSettings };
-
     if (domainSettings.blacklistMode) {
       // Adding to blacklist - remove from whitelist if exists
       newDomainSettings.whitelist = newDomainSettings.whitelist.filter(
@@ -234,22 +217,19 @@ export default function App() {
           matchesDomainPattern(currentHost, d)
         )
       ) {
-        // Newest first: prepend
         newDomainSettings.whitelist = [
           currentHost,
           ...newDomainSettings.whitelist,
         ];
       }
     }
-
-    // Persist and propagate changes (this was previously missing)
+    // Persist and propagate changes
     setDomainSettings(newDomainSettings);
 
     const result = await browser.storage.sync.get("wordserveSettings");
     const current = normalizeConfig(result.wordserveSettings || {});
     const updated = normalizeConfig({ ...current, domains: newDomainSettings });
     await browser.storage.sync.set({ wordserveSettings: updated });
-
     const tabs = await browser.tabs.query({
       active: true,
       currentWindow: true,
@@ -260,9 +240,7 @@ export default function App() {
           type: "domainSettingsChanged",
           settings: newDomainSettings,
         });
-      } catch (error) {
-        console.warn("Failed to send domain settings update:", error);
-      }
+      } catch (error) { }
     }
   };
 
@@ -278,7 +256,6 @@ export default function App() {
 
   const removeCurrentDomain = async () => {
     if (!currentHost) return;
-
     const newDomainSettings = {
       ...domainSettings,
       blacklist: domainSettings.blacklist.filter(
@@ -292,9 +269,7 @@ export default function App() {
           !matchesDomainPattern(d, currentHost)
       ),
     };
-
     setDomainSettings(newDomainSettings);
-
     const result = await browser.storage.sync.get("wordserveSettings");
     const current = normalizeConfig(result.wordserveSettings || {});
     const updated = normalizeConfig({ ...current, domains: newDomainSettings });
@@ -310,9 +285,7 @@ export default function App() {
           type: "domainSettingsChanged",
           settings: newDomainSettings,
         });
-      } catch (error) {
-        console.warn("Failed to send domain settings update:", error);
-      }
+      } catch (error) { }
     }
   };
 
@@ -321,10 +294,8 @@ export default function App() {
     const { blacklisted, whitelisted } = isCurrentDomainListed();
     return domainSettings.blacklistMode ? !blacklisted : whitelisted;
   };
-
   const getDomainButtonState = () => {
     const { blacklisted, whitelisted } = isCurrentDomainListed();
-
     if (domainSettings.blacklistMode) {
       return {
         isListed: blacklisted,
@@ -349,7 +320,6 @@ export default function App() {
     if (isExtensionId(hostname)) return "N/A";
     return hostname;
   };
-
   const currentList = domainSettings.blacklistMode
     ? domainSettings.blacklist
     : domainSettings.whitelist;
@@ -421,13 +391,12 @@ export default function App() {
             </div>
             <div className="flex items-center justify-between">
               <div
-                className={`flex items-center gap-1.5 text-xs px-1.5 py-0.5 rounded border ${
-                  isExtensionId(currentHost)
-                    ? "bg-background text-muted-foreground border-muted"
-                    : isDomainEnabled()
+                className={`flex items-center gap-1.5 text-xs px-1.5 py-0.5 rounded border ${isExtensionId(currentHost)
+                  ? "bg-background text-muted-foreground border-muted"
+                  : isDomainEnabled()
                     ? "bg-background text-success-foreground border-success"
                     : "bg-background text-error-foreground border/10"
-                }`}
+                  }`}
               >
                 {isExtensionId(currentHost) ? (
                   <Shield className="h-3 w-3" />
@@ -439,8 +408,8 @@ export default function App() {
                 {isExtensionId(currentHost)
                   ? "Extension"
                   : isDomainEnabled()
-                  ? "Active"
-                  : "Inactive"}
+                    ? "Active"
+                    : "Inactive"}
               </div>
             </div>
             {!isExtensionId(currentHost) &&
@@ -522,7 +491,8 @@ export default function App() {
                   {currentList.map((domain, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between text-xs rounded-md border px-1.5 py-0.5 gap-2"
+                      className="flex items-center justify-between
+                      text-xs rounded-md border px-1.5 py-0.5 gap-2"
                     >
                       <span className="truncate">{domain}</span>
                       <Button
