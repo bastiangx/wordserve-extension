@@ -199,7 +199,7 @@ export function DomainSettingsComponent({
             <div className="flex items-center justify-between ">
               <div className="space-y-2">
                 <Label>Blacklist mode</Label>
-                <p className="text-sm text-muted-foreground lg:max-w-[65ch] max-w-[45ch]">
+                <p className="text-xs font-mono text-muted-foreground lg:max-w-[65ch] max-w-[45ch]">
                   Blacklist mode enables suggestions on all domains except the
                   list below. IF turned off, WordServe will only work on the
                   domains in the whitelist you specify.
@@ -276,8 +276,8 @@ export function DomainSettingsComponent({
                 <div className="flex items-center justify-between">
                   <Label>
                     {pendingSettings.blacklistMode
-                      ? "Blocked domains (blacklist)"
-                      : "Allowed domains (whitelist)"}
+                      ? "Blocked domains :"
+                      : "Allowed domains :"}
                   </Label>
                   <div className="flex gap-4 items-center">
                     <Label>Sort</Label>
@@ -295,7 +295,7 @@ export function DomainSettingsComponent({
                 </div>
 
                 {!pendingSettings.blacklistMode && (
-                  <ScrollArea className="h-64 rounded-md border p-2">
+                  <ScrollArea className="h-64 rounded-md border p-2 font-mono">
                     <div className="flex flex-wrap gap-2">
                       {viewList.map((domain) => (
                         <Badge
@@ -324,7 +324,7 @@ export function DomainSettingsComponent({
                 )}
 
                 {pendingSettings.blacklistMode && (
-                  <ScrollArea className="h-64 rounded-md border p-2">
+                  <ScrollArea className="h-64 rounded-md border p-2 font-mono">
                     <div className="flex flex-wrap gap-2">
                       {viewList.map((domain) => (
                         <Badge
@@ -360,7 +360,7 @@ export function DomainSettingsComponent({
 
             <div className="rounded-md border bg-muted/40 p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <Badge className="text-xs" variant="secondary">
+                <Badge className="text-xs font-mono" variant="secondary">
                   FAQ
                 </Badge>
                 <span className="font-bold text-base">How does this work?</span>
@@ -393,18 +393,18 @@ export function DomainSettingsComponent({
               </p>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>
-                  <code>*.paypal.com</code> - matches all paypal.com subdomains
+                  <code>*.paypal.com</code> : matches all paypal.com subdomains
                 </li>
                 <li>
-                  <code>*payment*</code> - matches any domain containing
+                  <code>*payment*</code> : matches any domain containing
                   "payment"
                 </li>
                 <li>
-                  <code>secure.*</code> - matches any domain starting with
+                  <code>secure.*</code> : matches any domain starting with
                   "secure."
                 </li>
                 <li>
-                  <code>exact.domain.com</code> - matches only this exact domain
+                  <code>exact.domain.com</code> : matches only this exact domain
                 </li>
               </ul>
             </div>

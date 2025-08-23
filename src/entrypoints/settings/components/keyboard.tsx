@@ -29,8 +29,8 @@ export function KeyboardSettings({
             <div className="flex items-center justify-between">
               <div className="space-y-2">
                 <Label>Digit selection</Label>
-                <p className="text-sm text-muted-foreground">
-                  Use [1-9] keys to insert a suggestions quickly
+                <p className="text-xs font-mono text-muted-foreground">
+                  Use [1-9] keys to insert a word quickly
                 </p>
               </div>
               <Switch
@@ -47,7 +47,7 @@ export function KeyboardSettings({
               <div className="space-y-1">
                 <Label>Insert without space</Label>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 font-mono">
                 <Select
                   value={
                     pendingSettings.keyBindings.insertWithoutSpace
@@ -66,7 +66,7 @@ export function KeyboardSettings({
                   <SelectTrigger className="w-24">
                     <SelectValue placeholder="None" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="font-mono">
                     <SelectItem value="none">None</SelectItem>
                     <SelectItem value="ctrl">Ctrl</SelectItem>
                     <SelectItem value="cmd">Cmd</SelectItem>
@@ -103,7 +103,7 @@ export function KeyboardSettings({
               <div className="space-y-1">
                 <Label>Insert with space</Label>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 font-mono">
                 <Select
                   value={
                     pendingSettings.keyBindings.insertWithSpace
@@ -122,7 +122,7 @@ export function KeyboardSettings({
                   <SelectTrigger className="w-24">
                     <SelectValue placeholder="None" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="font-mono">
                     <SelectItem value="none">None</SelectItem>
                     <SelectItem value="ctrl">Ctrl</SelectItem>
                     <SelectItem value="cmd">Cmd</SelectItem>

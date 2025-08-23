@@ -95,14 +95,18 @@ export function AppearanceSettings({
                   <SelectGroup>
                     <SelectLabel>Dark</SelectLabel>
                     {DARK_THEMES.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.label}
+                      </SelectItem>
                     ))}
                   </SelectGroup>
                   <SelectSeparator />
                   <SelectGroup>
                     <SelectLabel>Light</SelectLabel>
                     {LIGHT_THEMES.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.label}
+                      </SelectItem>
                     ))}
                   </SelectGroup>
                 </SelectContent>
@@ -138,8 +142,8 @@ export function AppearanceSettings({
               <div className="flex items-center justify-between gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="customFontList">Use local font</Label>
-                  <p className="text-sm text-muted-foreground max-w-[60ch]">
-                    Your local system fonts
+                  <p className="text-xs font-mono text-muted-foreground max-w-[28ch]">
+                    Has to be installed on your system
                   </p>
                 </div>
                 <Input
@@ -243,7 +247,7 @@ export function AppearanceSettings({
             <div className="flex items-center justify-between">
               <div className="space-y-2">
                 <Label>Compact mode</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs font-mono text-muted-foreground">
                   Reduces spacing and padding
                 </p>
               </div>
@@ -260,7 +264,7 @@ export function AppearanceSettings({
             <div className="flex items-center justify-between">
               <div className="space-y-2">
                 <Label>Ranking number position</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs font-mono text-muted-foreground">
                   Relative to the suggestion texts
                 </p>
               </div>
@@ -283,7 +287,7 @@ export function AppearanceSettings({
             <div className="flex items-center justify-between">
               <div className="space-y-2">
                 <Label>Ranking render override</Label>
-                <p className="text-sm text-muted-foreground lg:max-w-[65ch] max-w-[45ch] ">
+                <p className="text-xs font-mono text-muted-foreground lg:max-w-[65ch] max-w-[45ch] ">
                   Always show rankings even when digit selection is off
                 </p>
               </div>

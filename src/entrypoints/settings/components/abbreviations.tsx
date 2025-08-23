@@ -290,9 +290,9 @@ export function AbbreviationsSettings({
           <div key={row.id} className="rounded-md border p-4 space-y-3">
             <div className="grid grid-cols-12 gap-4 items-start">
               <div className="col-span-12 md:col-span-3 space-y-4">
-                <Label htmlFor={`abbr-key-${row.id}`}>Shortcut</Label>
+                <Label className="font-mono" htmlFor={`abbr-key-${row.id}`}>Shortcut</Label>
                 <Input
-                  className="font-serif"
+                  className="font-mono text-sm"
                   id={`abbr-key-${row.id}`}
                   value={row.key}
                   onChange={(e) =>
@@ -310,14 +310,14 @@ export function AbbreviationsSettings({
                 />
               </div>
               <div className="col-span-12 md:col-span-8 space-y-4">
-                <Label htmlFor={`abbr-val-${row.id}`}>Target phrase</Label>
-                <ScrollArea className="max-h-48 font-serif">
+                <Label className="font-mono" htmlFor={`abbr-val-${row.id}`}>Target phrase</Label>
+                <ScrollArea className="max-h-48  font-mono">
                   <Textarea
                     id={`abbr-val-${row.id}`}
                     value={row.value}
                     onChange={(e) => onValueChange(row.id, e.target.value)}
                     placeholder="Write here..."
-                    className="min-h-24"
+                    className="min-h-24 text-sm"
                   />
                 </ScrollArea>
               </div>
@@ -339,7 +339,7 @@ export function AbbreviationsSettings({
       <Separator />
       <div className="rounded-md border bg-muted/40 p-4 space-y-3">
         <div className="flex items-center gap-2">
-          <Badge className="text-xs" variant="secondary">
+          <Badge className="text-xs font-mono" variant="secondary">
             FAQ
           </Badge>
           <span className="font-bold text-base">How does this work?</span>

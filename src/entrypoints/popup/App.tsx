@@ -319,7 +319,7 @@ export default function App() {
 
   return (
     <div className="w-72 p-3 bg-background text-foreground">
-      <div className="flex gap-1 mb-2 w-full p-2">
+      <div className="font-mono flex gap-1 mb-2 w-full p-2">
         <Button
           variant="ghost"
           size="sm"
@@ -434,8 +434,8 @@ export default function App() {
           <div className="flex items-center justify-between">
             <Label className="text-xs">
               {domainSettings.blacklistMode
-                ? "Block specific domains"
-                : "Allow only specific domains"}
+                ? "Blacklist mode"
+                : "Whitelist mode"}
             </Label>
             <Toggle
               variant={"outline"}
@@ -450,16 +450,16 @@ export default function App() {
               )}
             </Toggle>
           </div>
-          <div className="text-xs text-muted-foreground leading-tight">
+          <div className="font-mono text-xs text-muted-foreground leading-tighter">
             {domainSettings.blacklistMode
-              ? "Plugin works everywhere except blocked domains"
-              : "Plugin only works on allowed domains"}
+              ? "Will show suggestions everywhere except in domains below"
+              : "Will only show suggestions in domains below"}
           </div>
 
-          <div className="space-y-1.5">
+          <div className="font-mono space-y-1.5">
             <div className="flex gap-1.5">
               <Input
-                placeholder={"example.com"}
+                placeholder={"add new"}
                 value={newDomain}
                 onChange={(e) => setNewDomain(e.target.value)}
                 className="text-xs h-7"

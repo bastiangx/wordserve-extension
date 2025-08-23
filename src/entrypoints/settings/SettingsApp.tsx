@@ -62,7 +62,7 @@ import { Label } from "@radix-ui/react-label";
 import { AbbreviationsSettings } from "@/entrypoints/settings/components/abbreviations";
 
 const menuItems = [
-  { id: "general", label: "General", icon: SettingsIcon, desc: "" },
+  { id: "general", label: "General", icon: SettingsIcon, desc: "Main options" },
   {
     id: "behavior",
     label: "Behavior",
@@ -148,7 +148,6 @@ function SettingsApp() {
       const tabs = await browser.tabs.query({
         url: ["http://*/*", "https://*/*"],
       });
-
       let successfulUpdates = 0;
       for (const tab of tabs) {
         if (tab.id) {
@@ -319,7 +318,7 @@ function SettingsApp() {
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Settings</SidebarGroupLabel>
+            <SidebarGroupLabel className="font-mono">Settings</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {menuItems.map((item) => (
@@ -373,7 +372,7 @@ function SettingsApp() {
           </SidebarGroup>
 
           <SidebarGroup>
-            <SidebarGroupLabel>Live preview</SidebarGroupLabel>
+            <SidebarGroupLabel className="font-mono">Live preview</SidebarGroupLabel>
             <SidebarGroupContent>
               <div className="p-2">
                 <MenuPreview settings={pendingSettings} className="w-full" />
@@ -381,7 +380,7 @@ function SettingsApp() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <SidebarGroup className="mt-auto">
+          <SidebarGroup className="mt-auto font-mono">
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>

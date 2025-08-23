@@ -65,7 +65,7 @@ export function BehaviorSettings({
                     </Tooltip>
                   </TooltipProvider>
                 </Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="font-mono text-xs text-muted-foreground">
                   Custom shortcut words (cAsE SensItiVe)
                 </p>
               </div>
@@ -110,7 +110,7 @@ export function BehaviorSettings({
                     </Tooltip>
                   </TooltipProvider>
                 </Label>
-                <Label className="text-sm text-muted-foreground">
+                <Label className="text-xs font-mono text-muted-foreground">
                   How abbreviations are inserted
                 </Label>
               </div>
@@ -133,9 +133,9 @@ export function BehaviorSettings({
             <div className="flex items-center justify-between">
               <div className="space-y-2">
                 <Label>Smart backspace</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs font-mono text-muted-foreground lg:max-w-[65ch] max-w-[45ch]">
                   Restores original text when backspacing over an inserted
-                  suggestion
+                  word
                 </p>
               </div>
               <Switch
