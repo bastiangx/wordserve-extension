@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { browser } from "wxt/browser";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { Label } from "@/components/ui/label";
@@ -65,7 +66,7 @@ export default function App() {
       if (tab.id) {
         try {
           await browser.tabs.sendMessage(tab.id, {
-            type: "globalToggle",
+            type: "wordserve-toggle",
             enabled: val,
           });
         } catch (error) {
@@ -83,6 +84,19 @@ export default function App() {
     const current = normalizeConfig(result.wordserveSettings || {});
     const updated = normalizeConfig({ ...current, domains: newDomainSettings });
     await browser.storage.sync.set({ wordserveSettings: updated });
+    const tabs = await browser.tabs.query({});
+    for (const tab of tabs) {
+      if (tab.id) {
+        try {
+          await browser.tabs.sendMessage(tab.id, {
+            type: "settingsUpdated",
+            settings: updated,
+          });
+        } catch (error) {
+          console.warn(`Failed to send message to tab ${tab.id}:`, error);
+        }
+      }
+    }
   };
 
   const addDomain = async () => {
@@ -114,20 +128,32 @@ export default function App() {
     const current = normalizeConfig(result.wordserveSettings || {});
     const updated = normalizeConfig({ ...current, domains: newDomainSettings });
     await browser.storage.sync.set({ wordserveSettings: updated });
+    const allTabs = await browser.tabs.query({});
+    for (const tab of allTabs) {
+      if (tab.id) {
+        try {
+          await browser.tabs.sendMessage(tab.id, {
+            type: "settingsUpdated",
+            settings: updated,
+          });
+        } catch {}
+      }
+    }
 
     // Inform the active tab so content scripts can react immediately
     const tabs = await browser.tabs.query({
       active: true,
       currentWindow: true,
     });
+    // Keep explicit active-tab update for responsiveness
     if (tabs[0]?.id) {
       try {
         await browser.tabs.sendMessage(tabs[0].id, {
-          type: "domainSettingsChanged",
-          settings: newDomainSettings,
+          type: "settingsUpdated",
+          settings: updated,
         });
       } catch (error) {
-        console.warn("Failed to send domain settings update:", error);
+        console.warn("Failed to send settings update:", error);
       }
     }
   };
@@ -145,6 +171,17 @@ export default function App() {
     const current = normalizeConfig(result.wordserveSettings || {});
     const updated = normalizeConfig({ ...current, domains: newDomainSettings });
     await browser.storage.sync.set({ wordserveSettings: updated });
+    const allTabs2 = await browser.tabs.query({});
+    for (const tab of allTabs2) {
+      if (tab.id) {
+        try {
+          await browser.tabs.sendMessage(tab.id, {
+            type: "settingsUpdated",
+            settings: updated,
+          });
+        } catch {}
+      }
+    }
 
     // Inform the active tab so content scripts can react immediately
     const tabs = await browser.tabs.query({
@@ -154,11 +191,11 @@ export default function App() {
     if (tabs[0]?.id) {
       try {
         await browser.tabs.sendMessage(tabs[0].id, {
-          type: "domainSettingsChanged",
-          settings: newDomainSettings,
+          type: "settingsUpdated",
+          settings: updated,
         });
       } catch (error) {
-        console.warn("Failed to send domain settings update:", error);
+        console.warn("Failed to send settings update:", error);
       }
     }
   };

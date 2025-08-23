@@ -76,11 +76,17 @@ export default defineContentScript({
 
       private setupMessageListener(): void {
         browser.runtime.onMessage.addListener(
-          (message, sender, sendResponse) => {
+          (message, _sender, _sendResponse) => {
             switch (message.type) {
               case "settingsUpdated":
               case "wordserve-settings-updated":
                 this.updateSettings(message.settings);
+                break;
+              case "domainSettingsChanged":
+                // Backward compat: merge domain-only updates
+                if (message.settings) {
+                  this.updateSettings({ domains: message.settings });
+                }
                 break;
               case "wordserve-toggle":
                 this.toggle(message.enabled);

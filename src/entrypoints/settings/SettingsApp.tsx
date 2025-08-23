@@ -23,6 +23,7 @@ import { AccessibilitySettings } from "@/entrypoints/settings/components/accessi
 import { DomainSettingsComponent } from "@/entrypoints/settings/components/domain";
 import { MenuPreview } from "@/components/preview";
 import { useEffect, useState } from "react";
+import { browser } from "wxt/browser";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Toaster } from "@/components/ui/sonner";
