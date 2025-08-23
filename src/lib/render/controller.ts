@@ -464,7 +464,10 @@ export class AutocompleteController {
   public updateSettings(settings: Partial<DefaultConfig>): void {
     this.settings = { ...this.settings, ...settings };
     this.inputHandler.updateSettings(this.settings);
-    this.hideMenu();
+    // Re-render with new settings if menu is visible
+    if (this.isVisible) {
+      this.renderMenuWithCurrentPosition();
+    }
   }
 
   public enable(): void {

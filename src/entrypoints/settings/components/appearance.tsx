@@ -7,13 +7,17 @@ import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Minus, Plus } from "lucide-react";
 import type { DefaultConfig } from "@/types";
+import { DARK_THEMES, LIGHT_THEMES, type ThemeId } from "@/lib/render/themes";
 
 export interface AppearanceSettingsProps {
   pendingSettings: DefaultConfig;
@@ -79,17 +83,28 @@ export function AppearanceSettings({
                 <Label htmlFor="theme">Theme</Label>
               </div>
               <Select
-                value={pendingSettings.theme ?? "dark"}
-                onValueChange={(value: "dark" | "light") =>
+                value={(pendingSettings.theme as ThemeId) ?? "dark"}
+                onValueChange={(value: ThemeId) =>
                   updatePendingSetting("theme", value)
                 }
               >
-                <SelectTrigger id="theme" className="w-32">
+                <SelectTrigger id="theme" className="w-56">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="dark">Dark</SelectItem>
-                  <SelectItem value="light">Light</SelectItem>
+                  <SelectGroup>
+                    <SelectLabel>Dark</SelectLabel>
+                    {DARK_THEMES.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                  <SelectSeparator />
+                  <SelectGroup>
+                    <SelectLabel>Light</SelectLabel>
+                    {LIGHT_THEMES.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>

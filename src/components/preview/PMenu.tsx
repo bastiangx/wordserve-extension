@@ -7,6 +7,7 @@ import type { DefaultConfig, DisplaySuggestion } from "@/types";
 import { getRowHeight, clamp, toNumber } from "@/lib/utils";
 import { browser } from "wxt/browser";
 import { initOpenDyslexic, buildFontFamilyFromConfig } from "@/lib/render/font";
+import { themeToClass } from "@/lib/render/themes";
 
 export interface MenuPreviewProps {
   settings: DefaultConfig;
@@ -270,7 +271,7 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
     <div
       className={cn(
         "relative w-full",
-        settings.theme === "light" ? "ws-theme-light" : "ws-theme-dark",
+        themeToClass(settings.theme ?? "dark"),
         className
       )}
     >

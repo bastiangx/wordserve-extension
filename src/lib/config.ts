@@ -1,4 +1,5 @@
 import { clamp, toNumber, toBool } from "@/lib/utils";
+import type { ThemeId } from "@/lib/render/themes";
 import type { DefaultConfig } from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
 
@@ -47,7 +48,24 @@ export function normalizeConfig(input: any): DefaultConfig {
     merged.numberSelection,
     DEFAULT_SETTINGS.numberSelection
   );
-  const theme = merged.theme === "light" ? "light" : "dark";
+  const allowedThemes: Set<ThemeId> = new Set([
+    "dark",
+    "light",
+    "catppuccin-mocha",
+    "iv-space",
+    "iceberg-dark",
+    "iceberg-light",
+    "nord-dark",
+    "nord-light",
+    "mountain",
+    "dracula",
+    "everblush",
+    "blueberry",
+    "darling",
+  ]);
+  const theme: ThemeId = allowedThemes.has(merged.theme)
+    ? merged.theme
+    : "dark";
   const showRankingOverride = toBool(
     merged.showRankingOverride,
     DEFAULT_SETTINGS.showRankingOverride

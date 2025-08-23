@@ -34,11 +34,13 @@ export interface SensitivityResult {
   blocked: boolean;
 }
 
+import type { ThemeId } from "@/lib/render/themes";
+
 export interface DefaultConfig {
   minWordLength: number;
   maxSuggestions: number;
   debounceTime: number;
-  theme?: "dark" | "light";
+  theme?: ThemeId;
   numberSelection: boolean;
   showRankingOverride: boolean;
   compactMode: boolean;

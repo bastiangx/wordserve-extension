@@ -2,6 +2,7 @@ import "@/components/styles.css";
 import { getRowHeight } from "@/lib/utils";
 import { initOpenDyslexic } from "@/lib/render/font";
 import { AUTOCOMPLETE_DEFAULTS } from "@/types";
+import { themeToClass } from "@/lib/render/themes";
 import { ABBREVIATION_CONFIG } from "@/types";
 
 export interface Suggestion {
@@ -38,7 +39,7 @@ export interface AutocompleteMenuOptions {
   suffixColor?: string;
   dyslexicFont?: boolean;
   currentPrefixLength?: number;
-  theme?: "dark" | "light";
+  theme?: import("@/lib/render/themes").ThemeId;
 }
 
 export class AutocompleteMenuRenderer {
@@ -52,7 +53,7 @@ export class AutocompleteMenuRenderer {
 
   private createContainer(): void {
     this.container = document.createElement("div");
-  this.container.className = "wordserve-menu-container";
+    this.container.className = "wordserve-menu-container";
     document.body.appendChild(this.container);
   }
 
@@ -78,7 +79,7 @@ export class AutocompleteMenuRenderer {
       this.menu = this.createMenu();
       this.container!.appendChild(this.menu);
     }
-    const themeClass = options.theme === "light" ? "ws-theme-light" : "";
+    const themeClass = themeToClass(options.theme ?? "dark");
     this.container!.className = `wordserve-menu-container ${themeClass} ${
       options.compact ? "compact" : ""
     }`;
@@ -91,17 +92,17 @@ export class AutocompleteMenuRenderer {
     menuEl.style.fontWeight = fontWeight;
     if (options.dyslexicFont) {
       initOpenDyslexic();
-      // If provided, prefix OpenDyslexic to the provided list; else use a sensible default with Atkinson
+      // If provided, prefix OpenDyslexic to the provided list; else use a sensible default with Geist Mono
       const rest = options.fontFamily
         ? options.fontFamily
-        : `'Atkinson Hyperlegible', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`;
+        : `'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace`;
       menuEl.style.fontFamily = `'OpenDyslexic', ${rest}`;
     } else {
       menuEl.style.fontFamily = options.fontFamily || "inherit";
     }
-  // toggle helpers via classes instead of inline colors
-  menuEl.classList.toggle("no-border", !showBorder);
-  menuEl.classList.toggle("no-radius", !useRadius);
+    // toggle helpers via classes instead of inline colors
+    menuEl.classList.toggle("no-border", !showBorder);
+    menuEl.classList.toggle("no-radius", !useRadius);
     this.container!.style.left = `${options.position.x}px`;
     this.container!.style.top = `${options.position.y}px`;
     this.container!.style.display = "block";

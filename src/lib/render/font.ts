@@ -88,18 +88,24 @@ export function buildFontFamilyFromConfig(settings: {
     .map(quoteIfNeeded);
   const custom = sanitizeCustomFontList(settings.customFontList);
   const fallbacks = [
+    "ui-monospace",
+    "SFMono-Regular",
+    "Menlo",
+    "Monaco",
+    "Consolas",
+    "Liberation Mono",
+    "monospace",
     "system-ui",
     "-apple-system",
     "Segoe UI",
     "Roboto",
     "Arial",
-    "ui-monospace",
-    "monospace",
     "sans-serif",
   ];
   const parts: string[] = [];
   if (custom) parts.push(custom);
   if (selected.length) parts.push(selected.join(", "));
+  else parts.push("'Geist Mono'");
   parts.push(...fallbacks);
   return parts.map(quoteIfNeeded).join(", ");
 }

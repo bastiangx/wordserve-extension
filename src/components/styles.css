@@ -1,3 +1,5 @@
+@import "../themes.css";
+
 .wordserve-menu-container {
   all: initial;
   font-family: "Geist Mono", "Monaco", monospace;
