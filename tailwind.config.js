@@ -15,9 +15,9 @@ export const theme = {
   },
   extend: {
     fontFamily: {
-      sans: ["Geist Mono", "monospace"],
+      sans: ["Atkinson Hyperlegible", "sans-serif"],
       mono: ["Geist Mono", "monospace"],
-      serif: ["Atkinson Hyperlegible", "sans-serif"],
+      serif: ["Atkinson Hyperlegible", "serif"],
     },
     colors: {
       border: "hsl(var(--border))",

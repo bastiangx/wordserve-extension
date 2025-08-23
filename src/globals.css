@@ -49,7 +49,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: "Geist Mono", monospace;
+    font-family: "Atkinson Hyperlegible", "Geist Mono", sans-serif;
   }
 
   h1,

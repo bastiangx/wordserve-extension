@@ -128,6 +128,38 @@ export class InputHandler {
   private handleKeydown = (event: KeyboardEvent) => {
     const { key } = event;
 
+    const normKey = (k: string): "enter" | "tab" | "space" | "other" => {
+      if (k === "Enter") return "enter";
+      if (k === "Tab") return "tab";
+      if (k === " ") return "space";
+      return "other";
+    };
+
+    const hasAnyModifier = () =>
+      event.ctrlKey || event.metaKey || event.altKey || event.shiftKey;
+
+    const eventMatchesBinding = (
+      ev: KeyboardEvent,
+      binding: DefaultConfig["keyBindings"][keyof DefaultConfig["keyBindings"]]
+    ): boolean => {
+      const k = normKey(ev.key);
+      if (k === "other") return false;
+      if (binding.key !== k) return false;
+      const req = new Set(
+        (binding.modifiers || []).map((m) => m.toLowerCase())
+      );
+      const wantCtrl = req.has("ctrl");
+      const wantCmd = req.has("cmd");
+      const wantAlt = req.has("alt");
+      const wantShift = req.has("shift");
+      // Exact match of modifier presence (no extra, no missing)
+      if (ev.ctrlKey !== wantCtrl) return false;
+      if (ev.metaKey !== wantCmd) return false;
+      if (ev.altKey !== wantAlt) return false;
+      if (ev.shiftKey !== wantShift) return false;
+      return true;
+    };
+
     // Handle backspace for smart backspace functionality
     if (
       key === "Backspace" &&
@@ -170,11 +202,6 @@ export class InputHandler {
         return;
     }
 
-    // Don't handle other keys if modifier keys are pressed (except shift)
-    if (event.ctrlKey || event.metaKey || event.altKey) {
-      return;
-    }
-
     // Only handle these keys when menu is visible
     if (!this.menuVisible) {
       return;
@@ -182,31 +209,59 @@ export class InputHandler {
 
     switch (key) {
       case "Enter":
-        if (this.shouldHandleKey("enter")) {
+        if (
+          eventMatchesBinding(event, this.settings.keyBindings.insertWithSpace)
+        ) {
           event.preventDefault();
           event.stopPropagation();
-          const addSpace =
-            this.settings.keyBindings.insertWithSpace.key === "enter";
-          this.callbacks.onSelect(addSpace);
+          this.callbacks.onSelect(true);
+        } else if (
+          eventMatchesBinding(
+            event,
+            this.settings.keyBindings.insertWithoutSpace
+          )
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          this.callbacks.onSelect(false);
         }
         break;
       case "Tab":
-        if (this.shouldHandleKey("tab")) {
+        if (
+          eventMatchesBinding(event, this.settings.keyBindings.insertWithSpace)
+        ) {
           event.preventDefault();
           event.stopPropagation();
-          const addSpace =
-            this.settings.keyBindings.insertWithSpace.key === "tab";
-          this.callbacks.onSelect(addSpace);
+          this.callbacks.onSelect(true);
+        } else if (
+          eventMatchesBinding(
+            event,
+            this.settings.keyBindings.insertWithoutSpace
+          )
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          this.callbacks.onSelect(false);
         }
         break;
       case " ":
-        if (this.shouldHandleKey("space")) {
+        if (
+          eventMatchesBinding(event, this.settings.keyBindings.insertWithSpace)
+        ) {
           event.preventDefault();
           event.stopPropagation();
-          const addSpace =
-            this.settings.keyBindings.insertWithSpace.key === "space";
-          this.callbacks.onSelect(addSpace);
+          this.callbacks.onSelect(true);
+        } else if (
+          eventMatchesBinding(
+            event,
+            this.settings.keyBindings.insertWithoutSpace
+          )
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          this.callbacks.onSelect(false);
         } else {
+          // If no binding matched, fall back to abbreviation-on-space behavior when configured
           if (
             this.settings.abbreviationsEnabled &&
             this.settings.abbreviationInsertMode === "space"
@@ -236,7 +291,12 @@ export class InputHandler {
         }
         break;
       default:
-        if (this.settings.numberSelection && /^[1-9]$/.test(key)) {
+        // Only allow digit selection when no modifiers are pressed
+        if (
+          this.settings.numberSelection &&
+          !hasAnyModifier() &&
+          /^[1-9]$/.test(key)
+        ) {
           const index = parseInt(key) - 1;
           if (
             index >= 0 &&
@@ -255,6 +315,7 @@ export class InputHandler {
   };
 
   private shouldHandleKey(key: "enter" | "tab" | "space"): boolean {
+    // Deprecated: kept for backward compatibility if used elsewhere
     return (
       this.settings.keyBindings.insertWithoutSpace.key === key ||
       this.settings.keyBindings.insertWithSpace.key === key

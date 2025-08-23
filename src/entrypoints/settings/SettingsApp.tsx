@@ -83,9 +83,9 @@ const menuItems = [
   },
   {
     id: "keyboard",
-    label: "Keyboard",
+    label: "Keybinds",
     icon: Keyboard,
-    desc: "Bindings & control",
+    desc: "Keyboard & input control",
   },
   {
     id: "domain",

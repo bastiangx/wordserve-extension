@@ -27,6 +27,29 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
   const debounceTimeoutRef = useRef<number | undefined>(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
   const selectedItemRef = useRef<HTMLDivElement>(null);
+  const [caretPos, setCaretPos] = useState<number>(() => {
+    const init = localStorage.getItem("wordserve-preview-text") || "pro";
+    return init.length;
+  });
+
+  const extractWordAtPosition = useCallback(
+    (text: string, position: number) => {
+      let wordStart = position;
+      let wordEnd = position;
+      const isSep = (ch?: string) => !ch || /\s/.test(ch);
+      while (wordStart > 0 && !isSep(text[wordStart - 1])) wordStart--;
+      while (wordEnd < text.length && !isSep(text[wordEnd])) wordEnd++;
+      return {
+        prefix: text.slice(
+          wordStart,
+          Math.max(wordStart, Math.min(position, wordEnd))
+        ),
+        wordStart,
+        wordEnd,
+      };
+    },
+    []
+  );
 
   useEffect(() => {
     localStorage.setItem("wordserve-preview-text", inputValue);
@@ -77,21 +100,27 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
+      const caret = e.target.selectionStart ?? value.length;
       setInputValue(value);
+      setCaretPos(caret);
+      const { prefix } = extractWordAtPosition(value, caret);
 
       if (debounceTimeoutRef.current !== undefined) {
         clearTimeout(debounceTimeoutRef.current);
       }
       debounceTimeoutRef.current = window.setTimeout(() => {
-        fetchSuggestions(value);
+        fetchSuggestions(prefix);
       }, settings.debounceTime || 100);
     },
-    [fetchSuggestions, settings.debounceTime]
+    [extractWordAtPosition, fetchSuggestions, settings.debounceTime]
   );
 
   useEffect(() => {
-    fetchSuggestions(inputValue);
-  }, [fetchSuggestions]);
+    const caret = inputRef.current?.selectionStart ?? inputValue.length;
+    setCaretPos(caret);
+    const { prefix } = extractWordAtPosition(inputValue, caret);
+    fetchSuggestions(prefix);
+  }, [extractWordAtPosition, fetchSuggestions]);
 
   useEffect(() => {
     return () => {
@@ -143,22 +172,30 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
       const clamped = Math.max(0, Math.min(index, suggestions.length - 1));
       const chosen = suggestions[clamped];
       if (!chosen) return;
-      // Insert the word in its normal form regardless of uppercase display
-      setInputValue(chosen.word.toLowerCase());
-      localStorage.setItem("wordserve-preview-text", chosen.word.toLowerCase());
+      // Replace only the current word at caret with the chosen suggestion
+      const { wordStart, wordEnd } = extractWordAtPosition(
+        inputValue,
+        caretPos
+      );
+      const before = inputValue.slice(0, wordStart);
+      const after = inputValue.slice(wordEnd);
+      const newValue = before + chosen.word + after;
+      const newCaret = before.length + chosen.word.length;
+      setInputValue(newValue);
+      localStorage.setItem("wordserve-preview-text", newValue);
       setShowMenu(false);
       setSelectedIndex(clamped);
-      // Optionally refetch for the new word after a short delay to simulate flow
-      if (settings.debounceTime && settings.debounceTime > 0) {
-        window.setTimeout(
-          () => fetchSuggestions(chosen.word),
-          settings.debounceTime
-        );
-      }
-      // Keep focus on the input for a smooth preview
-      inputRef.current?.focus();
+      // Restore caret after state update
+      requestAnimationFrame(() => {
+        const el = inputRef.current;
+        if (el) {
+          el.focus();
+          el.setSelectionRange(newCaret, newCaret);
+          setCaretPos(newCaret);
+        }
+      });
     },
-    [suggestions, settings.debounceTime, fetchSuggestions]
+    [suggestions, extractWordAtPosition, inputValue, caretPos]
   );
 
   const onKeyDown = useCallback(
@@ -195,7 +232,8 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
         /^[1-9]$/.test(e.key) &&
         !e.altKey &&
         !e.ctrlKey &&
-        !e.metaKey
+        !e.metaKey &&
+        !e.shiftKey
       ) {
         const idx = parseInt(e.key, 10) - 1;
         if (idx >= 0 && idx < suggestions.length) {
@@ -242,7 +280,26 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={onKeyDown}
+          onClick={() => {
+            const el = inputRef.current;
+            if (!el) return;
+            const caret = el.selectionStart ?? el.value.length;
+            setCaretPos(caret);
+            const { prefix } = extractWordAtPosition(el.value, caret);
+            fetchSuggestions(prefix);
+          }}
+          onKeyUp={() => {
+            const el = inputRef.current;
+            if (!el) return;
+            const caret = el.selectionStart ?? el.value.length;
+            setCaretPos(caret);
+          }}
           onFocus={() => {
+            const el = inputRef.current;
+            const caret = el?.selectionStart ?? inputValue.length;
+            setCaretPos(caret);
+            const { prefix } = extractWordAtPosition(inputValue, caret);
+            fetchSuggestions(prefix);
             if (suggestions.length > 0) setShowMenu(true);
           }}
           onBlur={() => {
@@ -254,20 +311,22 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
       </div>
 
       {/* Menu Preview */}
-  {showMenu && suggestions.length > 0 && (
+      {showMenu && suggestions.length > 0 && (
         <div
           ref={menuRef}
           className={cn(
-    "border shadow-lg overflow-hidden font-mono",
+            "border shadow-lg overflow-hidden font-mono",
             settings.menuBorderRadius ? "rounded-md" : "rounded-none",
             settings.menuBorder ? "" : "border-transparent",
             settings.compactMode ? "py-1" : "py-2",
             "transition-all duration-100 ease-out"
           )}
           style={{
-    backgroundColor: "var(--ws-bg)",
-    borderColor: settings.menuBorder ? "var(--ws-border)" : "transparent",
-    color: "var(--ws-fg)",
+            backgroundColor: "var(--ws-bg)",
+            borderColor: settings.menuBorder
+              ? "var(--ws-border)"
+              : "transparent",
+            color: "var(--ws-fg)",
             fontSize: `${fontSize}px`,
             fontWeight: getFontWeight(settings.fontWeight),
             fontFamily: settings.accessibility.dyslexicFont
@@ -286,7 +345,8 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
             const displayWord = settings.accessibility.uppercaseSuggestions
               ? suggestion.word.toUpperCase()
               : suggestion.word;
-            const prefixLen = inputValue.length;
+            const { prefix } = extractWordAtPosition(inputValue, caretPos);
+            const prefixLen = prefix.length;
             const pre = displayWord.slice(0, prefixLen);
             const suf = displayWord.slice(prefixLen);
             const intensityMap: Record<string, string> = {
@@ -316,7 +376,9 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                   settings.rankingPosition === "right" ? "justify-between" : ""
                 )}
                 style={{
-                  backgroundColor: isSelected ? "var(--ws-selected)" : "transparent",
+                  backgroundColor: isSelected
+                    ? "var(--ws-selected)"
+                    : "transparent",
                   color: "var(--ws-fg)",
                   height: `${rowHeight}px`,
                 }}
@@ -398,13 +460,13 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                     </span>
 
                     {/* Rank badge on right */}
-        {showRanking && (
+                    {showRanking && (
                       <Badge
                         variant="outline"
                         className="text-xs font-medium ml-2 shrink-0"
                         style={{
-          borderColor: "var(--ws-rank-border)",
-          color: "var(--ws-fg)",
+                          borderColor: "var(--ws-rank-border)",
+                          color: "var(--ws-fg)",
                           fontSize: `${Math.max(10, fontSize - 2)}px`,
                         }}
                       >
