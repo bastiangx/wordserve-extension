@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import "@/components/styles.css";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -228,7 +229,13 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
   );
 
   return (
-    <div className={cn("relative w-full", className)}>
+    <div
+      className={cn(
+        "relative w-full",
+        settings.theme === "light" ? "ws-theme-light" : "ws-theme-dark",
+        className
+      )}
+    >
       <div className="mb-2">
         <Input
           ref={inputRef}
@@ -247,20 +254,20 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
       </div>
 
       {/* Menu Preview */}
-      {showMenu && suggestions.length > 0 && (
+  {showMenu && suggestions.length > 0 && (
         <div
           ref={menuRef}
           className={cn(
-            "border shadow-lg overflow-hidden font-mono",
+    "border shadow-lg overflow-hidden font-mono",
             settings.menuBorderRadius ? "rounded-md" : "rounded-none",
             settings.menuBorder ? "" : "border-transparent",
             settings.compactMode ? "py-1" : "py-2",
             "transition-all duration-100 ease-out"
           )}
           style={{
-            backgroundColor: "#191724",
-            borderColor: settings.menuBorder ? "#403d52" : "transparent",
-            color: "#e0def4",
+    backgroundColor: "var(--ws-bg)",
+    borderColor: settings.menuBorder ? "var(--ws-border)" : "transparent",
+    color: "var(--ws-fg)",
             fontSize: `${fontSize}px`,
             fontWeight: getFontWeight(settings.fontWeight),
             fontFamily: settings.accessibility.dyslexicFont
@@ -283,10 +290,10 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
             const pre = displayWord.slice(0, prefixLen);
             const suf = displayWord.slice(prefixLen);
             const intensityMap: Record<string, string> = {
-              normal: "#e0def4",
-              muted: "#c4c1d9",
-              faint: "#a8a5c3",
-              accent: "#c4a7e7",
+              normal: "var(--ws-intensity-normal)",
+              muted: "var(--ws-intensity-muted)",
+              faint: "var(--ws-intensity-faint)",
+              accent: "var(--ws-intensity-accent)",
             };
             const preColor =
               settings.accessibility.prefixColor ||
@@ -309,8 +316,8 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                   settings.rankingPosition === "right" ? "justify-between" : ""
                 )}
                 style={{
-                  backgroundColor: isSelected ? "#21202e" : "transparent",
-                  color: "#e0def4",
+                  backgroundColor: isSelected ? "var(--ws-selected)" : "transparent",
+                  color: "var(--ws-fg)",
                   height: `${rowHeight}px`,
                 }}
                 role="option"
@@ -329,8 +336,8 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                         variant="outline"
                         className="text-xs font-medium shrink-0"
                         style={{
-                          borderColor: "#403d52",
-                          color: "#e0def4",
+                          borderColor: "var(--ws-rank-border)",
+                          color: "var(--ws-fg)",
                           fontSize: `${Math.max(10, fontSize - 2)}px`,
                         }}
                       >
@@ -391,13 +398,13 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                     </span>
 
                     {/* Rank badge on right */}
-                    {showRanking && (
+        {showRanking && (
                       <Badge
                         variant="outline"
                         className="text-xs font-medium ml-2 shrink-0"
                         style={{
-                          borderColor: "#403d52",
-                          color: "#e0def4",
+          borderColor: "var(--ws-rank-border)",
+          color: "var(--ws-fg)",
                           fontSize: `${Math.max(10, fontSize - 2)}px`,
                         }}
                       >

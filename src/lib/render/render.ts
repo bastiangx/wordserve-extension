@@ -36,6 +36,7 @@ export interface AutocompleteMenuOptions {
   suffixColor?: string;
   dyslexicFont?: boolean;
   currentPrefixLength?: number;
+  theme?: "dark" | "light";
 }
 
 export class AutocompleteMenuRenderer {
@@ -49,7 +50,7 @@ export class AutocompleteMenuRenderer {
 
   private createContainer(): void {
     this.container = document.createElement("div");
-    this.container.className = "wordserve-menu-container";
+  this.container.className = "wordserve-menu-container";
     document.body.appendChild(this.container);
   }
 
@@ -75,7 +76,8 @@ export class AutocompleteMenuRenderer {
       this.menu = this.createMenu();
       this.container!.appendChild(this.menu);
     }
-    this.container!.className = `wordserve-menu-container ${
+    const themeClass = options.theme === "light" ? "ws-theme-light" : "";
+    this.container!.className = `wordserve-menu-container ${themeClass} ${
       options.compact ? "compact" : ""
     }`;
     const fontSize = options.fontSize ?? 14;
@@ -91,8 +93,9 @@ export class AutocompleteMenuRenderer {
     } else {
       menuEl.style.fontFamily = "inherit";
     }
-    menuEl.style.borderColor = showBorder ? "#403d52" : "transparent";
-    menuEl.style.borderRadius = useRadius ? "6px" : "0px";
+  // toggle helpers via classes instead of inline colors
+  menuEl.classList.toggle("no-border", !showBorder);
+  menuEl.classList.toggle("no-radius", !useRadius);
     this.container!.style.left = `${options.position.x}px`;
     this.container!.style.top = `${options.position.y}px`;
     this.container!.style.display = "block";
@@ -178,10 +181,10 @@ export class AutocompleteMenuRenderer {
     if (options.boldSuffix) sufSpan.style.fontWeight = "700";
     // color intensities
     const intensityMap: Record<string, string> = {
-      normal: "#e0def4",
-      muted: "#c4c1d9",
-      faint: "#a8a5c3",
-      accent: "#c4a7e7",
+      normal: "var(--ws-intensity-normal)",
+      muted: "var(--ws-intensity-muted)",
+      faint: "var(--ws-intensity-faint)",
+      accent: "var(--ws-intensity-accent)",
     };
     if (options.prefixColor) preSpan.style.color = options.prefixColor;
     else if (options.prefixColorIntensity)

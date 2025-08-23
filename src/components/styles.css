@@ -3,11 +3,85 @@
   font-family: "Geist Mono", "Monaco", monospace;
   font-size: 14px;
   line-height: 1.4;
-  color: #e0def4;
+  color: var(--ws-fg);
   background: transparent;
   z-index: 999999;
   position: fixed;
   pointer-events: none;
+
+  /* Default to dark theme tokens */
+  --ws-bg: #191724; /* base */
+  --ws-surface: #1f1d2e; /* surface */
+  --ws-overlay: #26233a; /* overlay */
+  --ws-fg: #e0def4; /* text */
+  --ws-border: #403d52; /* highlight-med */
+  --ws-hover: #1f1d2e; /* surface */
+  --ws-selected: #21202e; /* highlight-low */
+  --ws-rank-border: #403d52;
+  --ws-scrollbar-thumb: #44415a;
+  --ws-scrollbar-thumb-hover: #908caa;
+
+  /* prefix/suffix intensity palette */
+  --ws-intensity-normal: #e0def4; /* text */
+  --ws-intensity-muted: #c4c1d9; /* slightly muted text */
+  --ws-intensity-faint: #a8a5c3; /* more muted */
+  --ws-intensity-accent: #c4a7e7; /* iris */
+}
+
+/* Generic theme scopes for reuse outside the injected container (e.g., previews) */
+.ws-theme-dark {
+  --ws-bg: #191724; /* base */
+  --ws-surface: #1f1d2e; /* surface */
+  --ws-overlay: #26233a; /* overlay */
+  --ws-fg: #e0def4; /* text */
+  --ws-border: #403d52; /* highlight-med */
+  --ws-hover: #1f1d2e; /* surface */
+  --ws-selected: #21202e; /* highlight-low */
+  --ws-rank-border: #403d52;
+  --ws-scrollbar-thumb: #44415a;
+  --ws-scrollbar-thumb-hover: #908caa;
+
+  --ws-intensity-normal: #e0def4;
+  --ws-intensity-muted: #c4c1d9;
+  --ws-intensity-faint: #a8a5c3;
+  --ws-intensity-accent: #c4a7e7;
+}
+
+.ws-theme-light {
+  --ws-bg: #faf4ed; /* base */
+  --ws-surface: #fffaf3; /* surface */
+  --ws-overlay: #f2e9e1; /* overlay */
+  --ws-fg: #575279; /* text */
+  --ws-border: #f2e9e1; /* overlay */
+  --ws-hover: #f4ede8; /* highlight low */
+  --ws-selected: #dfdad9; /* highlight med */
+  --ws-rank-border: #f2e9e1;
+  --ws-scrollbar-thumb: #797593; /* subtle */
+  --ws-scrollbar-thumb-hover: #9893a5; /* muted */
+
+  --ws-intensity-normal: #575279; /* text */
+  --ws-intensity-muted: #797593; /* subtle */
+  --ws-intensity-faint: #9893a5; /* muted */
+  --ws-intensity-accent: #907aa9; /* iris */
+}
+
+/* Light theme (Rosé Pine Dawn) */
+.wordserve-menu-container.ws-theme-light {
+  --ws-bg: #faf4ed; /* base */
+  --ws-surface: #fffaf3; /* surface */
+  --ws-overlay: #f2e9e1; /* overlay */
+  --ws-fg: #575279; /* text */
+  --ws-border: #f2e9e1; /* overlay */
+  --ws-hover: #f4ede8; /* highlight low */
+  --ws-selected: #dfdad9; /* highlight med */
+  --ws-rank-border: #f2e9e1;
+  --ws-scrollbar-thumb: #797593; /* subtle */
+  --ws-scrollbar-thumb-hover: #9893a5; /* muted */
+
+  --ws-intensity-normal: #575279; /* text */
+  --ws-intensity-muted: #797593; /* subtle */
+  --ws-intensity-faint: #9893a5; /* muted */
+  --ws-intensity-accent: #907aa9; /* iris */
 }
 
 .wordserve-menu-container * {
@@ -15,8 +89,8 @@
 }
 
 .wordserve-autocomplete-menu {
-  background: #191724;
-  border: 1px solid #403d52;
+  background: var(--ws-bg);
+  border: 1px solid var(--ws-border);
   border-radius: 6px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -2px rgba(0, 0, 0, 0.1);
@@ -27,6 +101,14 @@
   overflow-y: auto;
   pointer-events: auto;
   transition: opacity 100ms ease-out, transform 100ms ease-out;
+}
+
+.wordserve-autocomplete-menu.no-border {
+  border-color: transparent !important;
+}
+
+.wordserve-autocomplete-menu.no-radius {
+  border-radius: 0 !important;
 }
 
 .wordserve-autocomplete-menu::-webkit-scrollbar {
@@ -44,11 +126,11 @@
 }
 
 .wordserve-autocomplete-menu:hover::-webkit-scrollbar-thumb {
-  background: #44415a;
+  background: var(--ws-scrollbar-thumb);
 }
 
 .wordserve-autocomplete-menu::-webkit-scrollbar-thumb:hover {
-  background: #908caa !important;
+  background: var(--ws-scrollbar-thumb-hover) !important;
 }
 
 .wordserve-menu-item {
@@ -69,12 +151,12 @@
 }
 
 .wordserve-menu-item:hover {
-  background: #1f1d2e;
+  background: var(--ws-hover);
 }
 
 .wordserve-menu-item.selected {
-  background: #21202e;
-  color: #e0def4;
+  background: var(--ws-selected);
+  color: var(--ws-fg);
 }
 
 .wordserve-menu-item-content {
@@ -104,8 +186,8 @@
   font-size: 11px;
   font-weight: 500;
   background: transparent;
-  border: 1px solid #403d52;
-  color: #e0def4;
+  border: 1px solid var(--ws-rank-border);
+  color: var(--ws-fg);
   padding: 2px 6px;
   border-radius: 4px;
   margin-left: 8px;
@@ -113,12 +195,12 @@
 }
 
 .wordserve-menu-item.selected .wordserve-menu-item-rank {
-  border-color: #403d52;
-  color: #e0def4;
+  border-color: var(--ws-rank-border);
+  color: var(--ws-fg);
 }
 
 .wordserve-menu-item.selected .wordserve-menu-item-number {
-  color: #e0def4;
+  color: var(--ws-fg);
 }
 
 /* Compact mode */

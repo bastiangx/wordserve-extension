@@ -76,6 +76,26 @@ export function AppearanceSettings({
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <div className="space-y-1">
+                <Label htmlFor="theme">Theme</Label>
+              </div>
+              <Select
+                value={pendingSettings.theme ?? "dark"}
+                onValueChange={(value: "dark" | "light") =>
+                  updatePendingSetting("theme", value)
+                }
+              >
+                <SelectTrigger id="theme" className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dark">Dark</SelectItem>
+                  <SelectItem value="light">Light</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-between items-center">
+              <div className="space-y-1">
                 <Label htmlFor="fontSize">Font size [px]</Label>
               </div>
               <div className="flex items-center gap-2">

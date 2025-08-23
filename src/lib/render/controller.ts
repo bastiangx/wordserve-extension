@@ -213,6 +213,7 @@ export class AutocompleteController {
       suffixColor: this.settings.accessibility.suffixColor,
       dyslexicFont: this.settings.accessibility.dyslexicFont,
       currentPrefixLength: this.currentWord.length,
+  theme: this.settings.theme ?? "dark",
     });
   }
 
