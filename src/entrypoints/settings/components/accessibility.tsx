@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/select";
 import type { DefaultConfig } from "@/types";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export interface AccessibilitySettingsProps {
   pendingSettings: DefaultConfig["accessibility"];
@@ -40,6 +42,17 @@ export function AccessibilitySettings({
                 }
               />
             </div>
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <Label>Bold prefix</Label>
+              </div>
+              <Switch
+                checked={pendingSettings.boldPrefix}
+                onCheckedChange={(checked) =>
+                  updatePendingAccessibilitySetting("boldPrefix", checked)
+                }
+              />
+            </div>
             <Separator />
             <div className="flex items-center justify-between">
               <div className="space-y-2">
@@ -58,31 +71,16 @@ export function AccessibilitySettings({
 
             <Separator />
 
-            <div className="flex justify-between items-center">
-              <div className="space-y-1">
-                <Label htmlFor="prefixColorIntensity">Prefix color intensity</Label>
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <Label>Dyslexic-friendly font</Label>
               </div>
-              <Select
-                value={pendingSettings.prefixColorIntensity}
-                onValueChange={(
-                  value: "normal" | "muted" | "faint" | "accent"
-                ) =>
-                  updatePendingAccessibilitySetting(
-                    "prefixColorIntensity",
-                    value
-                  )
+              <Switch
+                checked={pendingSettings.dyslexicFont || false}
+                onCheckedChange={(checked) =>
+                  updatePendingAccessibilitySetting("dyslexicFont", checked)
                 }
-              >
-                <SelectTrigger id="prefixColorIntensity" className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="muted">Muted</SelectItem>
-                  <SelectItem value="faint">Faint</SelectItem>
-                  <SelectItem value="accent">Accent</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
           </div>
         </CardContent>

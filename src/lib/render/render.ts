@@ -1,5 +1,6 @@
 import "@/components/styles.css";
 import { getRowHeight } from "@/lib/utils";
+import { initOpenDyslexic } from "@/lib/render/font";
 import { AUTOCOMPLETE_DEFAULTS } from "@/types";
 import { ABBREVIATION_CONFIG } from "@/types";
 
@@ -23,10 +24,18 @@ export interface AutocompleteMenuOptions {
   fontWeight?: string;
   menuBorder?: boolean;
   menuBorderRadius?: boolean;
-  // ranking and digit-selection settings
   numberSelection?: boolean;
   showRankingOverride?: boolean;
   rankingPosition?: "left" | "right";
+  uppercaseSuggestions?: boolean;
+  boldSuffix?: boolean;
+  boldPrefix?: boolean;
+  prefixColorIntensity?: "normal" | "muted" | "faint" | "accent";
+  suffixColorIntensity?: "normal" | "muted" | "faint" | "accent";
+  prefixColor?: string;
+  suffixColor?: string;
+  dyslexicFont?: boolean;
+  currentPrefixLength?: number;
 }
 
 export class AutocompleteMenuRenderer {
@@ -76,6 +85,12 @@ export class AutocompleteMenuRenderer {
     const menuEl = this.menu!;
     menuEl.style.fontSize = `${fontSize}px`;
     menuEl.style.fontWeight = fontWeight;
+    if (options.dyslexicFont) {
+      initOpenDyslexic();
+      menuEl.style.fontFamily = `'OpenDyslexic', 'Atkinson Hyperlegible', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`;
+    } else {
+      menuEl.style.fontFamily = "inherit";
+    }
     menuEl.style.borderColor = showBorder ? "#403d52" : "transparent";
     menuEl.style.borderRadius = useRadius ? "6px" : "0px";
     this.container!.style.left = `${options.position.x}px`;
@@ -143,10 +158,39 @@ export class AutocompleteMenuRenderer {
     if (options.rankingPosition === "left" && showRanking) {
       content.appendChild(badgeEl);
     }
+    // Build a prefix/suffix split for styling
     const wordEl = document.createElement("span");
     wordEl.className = "wordserve-menu-item-word";
-    wordEl.textContent = suggestion.word;
-    wordEl.style.fontWeight = options.fontWeight || "400";
+    const wordText = options.uppercaseSuggestions
+      ? suggestion.word.toUpperCase()
+      : suggestion.word;
+    // prefix length equals the current typed word length
+    const prefixLen = Math.max(0, options.currentPrefixLength ?? 0);
+    // When prefix length unknown, default to 0 so whole word is suffix
+    const display = wordText;
+    const pre = display.slice(0, prefixLen);
+    const suf = display.slice(prefixLen);
+    const preSpan = document.createElement("span");
+    preSpan.textContent = pre;
+    if (options.boldPrefix) preSpan.style.fontWeight = "700";
+    const sufSpan = document.createElement("span");
+    sufSpan.textContent = suf;
+    if (options.boldSuffix) sufSpan.style.fontWeight = "700";
+    // color intensities
+    const intensityMap: Record<string, string> = {
+      normal: "#e0def4",
+      muted: "#c4c1d9",
+      faint: "#a8a5c3",
+      accent: "#c4a7e7",
+    };
+    if (options.prefixColor) preSpan.style.color = options.prefixColor;
+    else if (options.prefixColorIntensity)
+      preSpan.style.color = intensityMap[options.prefixColorIntensity];
+    if (options.suffixColor) sufSpan.style.color = options.suffixColor;
+    else if (options.suffixColorIntensity)
+      sufSpan.style.color = intensityMap[options.suffixColorIntensity];
+    wordEl.appendChild(preSpan);
+    wordEl.appendChild(sufSpan);
     content.appendChild(wordEl);
     item.appendChild(content);
     if (options.rankingPosition === "right" && showRanking) {

@@ -204,6 +204,15 @@ export class AutocompleteController {
       numberSelection: this.settings.numberSelection,
       showRankingOverride: this.settings.showRankingOverride,
       rankingPosition: this.settings.rankingPosition,
+      uppercaseSuggestions: this.settings.accessibility.uppercaseSuggestions,
+      boldSuffix: this.settings.accessibility.boldSuffix,
+      boldPrefix: this.settings.accessibility.boldPrefix,
+      prefixColorIntensity: this.settings.accessibility.prefixColorIntensity,
+      suffixColorIntensity: this.settings.accessibility.suffixColorIntensity,
+      prefixColor: this.settings.accessibility.prefixColor,
+      suffixColor: this.settings.accessibility.suffixColor,
+      dyslexicFont: this.settings.accessibility.dyslexicFont,
+      currentPrefixLength: this.currentWord.length,
     });
   }
 
@@ -211,9 +220,9 @@ export class AutocompleteController {
     suggestion: Suggestion,
     addSpace: boolean = false
   ): void {
-    // Check if this is an abbreviation hint
-    if (suggestion.rank === (ABBREVIATION_CONFIG.SPACE_BADGE as unknown as number)) {
-      // For abbreviation hints, we need to get the full expansion text
+    if (
+      suggestion.rank === (ABBREVIATION_CONFIG.SPACE_BADGE as unknown as number)
+    ) {
       const match = findAbbreviation(this.currentWord, this.settings);
       if (match) {
         this.insertSuggestion(match.value, addSpace);
@@ -272,7 +281,10 @@ export class AutocompleteController {
     const selectedSuggestion = this.suggestions[this.selectedIndex];
     if (selectedSuggestion) {
       // Check if this is an abbreviation hint
-      if (selectedSuggestion.rank === (ABBREVIATION_CONFIG.SPACE_BADGE as unknown as number)) {
+      if (
+        selectedSuggestion.rank ===
+        (ABBREVIATION_CONFIG.SPACE_BADGE as unknown as number)
+      ) {
         // For abbreviation hints, we need to get the full expansion text
         const match = findAbbreviation(this.currentWord, this.settings);
         if (match) {
@@ -298,7 +310,10 @@ export class AutocompleteController {
     if (index >= 0 && index < this.suggestions.length) {
       const suggestion = this.suggestions[index];
       // Check if this is an abbreviation hint
-      if (suggestion.rank === (ABBREVIATION_CONFIG.SPACE_BADGE as unknown as number)) {
+      if (
+        suggestion.rank ===
+        (ABBREVIATION_CONFIG.SPACE_BADGE as unknown as number)
+      ) {
         // For abbreviation hints, we need to get the full expansion text
         const match = findAbbreviation(this.currentWord, this.settings);
         if (match) {

@@ -239,6 +239,111 @@ export function AppearanceSettings({
                 }
               />
             </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Prefix color intensity</Label>
+                <Select
+                  value={pendingSettings.accessibility.prefixColorIntensity}
+                  onValueChange={(value: "normal" | "muted" | "faint" | "accent") =>
+                    updatePendingSetting("accessibility", {
+                      ...pendingSettings.accessibility,
+                      prefixColorIntensity: value,
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="muted">Muted</SelectItem>
+                    <SelectItem value="faint">Faint</SelectItem>
+                    <SelectItem value="accent">Accent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label>Suffix color intensity</Label>
+                <Select
+                  value={pendingSettings.accessibility.suffixColorIntensity}
+                  onValueChange={(value: "normal" | "muted" | "faint" | "accent") =>
+                    updatePendingSetting("accessibility", {
+                      ...pendingSettings.accessibility,
+                      suffixColorIntensity: value,
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="muted">Muted</SelectItem>
+                    <SelectItem value="faint">Faint</SelectItem>
+                    <SelectItem value="accent">Accent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <Label className="min-w-[120px]">Prefix color</Label>
+                  <Input
+                    type="color"
+                    value={pendingSettings.accessibility.prefixColor || "#e0def4"}
+                    onChange={(e) =>
+                      updatePendingSetting("accessibility", {
+                        ...pendingSettings.accessibility,
+                        prefixColor: e.target.value,
+                      })
+                    }
+                    className="w-16 p-0 h-8"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      updatePendingSetting("accessibility", {
+                        ...pendingSettings.accessibility,
+                        prefixColor: undefined,
+                      })
+                    }
+                  >
+                    Reset
+                  </Button>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Label className="min-w-[120px]">Suffix color</Label>
+                  <Input
+                    type="color"
+                    value={pendingSettings.accessibility.suffixColor || "#a8a5c3"}
+                    onChange={(e) =>
+                      updatePendingSetting("accessibility", {
+                        ...pendingSettings.accessibility,
+                        suffixColor: e.target.value,
+                      })
+                    }
+                    className="w-16 p-0 h-8"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      updatePendingSetting("accessibility", {
+                        ...pendingSettings.accessibility,
+                        suffixColor: undefined,
+                      })
+                    }
+                  >
+                    Reset
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

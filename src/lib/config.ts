@@ -47,6 +47,7 @@ export function normalizeConfig(input: any): DefaultConfig {
     merged.numberSelection,
     DEFAULT_SETTINGS.numberSelection
   );
+  const theme = merged.theme === "light" ? "light" : "dark";
   const showRankingOverride = toBool(
     merged.showRankingOverride,
     DEFAULT_SETTINGS.showRankingOverride
@@ -128,6 +129,10 @@ export function normalizeConfig(input: any): DefaultConfig {
       merged.accessibility?.boldSuffix,
       DEFAULT_SETTINGS.accessibility.boldSuffix
     ),
+    boldPrefix: toBool(
+      merged.accessibility?.boldPrefix,
+      DEFAULT_SETTINGS.accessibility.boldPrefix
+    ),
     uppercaseSuggestions: toBool(
       merged.accessibility?.uppercaseSuggestions,
       DEFAULT_SETTINGS.accessibility.uppercaseSuggestions
@@ -137,6 +142,23 @@ export function normalizeConfig(input: any): DefaultConfig {
     )
       ? merged.accessibility.prefixColorIntensity
       : DEFAULT_SETTINGS.accessibility.prefixColorIntensity,
+    suffixColorIntensity: ["normal", "muted", "faint", "accent"].includes(
+      merged.accessibility?.suffixColorIntensity
+    )
+      ? merged.accessibility.suffixColorIntensity
+      : DEFAULT_SETTINGS.accessibility.suffixColorIntensity,
+    prefixColor:
+      typeof merged.accessibility?.prefixColor === "string"
+        ? merged.accessibility.prefixColor
+        : DEFAULT_SETTINGS.accessibility.prefixColor,
+    suffixColor:
+      typeof merged.accessibility?.suffixColor === "string"
+        ? merged.accessibility.suffixColor
+        : DEFAULT_SETTINGS.accessibility.suffixColor,
+    dyslexicFont: toBool(
+      merged.accessibility?.dyslexicFont,
+      DEFAULT_SETTINGS.accessibility.dyslexicFont ?? false
+    ),
     customColor:
       typeof merged.accessibility?.customColor === "string"
         ? merged.accessibility.customColor
@@ -155,6 +177,7 @@ export function normalizeConfig(input: any): DefaultConfig {
     minWordLength,
     maxSuggestions,
     debounceTime,
+  theme,
     numberSelection,
     showRankingOverride,
     compactMode,

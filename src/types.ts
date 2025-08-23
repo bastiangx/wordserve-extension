@@ -38,6 +38,7 @@ export interface DefaultConfig {
   minWordLength: number;
   maxSuggestions: number;
   debounceTime: number;
+  theme?: "dark" | "light";
   numberSelection: boolean;
   showRankingOverride: boolean;
   compactMode: boolean;
@@ -66,8 +67,13 @@ export interface DefaultConfig {
   };
   accessibility: {
     boldSuffix: boolean;
+    boldPrefix: boolean;
     uppercaseSuggestions: boolean;
     prefixColorIntensity: "normal" | "muted" | "faint" | "accent";
+    suffixColorIntensity: "normal" | "muted" | "faint" | "accent";
+    prefixColor?: string;
+    suffixColor?: string;
+    dyslexicFont?: boolean;
     customColor?: string;
     customFontFamily?: string;
     customFontSize?: number;
@@ -179,6 +185,7 @@ export const DEFAULT_SETTINGS: DefaultConfig = {
   minWordLength: 3,
   maxSuggestions: 16,
   debounceTime: 5,
+  theme: "dark",
   numberSelection: true,
   showRankingOverride: false,
   compactMode: false,
@@ -209,8 +216,13 @@ export const DEFAULT_SETTINGS: DefaultConfig = {
   },
   accessibility: {
     boldSuffix: false,
+    boldPrefix: false,
     uppercaseSuggestions: false,
     prefixColorIntensity: "normal",
+    suffixColorIntensity: "normal",
+    prefixColor: undefined,
+    suffixColor: undefined,
+    dyslexicFont: false,
   },
   domains: {
     blacklistMode: true,

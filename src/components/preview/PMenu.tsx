@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import type { DefaultConfig, DisplaySuggestion } from "@/types";
 import { getRowHeight, clamp, toNumber } from "@/lib/utils";
 import { browser } from "wxt/browser";
+import { initOpenDyslexic } from "@/lib/render/font";
 
 export interface MenuPreviewProps {
   settings: DefaultConfig;
@@ -116,6 +117,10 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
   // derive numeric font size, clamp to sensible range (12-28)
   const fontSize = clamp(toNumber(settings.fontSize, 15), 12, 28);
 
+  useEffect(() => {
+    if (settings.accessibility.dyslexicFont) initOpenDyslexic();
+  }, [settings.accessibility.dyslexicFont]);
+
   const getFontWeight = (weight: string): string => {
     const weightMap: Record<string, string> = {
       thin: "100",
@@ -137,8 +142,9 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
       const clamped = Math.max(0, Math.min(index, suggestions.length - 1));
       const chosen = suggestions[clamped];
       if (!chosen) return;
-      setInputValue(chosen.word);
-      localStorage.setItem("wordserve-preview-text", chosen.word);
+      // Insert the word in its normal form regardless of uppercase display
+      setInputValue(chosen.word.toLowerCase());
+      localStorage.setItem("wordserve-preview-text", chosen.word.toLowerCase());
       setShowMenu(false);
       setSelectedIndex(clamped);
       // Optionally refetch for the new word after a short delay to simulate flow
@@ -257,6 +263,9 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
             color: "#e0def4",
             fontSize: `${fontSize}px`,
             fontWeight: getFontWeight(settings.fontWeight),
+            fontFamily: settings.accessibility.dyslexicFont
+              ? `'OpenDyslexic', 'Atkinson Hyperlegible', ui-sans-serif, system-ui`
+              : undefined,
             maxHeight: "200px",
             overflowY: "auto" as const,
           }}
@@ -267,6 +276,28 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
               settings.showRankingOverride ||
               (settings.numberSelection && index < 9);
             const rowHeight = getRowHeight(fontSize, settings.compactMode);
+            const displayWord = settings.accessibility.uppercaseSuggestions
+              ? suggestion.word.toUpperCase()
+              : suggestion.word;
+            const prefixLen = inputValue.length;
+            const pre = displayWord.slice(0, prefixLen);
+            const suf = displayWord.slice(prefixLen);
+            const intensityMap: Record<string, string> = {
+              normal: "#e0def4",
+              muted: "#c4c1d9",
+              faint: "#a8a5c3",
+              accent: "#c4a7e7",
+            };
+            const preColor =
+              settings.accessibility.prefixColor ||
+              intensityMap[
+                settings.accessibility.prefixColorIntensity || "normal"
+              ];
+            const sufColor =
+              settings.accessibility.suffixColor ||
+              intensityMap[
+                settings.accessibility.suffixColorIntensity || "normal"
+              ];
 
             return (
               <div
@@ -307,18 +338,56 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                       </Badge>
                     )}
 
-                    {/* Word */}
-                    <span className="font-medium truncate">
-                      {suggestion.word}
+                    {/* with prefix/suffix styling */}
+                    <span className="truncate">
+                      <span
+                        style={{
+                          color: preColor,
+                          fontWeight: settings.accessibility.boldPrefix
+                            ? 700
+                            : undefined,
+                        }}
+                      >
+                        {pre}
+                      </span>
+                      <span
+                        style={{
+                          color: sufColor,
+                          fontWeight: settings.accessibility.boldSuffix
+                            ? 700
+                            : undefined,
+                        }}
+                      >
+                        {suf}
+                      </span>
                     </span>
                   </div>
                 )}
 
                 {settings.rankingPosition === "right" && (
                   <>
-                    {/* Word */}
-                    <span className="font-medium truncate">
-                      {suggestion.word}
+                    {/* Word with prefix/suffix styling */}
+                    <span className="truncate">
+                      <span
+                        style={{
+                          color: preColor,
+                          fontWeight: settings.accessibility.boldPrefix
+                            ? 700
+                            : undefined,
+                        }}
+                      >
+                        {pre}
+                      </span>
+                      <span
+                        style={{
+                          color: sufColor,
+                          fontWeight: settings.accessibility.boldSuffix
+                            ? 700
+                            : undefined,
+                        }}
+                      >
+                        {suf}
+                      </span>
                     </span>
 
                     {/* Rank badge on right */}
