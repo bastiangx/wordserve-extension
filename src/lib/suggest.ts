@@ -1,5 +1,9 @@
 export type Suggestion = { word: string; frequency: number };
 
+// TS implementation of prefix word suggestion engine
+// Based on Go implementation in WordServe
+// Had to use native impl because ov MV3 issues with WASM on webworkers.
+
 type CapitalInfo = {
   isAllUpper: boolean;
   isTitle: boolean;
@@ -23,15 +27,12 @@ function getCapitalInfo(prefix: string): { lower: string; info: CapitalInfo } {
       break;
     }
   }
-  
-  // Early return for no capitals - matches Go GetCapitalDetails
   if (!hasCapitals) {
     return {
       lower: prefix.toLowerCase(),
       info: { isAllUpper: false, isTitle: false, upperPositions: new Set() },
     };
   }
-
   const isAllUpper = prefix.toUpperCase() === prefix && /[A-Z]/.test(prefix);
   const isTitle =
     prefix.length > 0 &&
@@ -164,7 +165,6 @@ export class SuggestEngine {
     const { lower, info } = getCapitalInfo(prefix);
     const minThreshold = lower.length <= 2 || isRepetitive(lower) ? 24 : 20;
     if (lower.length === 0) return [];
-
   // prefix range over cached lexicographically sorted words
   const [start, end] = binarySearchRange(this.lexWords, lower);
     const target = lim + Math.floor(lim / 2);
