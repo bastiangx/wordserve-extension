@@ -164,7 +164,7 @@ export function AppearanceSettings({
               <div className="space-y-2">
                 <Label>Compact mode</Label>
                 <p className="text-sm text-muted-foreground">
-                  Reduce spacing and padding
+                  Reduces spacing and padding
                 </p>
               </div>
               <Switch
