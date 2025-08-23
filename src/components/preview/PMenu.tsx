@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import "@/components/styles.css";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { DefaultConfig, DisplaySuggestion } from "@/types";
 import { getRowHeight, clamp, toNumber } from "@/lib/utils";
@@ -314,178 +313,157 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
       {/* Menu Preview */}
       {showMenu && suggestions.length > 0 && (
         <div
-          ref={menuRef}
           className={cn(
-            "border shadow-lg overflow-hidden font-mono",
-            settings.menuBorderRadius ? "rounded-md" : "rounded-none",
-            settings.menuBorder ? "" : "border-transparent",
-            settings.compactMode ? "py-1" : "py-2",
-            "transition-all duration-100 ease-out"
+            "wordserve-menu-container",
+            settings.compactMode ? "compact" : "",
+            themeToClass(settings.theme ?? "dark")
           )}
-          style={{
-            backgroundColor: "var(--ws-bg)",
-            borderColor: settings.menuBorder
-              ? "var(--ws-border)"
-              : "transparent",
-            color: "var(--ws-fg)",
-            fontSize: `${fontSize}px`,
-            fontWeight: getFontWeight(settings.fontWeight),
-            fontFamily: settings.accessibility.dyslexicFont
-              ? `'OpenDyslexic', ` +
-                buildFontFamilyFromConfig({
-                  fontFamilyList: settings.fontFamilyList,
-                  customFontList: settings.customFontList,
-                })
-              : buildFontFamilyFromConfig({
-                  fontFamilyList: settings.fontFamilyList,
-                  customFontList: settings.customFontList,
-                }),
-            maxHeight: "200px",
-            overflowY: "auto" as const,
-          }}
         >
-          {suggestions.map((suggestion, index) => {
-            const isSelected = index === selectedIndex;
-            const showRanking =
-              settings.showRankingOverride ||
-              (settings.numberSelection && index < 9);
-            const rowHeight = getRowHeight(fontSize, settings.compactMode);
-            const displayWord = settings.accessibility.uppercaseSuggestions
-              ? suggestion.word.toUpperCase()
-              : suggestion.word;
-            const { prefix } = extractWordAtPosition(inputValue, caretPos);
-            const prefixLen = prefix.length;
-            const pre = displayWord.slice(0, prefixLen);
-            const suf = displayWord.slice(prefixLen);
-            const intensityMap: Record<string, string> = {
-              normal: "var(--ws-intensity-normal)",
-              muted: "var(--ws-intensity-muted)",
-              faint: "var(--ws-intensity-faint)",
-              accent: "var(--ws-intensity-accent)",
-            };
-            const preColor =
-              settings.accessibility.prefixColor ||
-              intensityMap[
-                settings.accessibility.prefixColorIntensity || "normal"
-              ];
-            const sufColor =
-              settings.accessibility.suffixColor ||
-              intensityMap[
-                settings.accessibility.suffixColorIntensity || "normal"
-              ];
+          <div
+            ref={menuRef}
+            className={cn(
+              "wordserve-autocomplete-menu",
+              settings.menuBorder ? "" : "no-border",
+              settings.menuBorderRadius ? "" : "no-radius"
+            )}
+            style={{
+              fontSize: `${fontSize}px`,
+              fontWeight: getFontWeight(settings.fontWeight),
+              fontFamily: settings.accessibility.dyslexicFont
+                ? `'OpenDyslexic', ` +
+                  buildFontFamilyFromConfig({
+                    fontFamilyList: settings.fontFamilyList,
+                    customFontList: settings.customFontList,
+                  })
+                : buildFontFamilyFromConfig({
+                    fontFamilyList: settings.fontFamilyList,
+                    customFontList: settings.customFontList,
+                  }),
+              maxHeight: "200px",
+              overflowY: "auto" as const,
+            }}
+          >
+            {suggestions.map((suggestion, index) => {
+              const isSelected = index === selectedIndex;
+              const showRanking =
+                settings.showRankingOverride ||
+                (settings.numberSelection && index < 9);
+              const rowHeight = getRowHeight(fontSize, settings.compactMode);
+              const displayWord = settings.accessibility.uppercaseSuggestions
+                ? suggestion.word.toUpperCase()
+                : suggestion.word;
+              const { prefix } = extractWordAtPosition(inputValue, caretPos);
+              const prefixLen = prefix.length;
+              const pre = displayWord.slice(0, prefixLen);
+              const suf = displayWord.slice(prefixLen);
+              const intensityMap: Record<string, string> = {
+                normal: "var(--ws-intensity-normal)",
+                muted: "var(--ws-intensity-muted)",
+                faint: "var(--ws-intensity-faint)",
+                accent: "var(--ws-intensity-accent)",
+              };
+              const preColor =
+                settings.accessibility.prefixColor ||
+                intensityMap[
+                  settings.accessibility.prefixColorIntensity || "normal"
+                ];
+              const sufColor =
+                settings.accessibility.suffixColor ||
+                intensityMap[
+                  settings.accessibility.suffixColorIntensity || "normal"
+                ];
 
-            return (
-              <div
-                key={`${suggestion.word}-${index}`}
-                ref={isSelected ? selectedItemRef : null}
-                className={cn(
-                  "flex items-center cursor-default transition-colors duration-75",
-                  settings.compactMode ? "px-3" : "px-4",
-                  settings.rankingPosition === "right" ? "justify-between" : ""
-                )}
-                style={{
-                  backgroundColor: isSelected
-                    ? "var(--ws-selected)"
-                    : "transparent",
-                  color: "var(--ws-fg)",
-                  height: `${rowHeight}px`,
-                }}
-                role="option"
-                aria-selected={isSelected}
-                onMouseEnter={() => setSelectedIndex(index)}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  selectByIndex(index);
-                }}
-              >
-                {settings.rankingPosition === "left" && (
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    {/* Rank badge on left */}
-                    {showRanking && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs font-medium shrink-0"
-                        style={{
-                          borderColor: "var(--ws-rank-border)",
-                          color: "var(--ws-fg)",
-                          fontSize: `${Math.max(10, fontSize - 2)}px`,
-                        }}
-                      >
-                        {settings.numberSelection ? index + 1 : suggestion.rank}
-                      </Badge>
-                    )}
+              return (
+                <div
+                  key={`${suggestion.word}-${index}`}
+                  ref={isSelected ? selectedItemRef : null}
+                  className={cn(
+                    "wordserve-menu-item",
+                    isSelected ? "selected" : "",
+                    settings.rankingPosition === "right" ? "justify-between" : ""
+                  )}
+                  style={{
+                    height: `${rowHeight}px`,
+                    // Align when the badge is on the left, mirroring injected renderer
+                    paddingLeft: settings.rankingPosition === "left" ? 0 : undefined,
+                  }}
+                  role="option"
+                  aria-selected={isSelected}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    selectByIndex(index);
+                  }}
+                >
+                  {settings.rankingPosition === "left" && (
+                    <div className="wordserve-menu-item-content">
+                      {showRanking && (
+                        <span className="wordserve-menu-item-rank">
+                          {settings.numberSelection ? index + 1 : suggestion.rank}
+                        </span>
+                      )}
+                      <span className="wordserve-menu-item-word truncate">
+                        <span
+                          style={{
+                            color: preColor,
+                            fontWeight: settings.accessibility.boldPrefix
+                              ? 700
+                              : undefined,
+                          }}
+                        >
+                          {pre}
+                        </span>
+                        <span
+                          style={{
+                            color: sufColor,
+                            fontWeight: settings.accessibility.boldSuffix
+                              ? 700
+                              : undefined,
+                          }}
+                        >
+                          {suf}
+                        </span>
+                      </span>
+                    </div>
+                  )}
 
-                    {/* with prefix/suffix styling */}
-                    <span className="truncate">
-                      <span
-                        style={{
-                          color: preColor,
-                          fontWeight: settings.accessibility.boldPrefix
-                            ? 700
-                            : undefined,
-                        }}
-                      >
-                        {pre}
-                      </span>
-                      <span
-                        style={{
-                          color: sufColor,
-                          fontWeight: settings.accessibility.boldSuffix
-                            ? 700
-                            : undefined,
-                        }}
-                      >
-                        {suf}
-                      </span>
-                    </span>
-                  </div>
-                )}
-
-                {settings.rankingPosition === "right" && (
-                  <>
-                    {/* Word with prefix/suffix styling */}
-                    <span className="truncate">
-                      <span
-                        style={{
-                          color: preColor,
-                          fontWeight: settings.accessibility.boldPrefix
-                            ? 700
-                            : undefined,
-                        }}
-                      >
-                        {pre}
-                      </span>
-                      <span
-                        style={{
-                          color: sufColor,
-                          fontWeight: settings.accessibility.boldSuffix
-                            ? 700
-                            : undefined,
-                        }}
-                      >
-                        {suf}
-                      </span>
-                    </span>
-
-                    {/* Rank badge on right */}
-                    {showRanking && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs font-medium ml-2 shrink-0"
-                        style={{
-                          borderColor: "var(--ws-rank-border)",
-                          color: "var(--ws-fg)",
-                          fontSize: `${Math.max(10, fontSize - 2)}px`,
-                        }}
-                      >
-                        {settings.numberSelection ? index + 1 : suggestion.rank}
-                      </Badge>
-                    )}
-                  </>
-                )}
-              </div>
-            );
-          })}
+                  {settings.rankingPosition === "right" && (
+                    <>
+                      <div className="wordserve-menu-item-content">
+                        <span className="wordserve-menu-item-word truncate">
+                          <span
+                            style={{
+                              color: preColor,
+                              fontWeight: settings.accessibility.boldPrefix
+                                ? 700
+                                : undefined,
+                            }}
+                          >
+                            {pre}
+                          </span>
+                          <span
+                            style={{
+                              color: sufColor,
+                              fontWeight: settings.accessibility.boldSuffix
+                                ? 700
+                                : undefined,
+                            }}
+                          >
+                            {suf}
+                          </span>
+                        </span>
+                      </div>
+                      {showRanking && (
+                        <span className="wordserve-menu-item-rank">
+                          {settings.numberSelection ? index + 1 : suggestion.rank}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

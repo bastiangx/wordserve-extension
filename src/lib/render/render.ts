@@ -147,9 +147,19 @@ export class AutocompleteMenuRenderer {
     const fontSize = options.fontSize ?? 14;
     const compact = options.compact ?? false;
     const rowHeight = getRowHeight(fontSize, compact);
+    // Scale vertical padding with font size so small fonts produce tighter rows
+    const sidePad = compact
+      ? Math.max(2, Math.round(fontSize * 0.2))
+      : Math.max(4, Math.round(fontSize * 0.3));
     item.style.height = `${rowHeight}px`;
+    item.style.paddingTop = `${sidePad}px`;
+    item.style.paddingBottom = `${sidePad}px`;
     const content = document.createElement("div");
     content.className = "wordserve-menu-item-content";
+    // Scale gap between badge and word
+    content.style.gap = compact
+      ? `${Math.max(4, Math.round(fontSize * 0.35))}px`
+      : `${Math.max(6, Math.round(fontSize * 0.5))}px`;
     const badgeEl = document.createElement("span");
     badgeEl.className = "wordserve-menu-item-rank";
 
@@ -164,6 +174,12 @@ export class AutocompleteMenuRenderer {
     } else {
       // For normal suggestions, show the menu position (1-based)
       badgeEl.textContent = (index + 1).toString();
+      // Scale badge typography and padding with font size
+      const badgeFont = Math.max(10, Math.round(fontSize - 2));
+      const badgePadY = Math.max(1, Math.round(fontSize * 0.12));
+      const badgePadX = Math.max(4, Math.round(fontSize * 0.4));
+      badgeEl.style.fontSize = `${badgeFont}px`;
+      badgeEl.style.padding = `${badgePadY}px ${badgePadX}px`;
     }
     if (options.rankingPosition === "left" && showRanking) {
       content.appendChild(badgeEl);
