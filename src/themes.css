@@ -21,9 +21,9 @@
   --ws-intensity-accent: #b4befe; /* Lavender */
 }
 
-/* IV Space (dark) */
-.wordserve-menu-container:is(.ws-theme-iv-space),
-.ws-theme-iv-space {
+/* IV Spade (dark) */
+.wordserve-menu-container:is(.ws-theme-iv-spade),
+.ws-theme-iv-spade {
   --ws-bg: #0c0c0c;
   --ws-surface: #121212;
   --ws-overlay: #121212;

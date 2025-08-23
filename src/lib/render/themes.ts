@@ -2,7 +2,7 @@ export type ThemeId =
   | "dark"
   | "light"
   | "catppuccin-mocha"
-  | "iv-space"
+  | "iv-spade"
   | "iceberg-dark"
   | "iceberg-light"
   | "nord-dark"
@@ -16,7 +16,7 @@ export type ThemeId =
 export const DARK_THEMES: { id: ThemeId; label: string }[] = [
   { id: "dark", label: "Rosé Pine (dark)" },
   { id: "catppuccin-mocha", label: "Catppuccin Mocha" },
-  { id: "iv-space", label: "IV space" },
+  { id: "iv-spade", label: "IV spade" },
   { id: "iceberg-dark", label: "Iceberg dark" },
   { id: "nord-dark", label: "Nord dark" },
   { id: "mountain", label: "Mountain" },
@@ -40,8 +40,8 @@ export function themeToClass(id: ThemeId): string {
       return "ws-theme-light"; // existing light tokens
     case "catppuccin-mocha":
       return "ws-theme-catppuccin-mocha";
-    case "iv-space":
-      return "ws-theme-iv-space";
+    case "iv-spade":
+      return "ws-theme-iv-spade";
     case "iceberg-dark":
       return "ws-theme-iceberg-dark";
     case "iceberg-light":

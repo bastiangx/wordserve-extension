@@ -52,7 +52,7 @@ export function normalizeConfig(input: any): DefaultConfig {
     "dark",
     "light",
     "catppuccin-mocha",
-    "iv-space",
+    "iv-spade",
     "iceberg-dark",
     "iceberg-light",
     "nord-dark",
