@@ -24,7 +24,7 @@ export function KeyboardSettings({
   return (
     <div className="space-y-4">
       <Card className="border-transparent">
-        <CardContent className="space-y-4 p-4">
+        <CardContent className="space-y-4 p-2">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-2">

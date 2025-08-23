@@ -1,4 +1,5 @@
 "use client";
+import { Badge } from "@/components/ui/badge";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DefaultConfig } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -157,7 +158,15 @@ export function AbbreviationsSettings({
   };
   const exportJSON = async () => {
     try {
-      const data = JSON.stringify(pendingSettings.abbreviations || {}, null, 2);
+      const data = JSON.stringify(
+        {
+          type: "wordserve/abbreviations",
+          version: 1,
+          data: pendingSettings.abbreviations || {},
+        },
+        null,
+        2
+      );
       const blob = new Blob([data], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const downloads: any =
@@ -193,11 +202,24 @@ export function AbbreviationsSettings({
     try {
       const text = await file.text();
       const parsed = JSON.parse(text);
-      const map: Record<string, string> = {};
+      let map: Record<string, string> = {};
       if (parsed && typeof parsed === "object") {
-        for (const [k, v] of Object.entries(parsed)) {
-          if (typeof k === "string" && typeof v === "string") {
-            map[k] = v;
+        if (
+          parsed.type === "wordserve/abbreviations" &&
+          parsed.data &&
+          typeof parsed.data === "object"
+        ) {
+          for (const [k, v] of Object.entries(parsed.data)) {
+            if (typeof k === "string" && typeof v === "string") {
+              map[k] = v;
+            }
+          }
+        } else {
+          // Back-compat: allow plain object maps
+          for (const [k, v] of Object.entries(parsed)) {
+            if (typeof k === "string" && typeof v === "string") {
+              map[k] = v;
+            }
           }
         }
       }
@@ -312,6 +334,31 @@ export function AbbreviationsSettings({
             </div>
           </div>
         ))}
+      </div>
+
+      <Separator />
+      <div className="rounded-md border bg-muted/40 p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Badge className="text-xs" variant="secondary">
+            FAQ
+          </Badge>
+          <span className="font-bold text-base">How does this work?</span>
+        </div>
+
+        <p className="text-sm text-muted-foreground">
+          Abbreviations are easy and <i>fast</i> text shortcuts that expand into longer custom phrases you define.
+        </p>
+
+        <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+          <li>
+            <b>Shortcut</b> is the abbreviation you type into the text field.
+            (e.g. "brb")
+          </li>
+          <li>
+            <b>Target phrase</b> is the full text that the shortcut expands to.
+            (e.g. "be right back")
+          </li>
+        </ul>
       </div>
     </div>
   );

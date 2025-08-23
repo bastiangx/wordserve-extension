@@ -300,7 +300,7 @@ function SettingsApp() {
 
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar className="h-svh">
         <SidebarHeader>
           <Button
             variant="ghost"
@@ -418,8 +418,8 @@ function SettingsApp() {
         </SidebarContent>
       </Sidebar>
 
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+      <SidebarInset className="h-svh">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb>
@@ -436,8 +436,8 @@ function SettingsApp() {
           </Breadcrumb>
         </header>
 
-        <div className="flex flex-1 flex-col gap-4 p-4">
-          <div className="mb-4">
+        <div className="flex flex-1 flex-col gap-3 p-3">
+          <div className="mb-2">
             <h1 className="text-2xl font-bold mb-1">{currentSection?.label}</h1>
             <h4 className="text-sm text-muted-foreground">
               {currentSection?.desc}

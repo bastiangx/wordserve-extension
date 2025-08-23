@@ -6,6 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Minus, Plus } from "lucide-react";
 import type { DefaultConfig } from "@/types";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { CircleHelp } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export interface GeneralSettingsProps {
   pendingSettings: DefaultConfig;
@@ -71,7 +79,7 @@ export function GeneralSettings({
             <div className="flex justify-between items-center">
               <div className="space-y-2">
                 <Label htmlFor="minWordLength">Minimum word length</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground lg:max-w-[65ch] max-w-[45ch] ">
                   Type these many letters to see suggestions
                 </p>
               </div>
@@ -177,13 +185,39 @@ export function GeneralSettings({
 
             <div className="flex justify-between items-center">
               <div className="space-y-2">
-                <Label htmlFor="debounceTime">Response delay (ms)</Label>
-                <p className="text-sm text-muted-foreground">
-                  Wait after typing to see the suggestions
-                </p>
-                <Label className="text-sm text-muted-foreground pt-2">
-                  - Every 1000ms is 1 second.
+                <Label htmlFor="debounceTime">
+                  Response delay (ms)
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          asChild
+                          variant="outline"
+                          className="border-transparent"
+                        >
+                          <button type="button" aria-label="What is suffix?">
+                            <CircleHelp className="size-6 sm:size-7" />
+                          </button>
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-w-xs whitespace-normal break-words"
+                      >
+                        <p>
+                          Use higher values if you want to wait a bit longer to see suggestions.
+                        </p>
+                        <Separator className="my-2 bg-slate-500" />
+                        <p>
+                          Every 1000ms is 1 second.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </Label>
+                <p className="text-sm text-muted-foreground">
+                  To show suggestions
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <Button

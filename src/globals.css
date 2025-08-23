@@ -215,4 +215,32 @@
     background-color: hsl(var(--background));
     border-color: hsl(var(--border));
   }
+
+  /* Sidebar scrollbar styling */
+  [data-sidebar="content"] {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: hsl(var(--border)) transparent; /* thumb track */
+  }
+
+  [data-sidebar="content"]:hover {
+    scrollbar-color: hsl(var(--interaction)) transparent;
+  }
+
+  [data-sidebar="content"]::-webkit-scrollbar {
+    width: 8px;
+  }
+  [data-sidebar="content"]::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  [data-sidebar="content"]::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 8px;
+    border: 2px solid transparent; /* creates padding */
+    background-clip: padding-box;
+  }
+  [data-sidebar="content"]:hover::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--interaction));
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
 }

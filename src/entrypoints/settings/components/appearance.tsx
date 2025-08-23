@@ -72,7 +72,7 @@ export function AppearanceSettings({
   return (
     <div className="space-y-6">
       <Card className="border-transparent">
-        <CardContent className="space-y-6 p-4">
+        <CardContent className="space-y-6 p-2">
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <div className="space-y-1">
@@ -225,7 +225,7 @@ export function AppearanceSettings({
             <div className="flex items-center justify-between">
               <div className="space-y-2">
                 <Label>Ranking render override</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground lg:max-w-[65ch] max-w-[45ch] ">
                   Always show rankings even when digit selection is off
                 </p>
               </div>
@@ -266,7 +266,7 @@ export function AppearanceSettings({
 
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <Label>Prefix color intensity</Label>
+                <Label>Prefix intensity</Label>
                 <Select
                   value={pendingSettings.accessibility.prefixColorIntensity}
                   onValueChange={(
@@ -291,7 +291,7 @@ export function AppearanceSettings({
               </div>
 
               <div className="flex items-center justify-between">
-                <Label>Suffix color intensity</Label>
+                <Label>Suffix intensity</Label>
                 <Select
                   value={pendingSettings.accessibility.suffixColorIntensity}
                   onValueChange={(

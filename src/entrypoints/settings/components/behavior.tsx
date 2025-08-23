@@ -1,4 +1,12 @@
 import React from "react";
+import { Badge } from "@/components/ui/badge";
+import { CircleHelp } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -28,7 +36,35 @@ export function BehaviorSettings({
           <div className="space-y-8">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <Label>Abbreviations</Label>
+                <Label>
+                  Abbreviations
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          asChild
+                          variant="outline"
+                          className="border-transparent"
+                        >
+                          <button type="button" aria-label="What is suffix?">
+                            <CircleHelp className="size-6 sm:size-7" />
+                          </button>
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-w-xs whitespace-normal break-words"
+                      >
+                        <p>
+                          Abbrv. are shortcut words that expand into longer
+                          phrases.
+                        </p>
+                        <Separator className="my-2 bg-slate-500" />
+                        <p>Example: "brb" expands to "be right back".</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </Label>
                 <p className="text-sm text-muted-foreground">
                   Custom shortcut words (cAsE SensItiVe)
                 </p>
@@ -42,16 +78,40 @@ export function BehaviorSettings({
             </div>
             <div className="flex justify-between">
               <div className="space-y-2">
-                <Label>Abbrv. insert mode</Label>
+                <Label>
+                  Abbrv. insert mode
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          asChild
+                          variant="outline"
+                          className="border-transparent"
+                        >
+                          <button type="button" aria-label="What is suffix?">
+                            <CircleHelp className="size-6 sm:size-7" />
+                          </button>
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-w-xs whitespace-normal break-words"
+                      >
+                        <p>
+                          When automatic, abbr. are expanded as soon as you
+                          finish typing them (case sensitive)
+                        </p>
+                        <Separator className="my-2 bg-slate-500" />
+                        <p>
+                          Otherwise, abbr. are <b>only</b> expanded when you
+                          press the space bar after typing them.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </Label>
                 <Label className="text-sm text-muted-foreground">
                   How abbreviations are inserted
-                </Label>
-                <div className="h-1" />
-                <Label className="text-sm text-muted-foreground">
-                  Immediate: Inserts as soon as shortcut is typed.
-                </Label>
-                <Label className="text-sm text-muted-foreground">
-                  Space: insert only upon pressing [space] key.
                 </Label>
               </div>
               <Select
@@ -64,8 +124,8 @@ export function BehaviorSettings({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="immediate">Immediate</SelectItem>
-                  <SelectItem value="space">On space (shows hint)</SelectItem>
+                  <SelectItem value="immediate">Automatic</SelectItem>
+                  <SelectItem value="space">via Space key</SelectItem>
                 </SelectContent>
               </Select>
             </div>
