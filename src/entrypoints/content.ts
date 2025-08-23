@@ -1,8 +1,8 @@
 import { AutocompleteController } from "@/lib/render/controller";
-import { DEFAULT_SETTINGS } from "@/types";
+import { shouldActivateForDomain } from "@/lib/domains";
 import { normalizeConfig } from "@/lib/config";
 import type { DefaultConfig } from "@/types";
-import { shouldActivateForDomain } from "@/lib/domains";
+import { DEFAULT_SETTINGS } from "@/types";
 import { browser } from "wxt/browser";
 
 export default defineContentScript({
@@ -12,8 +12,6 @@ export default defineContentScript({
     "moz-extension://*/settings.html",
   ],
   main() {
-    console.log("WordServe content script loaded");
-
     class WordServeContentScript {
       private controllers = new Map<HTMLElement, AutocompleteController>();
       private settings: DefaultConfig = DEFAULT_SETTINGS;
@@ -23,8 +21,6 @@ export default defineContentScript({
 
       constructor() {
         this.setupMessageListener();
-        // Ensure settings are loaded before we attach controllers so they don't
-        // render with defaults on first load in a new tab/site.
         this.startup();
       }
 
@@ -40,24 +36,18 @@ export default defineContentScript({
           const response = await browser.runtime.sendMessage({
             type: "wordserve-status",
           });
-          console.log("WordServe: engine status check:", response);
-
           if (!response?.ready) {
-            // Also check for any error messages
             const errorResponse = await browser.runtime.sendMessage({
               type: "wordserve-last-error",
             });
             if (errorResponse) {
               console.error("WordServe: Background error:", errorResponse);
             }
-
-            console.log("WordServe: engine not ready, retrying in 2s");
             setTimeout(() => this.checkEngineStatus(), 2000);
           } else {
             return;
           }
         } catch (error) {
-          console.error("WordServe: Failed to check engine status:", error);
           setTimeout(() => this.checkEngineStatus(), 2000);
         }
       }
@@ -83,7 +73,7 @@ export default defineContentScript({
                 this.updateSettings(message.settings);
                 break;
               case "domainSettingsChanged":
-                // Backward compat: merge domain-only updates
+                // Backward compat: merge domain only updates
                 if (message.settings) {
                   this.updateSettings({ domains: message.settings });
                 }
@@ -133,9 +123,8 @@ export default defineContentScript({
         // Find all input elements within the element
         const inputs = element.querySelectorAll(
           'input[type="text"], input[type="search"], input[type="email"], input[type="url"], ' +
-            'input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]'
+          'input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]'
         );
-
         inputs.forEach((input) => {
           if (this.isTargetElement(input)) {
             this.attachToInput(input as HTMLElement);
@@ -145,23 +134,17 @@ export default defineContentScript({
 
       private isTargetElement(element: Element): boolean {
         if (!(element instanceof HTMLElement)) return false;
-
         // Check domain settings first (cached)
         if (!this.isEnabledForCurrentDomain()) return false;
-
-        // Only target specific input elements, not contenteditable divs
         const isInput =
           element.nodeName === "INPUT" || element.nodeName === "TEXTAREA";
         const isContentEditable =
           element.contentEditable === "true" ||
           element.getAttribute("contenteditable") === "true";
-
         if (!isInput && !isContentEditable) return false;
-
         // Skip elements that are too small or hidden
         const rect = element.getBoundingClientRect();
         if (rect.width < 50 || rect.height < 20) return false;
-
         // Skip password fields and sensitive inputs
         if (element instanceof HTMLInputElement) {
           const type = element.type.toLowerCase();
@@ -182,8 +165,6 @@ export default defineContentScript({
             return false;
           }
         }
-
-        // Skip elements in sensitive contexts
         const sensitiveSelectors = [
           "[data-sensitive]",
           "[data-no-autocomplete]",
@@ -195,13 +176,11 @@ export default defineContentScript({
           'form[action*="password"]',
           'form[action*="payment"]',
         ];
-
         for (const selector of sensitiveSelectors) {
           if (element.matches(selector) || element.closest(selector)) {
             return false;
           }
         }
-
         return true;
       }
 
@@ -218,16 +197,11 @@ export default defineContentScript({
 
       private attachToInput(element: HTMLElement): void {
         if (this.controllers.has(element)) return;
-        console.log(
-          "WordServe: Attaching to element:",
-          element.tagName,
-          element instanceof HTMLInputElement ? element.type : "N/A"
-        );
         try {
           const controller = new AutocompleteController({
             element,
             settings: this.settings,
-            onSelectionChanged: () => {},
+            onSelectionChanged: () => { },
           });
           this.controllers.set(element, controller);
           const observer = new MutationObserver((mutations) => {
@@ -250,7 +224,7 @@ export default defineContentScript({
             subtree: true,
           });
         } catch (error) {
-          console.error("Failed to attach autocomplete to element:", error);
+          console.error("Failed to attach to input:", error);
         }
       }
 
@@ -265,7 +239,6 @@ export default defineContentScript({
       private updateSettings(newSettings: Partial<DefaultConfig>): void {
         this.settings = normalizeConfig({ ...this.settings, ...newSettings });
         this.domainEnabledCache = null;
-        console.log("WordServe: Updated settings:", this.settings);
         this.controllers.forEach((controller) => {
           controller.updateSettings(this.settings);
         });
@@ -273,7 +246,6 @@ export default defineContentScript({
 
       private toggle(enabled: boolean): void {
         this.isEnabled = enabled;
-
         if (enabled) {
           this.controllers.forEach((controller) => controller.enable());
           this.attachToExistingInputs();
