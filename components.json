@@ -13,6 +13,12 @@
   "aliases": {
     "components": "src/components",
     "utils": "src/lib/utils",
-    "ui": "src/components/ui"
+    "ui": "src/components/ui",
+    "entry": "src/entrypoints",
+    "lib": "src/lib",
+    "assets": "src/assets",
+    "hooks": "src/hooks",
+    "input": "src/lib/input",
+    "render": "src/lib/render"
   }
 }
