@@ -1,3 +1,8 @@
+/**
+ * Types and constants used throughout WordServe
+ * Most of them get their values in lib/config.ts
+ */
+
 export type { DomainSettings } from "@/lib/domains";
 
 export interface RawSuggestion {

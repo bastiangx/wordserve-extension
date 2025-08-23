@@ -5,8 +5,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "prep": "bun run scripts/download.ts",
-    "prep:force": "bun run scripts/download.ts --force",
+    "prep": "bun run scripts/prep.ts",
+    "prep:force": "bun run scripts/prep.ts --force",
     "build": "bun run scripts/manifest.ts && wxt build",
     "build:firefox": "bun run scripts/manifest.ts && wxt build -b firefox",
     "dev": "wxt",
