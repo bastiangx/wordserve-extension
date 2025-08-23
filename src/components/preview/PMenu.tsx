@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import type { DefaultConfig, DisplaySuggestion } from "@/types";
 import { getRowHeight, clamp, toNumber } from "@/lib/utils";
 import { browser } from "wxt/browser";
-import { initOpenDyslexic } from "@/lib/render/font";
+import { initOpenDyslexic, buildFontFamilyFromConfig } from "@/lib/render/font";
 
 export interface MenuPreviewProps {
   settings: DefaultConfig;
@@ -330,8 +330,15 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
             fontSize: `${fontSize}px`,
             fontWeight: getFontWeight(settings.fontWeight),
             fontFamily: settings.accessibility.dyslexicFont
-              ? `'OpenDyslexic', 'Atkinson Hyperlegible', ui-sans-serif, system-ui`
-              : undefined,
+              ? `'OpenDyslexic', ` +
+                buildFontFamilyFromConfig({
+                  fontFamilyList: settings.fontFamilyList,
+                  customFontList: settings.customFontList,
+                })
+              : buildFontFamilyFromConfig({
+                  fontFamilyList: settings.fontFamilyList,
+                  customFontList: settings.customFontList,
+                }),
             maxHeight: "200px",
             overflowY: "auto" as const,
           }}

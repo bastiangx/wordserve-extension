@@ -8,6 +8,7 @@ import { calculateMenuPosition } from "@/lib/input/caret";
 import { getRowHeight } from "@/lib/utils";
 import { smartBackspace } from "@/lib/input/backspace";
 import type { DefaultConfig, RawSuggestion } from "@/types";
+import { buildFontFamilyFromConfig } from "@/lib/render/font";
 import { ABBREVIATION_CONFIG } from "@/types";
 import { findAbbreviation } from "@/lib/input/abbrv";
 import { browser } from "wxt/browser";
@@ -188,6 +189,10 @@ export class AutocompleteController {
       black: "900",
     };
     const fontWeight = weightMap[this.settings.fontWeight] || "400";
+    const fontFamily = buildFontFamilyFromConfig({
+      fontFamilyList: this.settings.fontFamilyList,
+      customFontList: this.settings.customFontList,
+    });
     this.menuRenderer.render({
       suggestions: this.suggestions,
       selectedIndex: this.selectedIndex,
@@ -199,6 +204,7 @@ export class AutocompleteController {
       compact: this.settings.compactMode,
       fontSize,
       fontWeight,
+  fontFamily,
       menuBorder: this.settings.menuBorder,
       menuBorderRadius: this.settings.menuBorderRadius,
       numberSelection: this.settings.numberSelection,

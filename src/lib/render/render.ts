@@ -22,6 +22,8 @@ export interface AutocompleteMenuOptions {
   compact?: boolean;
   fontSize?: number;
   fontWeight?: string;
+  /** CSS font-family string to apply to suggestions/PMenu */
+  fontFamily?: string;
   menuBorder?: boolean;
   menuBorderRadius?: boolean;
   numberSelection?: boolean;
@@ -89,9 +91,13 @@ export class AutocompleteMenuRenderer {
     menuEl.style.fontWeight = fontWeight;
     if (options.dyslexicFont) {
       initOpenDyslexic();
-      menuEl.style.fontFamily = `'OpenDyslexic', 'Atkinson Hyperlegible', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`;
+      // If provided, prefix OpenDyslexic to the provided list; else use a sensible default with Atkinson
+      const rest = options.fontFamily
+        ? options.fontFamily
+        : `'Atkinson Hyperlegible', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`;
+      menuEl.style.fontFamily = `'OpenDyslexic', ${rest}`;
     } else {
-      menuEl.style.fontFamily = "inherit";
+      menuEl.style.fontFamily = options.fontFamily || "inherit";
     }
   // toggle helpers via classes instead of inline colors
   menuEl.classList.toggle("no-border", !showBorder);

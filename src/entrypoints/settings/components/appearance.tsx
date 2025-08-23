@@ -96,6 +96,49 @@ export function AppearanceSettings({
 
             <Separator />
 
+            {/* Font family */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <Label>Menu text font</Label>
+                <Select
+                  value={
+                    (pendingSettings.fontFamilyList?.[0] as any) || "Geist Mono"
+                  }
+                  onValueChange={(value: string) => {
+                    updatePendingSetting("fontFamilyList", [value]);
+                  }}
+                >
+                  <SelectTrigger className="w-44">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Geist Mono">Geist mono</SelectItem>
+                    <SelectItem value="Atkinson Hyperlegible">
+                      Atkinson hyperlegible
+                    </SelectItem>
+                    <SelectItem value="Monaco">Monaco</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="customFontList">Use local font</Label>
+                  <p className="text-sm text-muted-foreground max-w-[60ch]">
+                    Your local system fonts
+                  </p>
+                </div>
+                <Input
+                  id="customFontList"
+                  placeholder="'Moranga', 'Inter', sans-serif"
+                  value={pendingSettings.customFontList || ""}
+                  onChange={(e) =>
+                    updatePendingSetting("customFontList", e.target.value)
+                  }
+                  className="max-w-xs flex-1"
+                />
+              </div>
+            </div>
+
             <div className="flex justify-between items-center">
               <div className="space-y-1">
                 <Label htmlFor="fontSize">Font size [px]</Label>

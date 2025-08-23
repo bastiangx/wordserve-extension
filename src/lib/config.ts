@@ -73,6 +73,16 @@ export function normalizeConfig(input: any): DefaultConfig {
     typeof merged.fontWeight === "string"
       ? merged.fontWeight
       : DEFAULT_SETTINGS.fontWeight;
+  const allowedFonts = new Set(["Geist Mono", "Atkinson Hyperlegible", "Monaco"]);
+  const fontFamilyList = Array.isArray(merged.fontFamilyList)
+    ? merged.fontFamilyList
+        .map((s: any) => (typeof s === "string" ? s : ""))
+        .filter((s: string) => allowedFonts.has(s))
+    : DEFAULT_SETTINGS.fontFamilyList;
+  const customFontList =
+    typeof merged.customFontList === "string"
+      ? merged.customFontList
+      : DEFAULT_SETTINGS.customFontList;
   const debugMode = toBool(
     merged.debugMode,
     DEFAULT_SETTINGS.debugMode ?? false
@@ -185,6 +195,8 @@ export function normalizeConfig(input: any): DefaultConfig {
     menuBorderRadius,
     fontSize,
     fontWeight,
+  fontFamilyList,
+  customFontList,
     debugMode,
     abbreviationsEnabled,
     abbreviations,

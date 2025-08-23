@@ -46,6 +46,10 @@ export interface DefaultConfig {
   menuBorderRadius: boolean;
   fontSize: string | number;
   fontWeight: string;
+  /** Ordered list of preferred fonts for suggestions/PMenu (not settings UI) */
+  fontFamilyList?: string[];
+  /** Optional custom CSS font-family list string entered by user */
+  customFontList?: string;
   debugMode?: boolean;
   abbreviationsEnabled: boolean;
   abbreviations: Record<string, string>;
@@ -193,6 +197,8 @@ export const DEFAULT_SETTINGS: DefaultConfig = {
   menuBorderRadius: true,
   fontSize: 15,
   fontWeight: "normal",
+  fontFamilyList: ["Geist Mono", "Monaco", "monospace"],
+  customFontList: "",
   debugMode: false,
   abbreviationsEnabled: true,
   abbreviations: {
