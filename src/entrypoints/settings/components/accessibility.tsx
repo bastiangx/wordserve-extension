@@ -13,6 +13,9 @@ import type { DefaultConfig } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { CircleHelp } from "lucide-react";
 
 export interface AccessibilitySettingsProps {
   pendingSettings: DefaultConfig["accessibility"];
@@ -33,7 +36,23 @@ export function AccessibilitySettings({
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <Label>Bold suffix</Label>
+                <Label>
+                  Bold suffix
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge asChild variant="outline" className="ml-2 cursor-help">
+                          <button type="button" aria-label="What is suffix?">
+                            <CircleHelp className="size-3" />
+                          </button>
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        The part of a suggestion that comes after what you\'ve already typed.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </Label>
               </div>
               <Switch
                 checked={pendingSettings.boldSuffix}
@@ -44,7 +63,23 @@ export function AccessibilitySettings({
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <Label>Bold prefix</Label>
+                <Label>
+                  Bold prefix
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge asChild variant="outline" className="ml-2 cursor-help">
+                          <button type="button" aria-label="What is prefix?">
+                            <CircleHelp className="size-3" />
+                          </button>
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        The part of a suggestion that matches what you\'ve already typed.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </Label>
               </div>
               <Switch
                 checked={pendingSettings.boldPrefix}

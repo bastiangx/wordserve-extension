@@ -94,6 +94,8 @@ export function AppearanceSettings({
               </Select>
             </div>
 
+            <Separator />
+
             <div className="flex justify-between items-center">
               <div className="space-y-1">
                 <Label htmlFor="fontSize">Font size [px]</Label>
@@ -239,7 +241,7 @@ export function AppearanceSettings({
 
             <div className="flex items-center justify-between">
               <div>
-                <Label>Bordered Menu</Label>
+                <Label>Bordered menu</Label>
               </div>
               <Switch
                 checked={pendingSettings.menuBorder}
@@ -262,12 +264,14 @@ export function AppearanceSettings({
 
             <Separator />
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <Label>Prefix color intensity</Label>
                 <Select
                   value={pendingSettings.accessibility.prefixColorIntensity}
-                  onValueChange={(value: "normal" | "muted" | "faint" | "accent") =>
+                  onValueChange={(
+                    value: "normal" | "muted" | "faint" | "accent"
+                  ) =>
                     updatePendingSetting("accessibility", {
                       ...pendingSettings.accessibility,
                       prefixColorIntensity: value,
@@ -290,7 +294,9 @@ export function AppearanceSettings({
                 <Label>Suffix color intensity</Label>
                 <Select
                   value={pendingSettings.accessibility.suffixColorIntensity}
-                  onValueChange={(value: "normal" | "muted" | "faint" | "accent") =>
+                  onValueChange={(
+                    value: "normal" | "muted" | "faint" | "accent"
+                  ) =>
                     updatePendingSetting("accessibility", {
                       ...pendingSettings.accessibility,
                       suffixColorIntensity: value,
@@ -309,12 +315,16 @@ export function AppearanceSettings({
                 </Select>
               </div>
 
-              <div className="flex flex-col gap-3">
+              <Separator />
+
+              <div className="flex flex-col gap-6">
                 <div className="flex items-center gap-3">
-                  <Label className="min-w-[120px]">Prefix color</Label>
+                  <Label className="min-w-[120px]">Custom prefix color</Label>
                   <Input
                     type="color"
-                    value={pendingSettings.accessibility.prefixColor || "#e0def4"}
+                    value={
+                      pendingSettings.accessibility.prefixColor || "#e0def4"
+                    }
                     onChange={(e) =>
                       updatePendingSetting("accessibility", {
                         ...pendingSettings.accessibility,
@@ -337,10 +347,12 @@ export function AppearanceSettings({
                   </Button>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Label className="min-w-[120px]">Suffix color</Label>
+                  <Label className="min-w-[120px]">Custom suffix color</Label>
                   <Input
                     type="color"
-                    value={pendingSettings.accessibility.suffixColor || "#a8a5c3"}
+                    value={
+                      pendingSettings.accessibility.suffixColor || "#a8a5c3"
+                    }
                     onChange={(e) =>
                       updatePendingSetting("accessibility", {
                         ...pendingSettings.accessibility,
