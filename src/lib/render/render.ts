@@ -64,14 +64,11 @@ export class AutocompleteMenuRenderer {
   }
 
   public render(options: AutocompleteMenuOptions): void {
-    console.log("WordServe: Renderer render called with:", options);
     if (!this.container) {
-      console.log("WordServe: No container, creating one");
       this.createContainer();
     }
 
     if (!options.visible || options.suggestions.length === 0) {
-      console.log("WordServe: Not visible or no suggestions, hiding");
       this.hide();
       return;
     }

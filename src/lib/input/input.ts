@@ -115,7 +115,6 @@ export class InputHandler {
 
     if (context.currentWord.length >= this.settings.minWordLength) {
       if (context.currentWord !== this.lastWord) {
-        console.log("WordServe: Word change detected:", context.currentWord);
         this.lastWord = context.currentWord;
         this.callbacks.onWordChange(context);
       }
@@ -284,9 +283,6 @@ export class InputHandler {
           }
           if (this.settings.smartBackspace) {
             smartBackspace.invalidateForElement(this.element);
-            console.log(
-              "WordServe: Smart backspace invalidated due to space key"
-            );
           }
         }
         break;
