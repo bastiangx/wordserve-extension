@@ -3,8 +3,8 @@
 /**
  * Fetches WordServe dictionary data assets.
  * Most important bits are the .bin files in public/data/ .
- * 
- * This script downloads them from the GitHub release assets 
+ *
+ * This script downloads them from the GitHub release assets
  * and verifies the checksums.
  *
  * Usage: `bun run scripts/prep.ts [--force]`
@@ -94,34 +94,17 @@ export class WordServeDownloader {
     const baseUrl = `https://github.com/${GITHUB_REPO}/releases/download/${TARGET_RELEASE_VERSION}`;
     const dataZipUrl = `${baseUrl}/data.zip`;
     const checksumsUrl = `${baseUrl}/checksums.txt`;
-    const response = await fetch(dataZipUrl);
-    const zipBuffer = await response.arrayBuffer();
-    const zipUint8 = new Uint8Array(zipBuffer);
-    const unzipped = fflate.unzipSync(zipUint8);
     const dataDir = join(this.publicDir, "data");
     const checksumsPath = join(dataDir, "checksums.txt");
-    const checksumsContent = readFileSync(checksumsPath, "utf-8");
     const expectedHashByName: Record<string, string> = {};
-    const extractedFiles: string[] = [];
-    let extractedCount = 0;
 
-    if (!response.ok) {
-      throw new Error(
-        `Failed to download data.zip: ${response.status} ${response.statusText}`
-      );
-    }
     if (!existsSync(dataDir)) {
       mkdirSync(dataDir, { recursive: true });
     }
-    for (const [filename, fileData] of Object.entries(unzipped)) {
-      if (filename.endsWith(".bin")) {
-        const outputPath = join(dataDir, filename);
-        writeFileSync(outputPath, fileData);
-        extractedFiles.push(outputPath);
-        extractedCount++;
-      }
-    }
+
+    // fetch checksums.txt
     await this.downloadFile(checksumsUrl, checksumsPath, "checksums.txt");
+    const checksumsContent = readFileSync(checksumsPath, "utf-8");
     for (const line of checksumsContent.split(/\r?\n/)) {
       const trimmed = line.trim();
       if (!trimmed) continue;
@@ -132,20 +115,43 @@ export class WordServeDownloader {
         expectedHashByName[name] = hash.toLowerCase();
       }
     }
-    for (const filePath of extractedFiles) {
-      const fileName = basename(filePath);
-      const expected = expectedHashByName[fileName];
-      if (!expected) {
-        this.log(`No checksum: ${fileName}`);
-        continue;
-      }
-      const fileBuffer = readFileSync(filePath);
-      const actual = createHash("sha256").update(fileBuffer).digest("hex");
-      if (actual !== expected) {
+
+    // fetch data.zip
+    const response = await fetch(dataZipUrl);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to download data.zip: ${response.status} ${response.statusText}`
+      );
+    }
+    const zipBuffer = await response.arrayBuffer();
+    const zipUint8 = new Uint8Array(zipBuffer);
+
+    const expectedZip = expectedHashByName["data.zip"];
+    if (expectedZip) {
+      const actualZip = createHash("sha256").update(zipUint8).digest("hex");
+      if (actualZip !== expectedZip) {
         throw new Error(
-          `Checksum mismatch for ${fileName}: expected ${expected}, got ${actual}`
+          `Checksum mismatch for data.zip: expected ${expectedZip}, got ${actualZip}`
         );
       }
+    }
+
+    // 4) Unzip and validate
+    const unzipped = fflate.unzipSync(zipUint8);
+    for (const [filename, fileData] of Object.entries(unzipped)) {
+      if (!filename.endsWith(".bin")) continue;
+      const expected = expectedHashByName[basename(filename)];
+      if (!expected) {
+        throw new Error(`Missing checksum entry for ${filename}`);
+      }
+      const actual = createHash("sha256").update(fileData).digest("hex");
+      if (actual !== expected) {
+        throw new Error(
+          `Checksum mismatch for ${filename}: expected ${expected}, got ${actual}`
+        );
+      }
+      const outputPath = join(dataDir, filename);
+      writeFileSync(outputPath, fileData);
     }
   }
 
@@ -163,7 +169,6 @@ export class WordServeDownloader {
       join(dataDir, "dict_0006.bin"),
       join(dataDir, "dict_0007.bin"),
     ];
-
     for (const asset of requiredAssets) {
       if (existsSync(asset)) {
         existing.push(asset);
@@ -174,7 +179,7 @@ export class WordServeDownloader {
     return { missing, existing };
   }
 
-  // Downloads missing assets, or all if force=true
+  // Downloads missing asset, or all if force=true
   public async downloadAssets(force = false): Promise<DownloadResult> {
     try {
       const { missing } = this.checkExistingAssets();
