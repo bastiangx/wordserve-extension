@@ -1,3 +1,8 @@
+/**
+ * Types and constants used throughout WordServe
+ * Most of them get their values in lib/config.ts
+ */
+
 export type { DomainSettings } from "@/lib/domains";
 
 export interface RawSuggestion {
@@ -11,7 +16,7 @@ export interface DisplaySuggestion {
   rank: number;
 }
 
-export interface WASMCompleterStats {
+export interface EngineStats {
   totalWords: number;
   maxFrequency: number;
   [key: string]: number;
@@ -34,10 +39,13 @@ export interface SensitivityResult {
   blocked: boolean;
 }
 
+import type { ThemeId } from "@/lib/render/themes";
+
 export interface DefaultConfig {
   minWordLength: number;
   maxSuggestions: number;
   debounceTime: number;
+  theme?: ThemeId;
   numberSelection: boolean;
   showRankingOverride: boolean;
   compactMode: boolean;
@@ -45,8 +53,16 @@ export interface DefaultConfig {
   menuBorderRadius: boolean;
   fontSize: string | number;
   fontWeight: string;
+  /** Ordered list of preferred fonts for suggestions/PMenu (not settings UI) */
+  fontFamilyList?: string[];
+  /** Optional custom CSS font-family list string entered by user */
+  customFontList?: string;
   debugMode?: boolean;
   abbreviationsEnabled: boolean;
+  abbreviations: Record<string, string>;
+  maxAbbreviationLength: number;
+  abbreviationInsertMode: "immediate" | "space";
+  abbreviationHintClamp: number;
   autoInsertion: boolean;
   smartBackspace: boolean;
   rankingPosition: "left" | "right";
@@ -62,8 +78,13 @@ export interface DefaultConfig {
   };
   accessibility: {
     boldSuffix: boolean;
+    boldPrefix: boolean;
     uppercaseSuggestions: boolean;
     prefixColorIntensity: "normal" | "muted" | "faint" | "accent";
+    suffixColorIntensity: "normal" | "muted" | "faint" | "accent";
+    prefixColor?: string;
+    suffixColor?: string;
+    dyslexicFont?: boolean;
     customColor?: string;
     customFontFamily?: string;
     customFontSize?: number;
@@ -165,10 +186,17 @@ export const AUTOCOMPLETE_DEFAULTS = {
   MAX_WIDTH: 400,
 } as const;
 
+export const ABBREVIATION_CONFIG = {
+  MAX_LENGTH: 16,
+  HINT_CLAMP: 12,
+  SPACE_BADGE: "abbrv",
+} as const;
+
 export const DEFAULT_SETTINGS: DefaultConfig = {
   minWordLength: 3,
   maxSuggestions: 16,
   debounceTime: 5,
+  theme: "dark",
   numberSelection: true,
   showRankingOverride: false,
   compactMode: false,
@@ -176,8 +204,16 @@ export const DEFAULT_SETTINGS: DefaultConfig = {
   menuBorderRadius: true,
   fontSize: 15,
   fontWeight: "normal",
+  fontFamilyList: ["Geist Mono", "Monaco", "monospace"],
+  customFontList: "",
   debugMode: false,
-  abbreviationsEnabled: false,
+  abbreviationsEnabled: true,
+  abbreviations: {
+    STR: "Star WordServe on github!!",
+  },
+  maxAbbreviationLength: ABBREVIATION_CONFIG.MAX_LENGTH,
+  abbreviationInsertMode: "immediate",
+  abbreviationHintClamp: ABBREVIATION_CONFIG.HINT_CLAMP,
   autoInsertion: false,
   smartBackspace: true,
   rankingPosition: "right",
@@ -193,8 +229,13 @@ export const DEFAULT_SETTINGS: DefaultConfig = {
   },
   accessibility: {
     boldSuffix: false,
+    boldPrefix: false,
     uppercaseSuggestions: false,
     prefixColorIntensity: "normal",
+    suffixColorIntensity: "normal",
+    prefixColor: undefined,
+    suffixColor: undefined,
+    dyslexicFont: false,
   },
   domains: {
     blacklistMode: true,

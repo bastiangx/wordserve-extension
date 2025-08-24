@@ -7,13 +7,17 @@ import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Minus, Plus } from "lucide-react";
 import type { DefaultConfig } from "@/types";
+import { DARK_THEMES, LIGHT_THEMES, type ThemeId } from "@/lib/render/themes";
 
 export interface AppearanceSettingsProps {
   pendingSettings: DefaultConfig;
@@ -71,11 +75,93 @@ export function AppearanceSettings({
 
   return (
     <div className="space-y-6">
-      <Card className="rounded-md card">
-        <CardContent className="space-y-6 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="fontSize">Font size [px]</Label>
+      <Card className="border-transparent">
+        <CardContent className="space-y-6 p-2">
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div className="space-y-1">
+                <Label htmlFor="theme">Theme</Label>
+              </div>
+              <Select
+                value={(pendingSettings.theme as ThemeId) ?? "dark"}
+                onValueChange={(value: ThemeId) =>
+                  updatePendingSetting("theme", value)
+                }
+              >
+                <SelectTrigger id="theme" className="w-56">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Dark</SelectLabel>
+                    {DARK_THEMES.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                  <SelectSeparator />
+                  <SelectGroup>
+                    <SelectLabel>Light</SelectLabel>
+                    {LIGHT_THEMES.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Separator />
+
+            {/* Font family */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <Label>Menu text font</Label>
+                <Select
+                  value={
+                    (pendingSettings.fontFamilyList?.[0] as any) || "Geist Mono"
+                  }
+                  onValueChange={(value: string) => {
+                    updatePendingSetting("fontFamilyList", [value]);
+                  }}
+                >
+                  <SelectTrigger className="w-44">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Geist Mono">Geist mono</SelectItem>
+                    <SelectItem value="Atkinson Hyperlegible">
+                      Atkinson hyperlegible
+                    </SelectItem>
+                    <SelectItem value="Monaco">Monaco</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="customFontList">Use local font</Label>
+                  <p className="text-xs font-mono text-muted-foreground max-w-[28ch]">
+                    Has to be installed on your system
+                  </p>
+                </div>
+                <Input
+                  id="customFontList"
+                  placeholder="'Moranga', 'Inter', sans-serif"
+                  value={pendingSettings.customFontList || ""}
+                  onChange={(e) =>
+                    updatePendingSetting("customFontList", e.target.value)
+                  }
+                  className="max-w-xs flex-1"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center">
+              <div className="space-y-1">
+                <Label htmlFor="fontSize">Font size [px]</Label>
+              </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -115,7 +201,7 @@ export function AppearanceSettings({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => adjustNumber("fontSize", 1, 8, 32)}
+                  onClick={() => adjustNumber("fontSize", 1, 12, 28)}
                   disabled={
                     typeof pendingSettings.fontSize === "number" &&
                     pendingSettings.fontSize >= 32
@@ -125,20 +211,19 @@ export function AppearanceSettings({
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Size of text in suggestions
-              </p>
             </div>
 
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="fontWeight">Font weight</Label>
+            <div className="flex justify-between items-center">
+              <div className="space-y-1">
+                <Label htmlFor="fontWeight">Font weight</Label>
+              </div>
               <Select
                 value={pendingSettings.fontWeight}
                 onValueChange={(value: DefaultConfig["fontWeight"]) =>
                   updatePendingSetting("fontWeight", value)
                 }
               >
-                <SelectTrigger id="fontWeight">
+                <SelectTrigger id="fontWeight" className="w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -153,20 +238,17 @@ export function AppearanceSettings({
                   <SelectItem value="black">Black</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-sm text-muted-foreground">
-                Weight of text in suggestions
-              </p>
             </div>
           </div>
 
           <Separator />
 
-          <div className="space-y-4">
+          <div className="space-y-8">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <Label>Compact mode</Label>
-                <p className="text-sm text-muted-foreground">
-                  Reduce spacing and padding in suggestions
+                <p className="text-xs font-mono text-muted-foreground">
+                  Reduces spacing and padding
                 </p>
               </div>
               <Switch
@@ -177,11 +259,13 @@ export function AppearanceSettings({
               />
             </div>
 
+            <Separator />
+
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Ranking position</Label>
-                <p className="text-sm text-muted-foreground">
-                  Position of ranking numbers in suggestion menu
+              <div className="space-y-2">
+                <Label>Ranking number position</Label>
+                <p className="text-xs font-mono text-muted-foreground">
+                  Relative to the suggestion texts
                 </p>
               </div>
               <Select
@@ -201,11 +285,25 @@ export function AppearanceSettings({
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Menu border</Label>
-                <p className="text-sm text-muted-foreground">
-                  Show border around suggestion menu
+              <div className="space-y-2">
+                <Label>Ranking render override</Label>
+                <p className="text-xs font-mono text-muted-foreground lg:max-w-[65ch] max-w-[45ch] ">
+                  Always show rankings even when digit selection is off
                 </p>
+              </div>
+              <Switch
+                checked={pendingSettings.showRankingOverride}
+                onCheckedChange={(checked) =>
+                  updatePendingSetting("showRankingOverride", checked)
+                }
+              />
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Bordered menu</Label>
               </div>
               <Switch
                 checked={pendingSettings.menuBorder}
@@ -214,13 +312,9 @@ export function AppearanceSettings({
                 }
               />
             </div>
-
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Rounded borders</Label>
-                <p className="text-sm text-muted-foreground">
-                  Use rounded corners for the suggestion menu
-                </p>
+              <div>
+                <Label>Rounded corners</Label>
               </div>
               <Switch
                 checked={pendingSettings.menuBorderRadius}
@@ -228,6 +322,121 @@ export function AppearanceSettings({
                   updatePendingSetting("menuBorderRadius", checked)
                 }
               />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <Label>Prefix intensity</Label>
+                <Select
+                  value={pendingSettings.accessibility.prefixColorIntensity}
+                  onValueChange={(
+                    value: "normal" | "muted" | "faint" | "accent"
+                  ) =>
+                    updatePendingSetting("accessibility", {
+                      ...pendingSettings.accessibility,
+                      prefixColorIntensity: value,
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="muted">Muted</SelectItem>
+                    <SelectItem value="faint">Faint</SelectItem>
+                    <SelectItem value="accent">Accent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label>Suffix intensity</Label>
+                <Select
+                  value={pendingSettings.accessibility.suffixColorIntensity}
+                  onValueChange={(
+                    value: "normal" | "muted" | "faint" | "accent"
+                  ) =>
+                    updatePendingSetting("accessibility", {
+                      ...pendingSettings.accessibility,
+                      suffixColorIntensity: value,
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="muted">Muted</SelectItem>
+                    <SelectItem value="faint">Faint</SelectItem>
+                    <SelectItem value="accent">Accent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Separator />
+
+              <div className="flex flex-col gap-6">
+                <div className="flex items-center gap-3">
+                  <Label className="min-w-[120px]">Custom prefix color</Label>
+                  <Input
+                    type="color"
+                    value={
+                      pendingSettings.accessibility.prefixColor || "#e0def4"
+                    }
+                    onChange={(e) =>
+                      updatePendingSetting("accessibility", {
+                        ...pendingSettings.accessibility,
+                        prefixColor: e.target.value,
+                      })
+                    }
+                    className="w-16 p-0 h-8"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      updatePendingSetting("accessibility", {
+                        ...pendingSettings.accessibility,
+                        prefixColor: undefined,
+                      })
+                    }
+                  >
+                    Reset
+                  </Button>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Label className="min-w-[120px]">Custom suffix color</Label>
+                  <Input
+                    type="color"
+                    value={
+                      pendingSettings.accessibility.suffixColor || "#a8a5c3"
+                    }
+                    onChange={(e) =>
+                      updatePendingSetting("accessibility", {
+                        ...pendingSettings.accessibility,
+                        suffixColor: e.target.value,
+                      })
+                    }
+                    className="w-16 p-0 h-8"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      updatePendingSetting("accessibility", {
+                        ...pendingSettings.accessibility,
+                        suffixColor: undefined,
+                      })
+                    }
+                  >
+                    Reset
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>

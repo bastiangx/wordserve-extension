@@ -2,7 +2,7 @@
 
 /**
  * Generates a JSON manifest with size + sha256 for WASM + dictionary assets.
- * This is used for build-time and runtime integrity verification.
+ * For build and runtime integrity verifications.
  */
 
 import { readFileSync, statSync, writeFileSync } from "fs";
@@ -15,8 +15,6 @@ interface ManifestEntry {
 }
 
 const assets = [
-  "public/wordserve.wasm",
-  "public/wasm_exec.js",
   "public/data/dict_0001.bin",
   "public/data/dict_0002.bin",
   "public/data/dict_0003.bin",
@@ -28,6 +26,7 @@ const assets = [
 
 const manifest: ManifestEntry[] = [];
 let failed = false;
+
 for (const p of assets) {
   try {
     const st = statSync(p);
@@ -35,7 +34,7 @@ for (const p of assets) {
     const sha256 = crypto.createHash("sha256").update(buf).digest("hex");
     manifest.push({ path: p.replace(/^public\//, ""), bytes: st.size, sha256 });
   } catch (e) {
-    console.error(`gen-asset-manifest: missing asset ${p}: ${e}`);
+    console.error(`[SCRPT]manifest: missing assets ${p}: ${e}`);
     failed = true;
   }
 }
@@ -43,6 +42,7 @@ for (const p of assets) {
 if (failed) process.exit(1);
 
 const outPath = "public/asset-manifest.json";
+
 writeFileSync(
   outPath,
   JSON.stringify(

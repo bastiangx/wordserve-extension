@@ -1,0 +1,222 @@
+/* Centralized theme tokens for the suggestions menu (PMenu and injected menu)
+   Each theme class sets the --ws-* CSS variables. No hard-coded inline colors elsewhere. */
+
+/* Catppuccin Mocha (dark) */
+.wordserve-menu-container:is(.ws-theme-catppuccin-mocha),
+.ws-theme-catppuccin-mocha {
+  --ws-bg: #1e1e2e; /* Base */
+  --ws-surface: #313244; /* Surface 0 */
+  --ws-overlay: #181825; /* Mantle */
+  --ws-fg: #cdd6f4; /* Text */
+  --ws-border: #45475a; /* Surface 1 as subtle border */
+  --ws-hover: #313244; /* hover on row */
+  --ws-selected: #45475a; /* selected row */
+  --ws-rank-border: #6c7086; /* Overlay 0 */
+  --ws-scrollbar-thumb: #6c7086; /* Overlay 0 */
+  --ws-scrollbar-thumb-hover: #a6adc8; /* Subtext 0 */
+
+  --ws-intensity-normal: #cdd6f4; /* Text */
+  --ws-intensity-muted: #a6adc8; /* Subtext 0 */
+  --ws-intensity-faint: #7f849c; /* Overlay 1 */
+  --ws-intensity-accent: #b4befe; /* Lavender */
+}
+
+/* IV Spade (dark) */
+.wordserve-menu-container:is(.ws-theme-iv-spade),
+.ws-theme-iv-spade {
+  --ws-bg: #0c0c0c;
+  --ws-surface: #121212;
+  --ws-overlay: #121212;
+  --ws-fg: #d3c2c3;
+  --ws-border: #404040;
+  --ws-hover: #121212;
+  --ws-selected: #404040;
+  --ws-rank-border: #404040;
+  --ws-scrollbar-thumb: #404040;
+  --ws-scrollbar-thumb-hover: #bebebe;
+
+  --ws-intensity-normal: #d3c2c3;
+  --ws-intensity-muted: #bebebe;
+  --ws-intensity-faint: #838383;
+  --ws-intensity-accent: #b7976a; /* main */
+}
+
+/* Iceberg Dark */
+.wordserve-menu-container:is(.ws-theme-iceberg-dark),
+.ws-theme-iceberg-dark {
+  --ws-bg: #161821;
+  --ws-surface: #232531;
+  --ws-overlay: #232531;
+  --ws-fg: #c6c8d1;
+  --ws-border: #595e76;
+  --ws-hover: #232531;
+  --ws-selected: #595e76;
+  --ws-rank-border: #595e76;
+  --ws-scrollbar-thumb: #595e76;
+  --ws-scrollbar-thumb-hover: #d2d4de;
+
+  --ws-intensity-normal: #c6c8d1;
+  --ws-intensity-muted: #a7aabb;
+  --ws-intensity-faint: #8b8fa1;
+  --ws-intensity-accent: #84a0c6;
+}
+
+/* Iceberg Light (note: palette in reference resembles dark; keep a lighter mapping) */
+.wordserve-menu-container:is(.ws-theme-iceberg-light),
+.ws-theme-iceberg-light {
+  --ws-bg: #e6e9f2;
+  --ws-surface: #dbe0ec;
+  --ws-overlay: #cfd6e6;
+  --ws-fg: #232531;
+  --ws-border: #cfd6e6;
+  --ws-hover: #dbe0ec;
+  --ws-selected: #cfd6e6;
+  --ws-rank-border: #cfd6e6;
+  --ws-scrollbar-thumb: #8b8fa1;
+  --ws-scrollbar-thumb-hover: #595e76;
+
+  --ws-intensity-normal: #232531;
+  --ws-intensity-muted: #595e76;
+  --ws-intensity-faint: #8b8fa1;
+  --ws-intensity-accent: #84a0c6;
+}
+
+/* Nord Dark */
+.wordserve-menu-container:is(.ws-theme-nord-dark),
+.ws-theme-nord-dark {
+  --ws-bg: #242933;
+  --ws-surface: #2e3440;
+  --ws-overlay: #2e3440;
+  --ws-fg: #d8dee9;
+  --ws-border: #3b4252;
+  --ws-hover: #2e3440;
+  --ws-selected: #3b4252;
+  --ws-rank-border: #4c566a;
+  --ws-scrollbar-thumb: #4c566a;
+  --ws-scrollbar-thumb-hover: #88c0d0;
+
+  --ws-intensity-normal: #d8dee9;
+  --ws-intensity-muted: #eceff4;
+  --ws-intensity-faint: #a7b1c2;
+  --ws-intensity-accent: #88c0d0;
+}
+
+/* Nord Light */
+.wordserve-menu-container:is(.ws-theme-nord-light),
+.ws-theme-nord-light {
+  --ws-bg: #eceff4;
+  --ws-surface: #e6edf5;
+  --ws-overlay: #d8dee9;
+  --ws-fg: #2e3440;
+  --ws-border: #d8dee9;
+  --ws-hover: #e6edf5;
+  --ws-selected: #d8dee9;
+  --ws-rank-border: #d8dee9;
+  --ws-scrollbar-thumb: #6a7791;
+  --ws-scrollbar-thumb-hover: #8fbcbb;
+
+  --ws-intensity-normal: #2e3440;
+  --ws-intensity-muted: #6a7791;
+  --ws-intensity-faint: #93a4b6;
+  --ws-intensity-accent: #8fbcbb;
+}
+
+/* Mountain (dark) */
+.wordserve-menu-container:is(.ws-theme-mountain),
+.ws-theme-mountain {
+  --ws-bg: #0f0f0f;
+  --ws-surface: #1a1a1a;
+  --ws-overlay: #1a1a1a;
+  --ws-fg: #e7e7e7;
+  --ws-border: #4c4c4c;
+  --ws-hover: #1a1a1a;
+  --ws-selected: #2a2a2a;
+  --ws-rank-border: #4c4c4c;
+  --ws-scrollbar-thumb: #4c4c4c;
+  --ws-scrollbar-thumb-hover: #c49ea0;
+
+  --ws-intensity-normal: #e7e7e7;
+  --ws-intensity-muted: #c4c4c4;
+  --ws-intensity-faint: #9a9a9a;
+  --ws-intensity-accent: #aca98a;
+}
+
+/* Dracula (dark) */
+.wordserve-menu-container:is(.ws-theme-dracula),
+.ws-theme-dracula {
+  --ws-bg: #282a36;
+  --ws-surface: #20222c; /* sub-alt */
+  --ws-overlay: #20222c;
+  --ws-fg: #f8f8f2;
+  --ws-border: #44475a;
+  --ws-hover: #20222c;
+  --ws-selected: #44475a;
+  --ws-rank-border: #6272a4;
+  --ws-scrollbar-thumb: #6272a4;
+  --ws-scrollbar-thumb-hover: #bd93f9;
+
+  --ws-intensity-normal: #f8f8f2;
+  --ws-intensity-muted: #cfcfd9;
+  --ws-intensity-faint: #a8a8b8;
+  --ws-intensity-accent: #bd93f9;
+}
+
+/* Everblush (dark) */
+.wordserve-menu-container:is(.ws-theme-everblush),
+.ws-theme-everblush {
+  --ws-bg: #141b1e;
+  --ws-surface: #232a2d;
+  --ws-overlay: #232a2d;
+  --ws-fg: #dadada;
+  --ws-border: #3a4448;
+  --ws-hover: #232a2d;
+  --ws-selected: #3a4448;
+  --ws-rank-border: #3a4448;
+  --ws-scrollbar-thumb: #3a4448;
+  --ws-scrollbar-thumb-hover: #6cbfbf;
+
+  --ws-intensity-normal: #dadada;
+  --ws-intensity-muted: #b7bcbc;
+  --ws-intensity-faint: #969b9b;
+  --ws-intensity-accent: #8ccf7e;
+}
+
+/* Blueberry (light) */
+.wordserve-menu-container:is(.ws-theme-blueberry),
+.ws-theme-blueberry {
+  --ws-bg: #dae0f5;
+  --ws-surface: #c1c7df;
+  --ws-overlay: #c1c7df;
+  --ws-fg: #506477;
+  --ws-border: #c1c7df;
+  --ws-hover: #c1c7df;
+  --ws-selected: #92a4be;
+  --ws-rank-border: #c1c7df;
+  --ws-scrollbar-thumb: #92a4be;
+  --ws-scrollbar-thumb-hover: #678198;
+
+  --ws-intensity-normal: #506477;
+  --ws-intensity-muted: #678198;
+  --ws-intensity-faint: #92a4be;
+  --ws-intensity-accent: #df4576;
+}
+
+/* Darling (light) */
+.wordserve-menu-container:is(.ws-theme-darling),
+.ws-theme-darling {
+  --ws-bg: #fec8cd;
+  --ws-surface: #f2babd;
+  --ws-overlay: #f2babd;
+  --ws-fg: #A30100;
+  --ws-border: #f2babd;
+  --ws-hover: #f2babd;
+  --ws-selected: #eaa9ad;
+  --ws-rank-border: #f2babd;
+  --ws-scrollbar-thumb: #eaa9ad;
+  --ws-scrollbar-thumb-hover: #a30000;
+
+  --ws-intensity-normal: #A30100;
+  --ws-intensity-muted: #f6e9ea;
+  --ws-intensity-faint: #e2cfd1;
+  --ws-intensity-accent: #2e7dde;
+}

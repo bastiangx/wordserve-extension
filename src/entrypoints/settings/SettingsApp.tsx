@@ -1,4 +1,12 @@
 "use client";
+import { AbbreviationsSettings } from "@/entrypoints/settings/components/abbreviations";
+import { AccessibilitySettings } from "@/entrypoints/settings/components/accessibility";
+import { DomainSettingsComponent } from "@/entrypoints/settings/components/domain";
+import { AppearanceSettings } from "@/entrypoints/settings/components/appearance";
+import { BehaviorSettings } from "@/entrypoints/settings/components/behavior";
+import { KeyboardSettings } from "@/entrypoints/settings/components/keyboard";
+import { GeneralSettings } from "@/entrypoints/settings/components/general";
+import { Label } from "@radix-ui/react-label";
 import { FaGithub } from "react-icons/fa";
 import {
   Glasses,
@@ -10,18 +18,14 @@ import {
   Save,
   SettingsIcon,
   X,
+  FastForward,
 } from "lucide-react";
 import type { DefaultConfig } from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
 import { normalizeConfig } from "@/lib/config";
-import { GeneralSettings } from "@/entrypoints/settings/components/general";
-import { BehaviorSettings } from "@/entrypoints/settings/components/behavior";
-import { KeyboardSettings } from "@/entrypoints/settings/components/keyboard";
-import { AppearanceSettings } from "@/entrypoints/settings/components/appearance";
-import { AccessibilitySettings } from "@/entrypoints/settings/components/accessibility";
-import { DomainSettingsComponent } from "@/entrypoints/settings/components/domain";
 import { MenuPreview } from "@/components/preview";
 import { useEffect, useState } from "react";
+import { browser } from "wxt/browser";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Toaster } from "@/components/ui/sonner";
@@ -57,19 +61,50 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import { Label } from "@radix-ui/react-label";
 
 const menuItems = [
-  { id: "general", label: "General", icon: SettingsIcon },
-  { id: "behavior", label: "Behavior", icon: BookType },
-  { id: "appearance", label: "Appearance", icon: Palette },
-  { id: "keyboard", label: "Keyboard", icon: Keyboard },
-  { id: "domain", label: "Domain", icon: Globe },
-  { id: "accessibility", label: "Accessibility", icon: Glasses },
+  { id: "general", label: "General", icon: SettingsIcon, desc: "Main options" },
+  {
+    id: "behavior",
+    label: "Behavior",
+    icon: BookType,
+    desc: "Insertions & input control",
+  },
+  {
+    id: "abbreviations",
+    label: "Abbreviations",
+    icon: FastForward,
+    desc: "Make text shortcuts that expand into longer phrases",
+  },
+  {
+    id: "appearance",
+    label: "Appearance",
+    icon: Palette,
+    desc: "Suggestion menu's UI",
+  },
+  {
+    id: "keyboard",
+    label: "Keybinds",
+    icon: Keyboard,
+    desc: "Keyboard & input control",
+  },
+  {
+    id: "domain",
+    label: "Domain",
+    icon: Globe,
+    desc: "Control when WordServe comes to life",
+  },
+  {
+    id: "accessibility",
+    label: "Accessibility",
+    icon: Glasses,
+    desc: "Various accessiblity improvements",
+  },
 ];
 
 const LOGO_URL = "icon/48.png";
 
+// SettingsApp manages the config state
 function SettingsApp() {
   const [settings, setSettings] = useState<DefaultConfig>(DEFAULT_SETTINGS);
   const [pendingSettings, setPendingSettings] =
@@ -99,7 +134,6 @@ function SettingsApp() {
       setSettings(loadedSettings);
       setPendingSettings(loadedSettings);
     } catch (error) {
-      console.error("Failed to load settings:", error);
       showNotification("error", "Failed to load settings");
     } finally {
       setIsLoading(false);
@@ -110,12 +144,9 @@ function SettingsApp() {
     try {
       const normalized = normalizeConfig(pendingSettings);
       await browser.storage.sync.set({ wordserveSettings: normalized });
-
-      // Only send messages to tabs that might have content scripts
       const tabs = await browser.tabs.query({
         url: ["http://*/*", "https://*/*"],
       });
-
       let successfulUpdates = 0;
       for (const tab of tabs) {
         if (tab.id) {
@@ -125,26 +156,19 @@ function SettingsApp() {
               settings: pendingSettings,
             });
             successfulUpdates++;
-          } catch (error) {
-            console.log(`Failed to update settings in tab ${tab.id}:`, error);
-          }
+          } catch (error) { }
         }
       }
-
       setSettings(pendingSettings);
       showNotification("success", "Preference saved!");
     } catch (error) {
-      console.error("Failed to save settings:", error);
       showNotification("error", "Failed to save preference");
     }
   };
-
   const discardChanges = () => {
     setPendingSettings(settings);
   };
-
   const showNotification = (type: "success" | "error", message: string) => {
-    // Use setTimeout to defer toast rendering and avoid blocking the main thread
     setTimeout(() => {
       if (type === "success") {
         toast.success(message, { duration: 2000 });
@@ -203,7 +227,7 @@ function SettingsApp() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading settings...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -257,6 +281,13 @@ function SettingsApp() {
             updatePendingDomainSetting={updatePendingDomainSetting}
           />
         );
+      case "abbreviations":
+        return (
+          <AbbreviationsSettings
+            pendingSettings={pendingSettings}
+            updatePendingSetting={updatePendingSetting}
+          />
+        );
     }
   };
 
@@ -264,7 +295,7 @@ function SettingsApp() {
 
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar className="h-svh">
         <SidebarHeader>
           <Button
             variant="ghost"
@@ -283,7 +314,7 @@ function SettingsApp() {
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Settings</SidebarGroupLabel>
+            <SidebarGroupLabel className="font-mono">Settings</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {menuItems.map((item) => (
@@ -337,7 +368,7 @@ function SettingsApp() {
           </SidebarGroup>
 
           <SidebarGroup>
-            <SidebarGroupLabel>Live preview</SidebarGroupLabel>
+            <SidebarGroupLabel className="font-mono">Live preview</SidebarGroupLabel>
             <SidebarGroupContent>
               <div className="p-2">
                 <MenuPreview settings={pendingSettings} className="w-full" />
@@ -345,7 +376,7 @@ function SettingsApp() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <SidebarGroup className="mt-auto">
+          <SidebarGroup className="mt-auto font-mono">
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
@@ -382,8 +413,8 @@ function SettingsApp() {
         </SidebarContent>
       </Sidebar>
 
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+      <SidebarInset className="h-svh">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb>
@@ -400,12 +431,12 @@ function SettingsApp() {
           </Breadcrumb>
         </header>
 
-        <div className="flex flex-1 flex-col gap-4 p-4">
-          <div className="mb-4">
-            <h1 className="text-2xl font-bold">{currentSection?.label}</h1>
-            <p className="text-muted-foreground">
-              Configure {currentSection?.label.toLowerCase()} settings
-            </p>
+        <div className="flex flex-1 flex-col gap-3 p-3">
+          <div className="mb-2">
+            <h1 className="text-2xl font-bold mb-1">{currentSection?.label}</h1>
+            <h4 className="text-sm text-muted-foreground">
+              {currentSection?.desc}
+            </h4>
           </div>
 
           {renderContent()}

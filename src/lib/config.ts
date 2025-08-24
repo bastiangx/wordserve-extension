@@ -1,7 +1,9 @@
 import { clamp, toNumber, toBool } from "@/lib/utils";
+import type { ThemeId } from "@/lib/render/themes";
 import type { DefaultConfig } from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
 
+// coerceKBD coerces an object into a keyBindings config, using fallback for missing/invalid values
 function coerceKBD(obj: any, fallback: DefaultConfig["keyBindings"]) {
   if (!obj || typeof obj !== "object") return fallback;
   const allowedKeys = ["enter", "tab", "space"] as const;
@@ -9,7 +11,7 @@ function coerceKBD(obj: any, fallback: DefaultConfig["keyBindings"]) {
     if (!b || typeof b !== "object") return def;
     const key =
       typeof b.key === "string" &&
-      (allowedKeys as readonly string[]).includes(b.key)
+        (allowedKeys as readonly string[]).includes(b.key)
         ? b.key
         : def.key;
     const modifiers = Array.isArray(b.modifiers)
@@ -26,6 +28,10 @@ function coerceKBD(obj: any, fallback: DefaultConfig["keyBindings"]) {
   };
 }
 
+/**
+*  normalizeConfig takes an input config object (possibly partial, possibly with wrong types)
+*  and returns a fully populated DefaultConfig object with all values validated and sanitized.
+*/
 export function normalizeConfig(input: any): DefaultConfig {
   const merged = { ...DEFAULT_SETTINGS, ...(input || {}) } as any;
   const minWordLength = clamp(
@@ -47,6 +53,24 @@ export function normalizeConfig(input: any): DefaultConfig {
     merged.numberSelection,
     DEFAULT_SETTINGS.numberSelection
   );
+  const allowedThemes: Set<ThemeId> = new Set([
+    "dark",
+    "light",
+    "catppuccin-mocha",
+    "iv-spade",
+    "iceberg-dark",
+    "iceberg-light",
+    "nord-dark",
+    "nord-light",
+    "mountain",
+    "dracula",
+    "everblush",
+    "blueberry",
+    "darling",
+  ]);
+  const theme: ThemeId = allowedThemes.has(merged.theme)
+    ? merged.theme
+    : "dark";
   const showRankingOverride = toBool(
     merged.showRankingOverride,
     DEFAULT_SETTINGS.showRankingOverride
@@ -65,13 +89,22 @@ export function normalizeConfig(input: any): DefaultConfig {
     typeof fontSizeRaw === "number"
       ? clamp(fontSizeRaw, 12, 28)
       : typeof fontSizeRaw === "string" && fontSizeRaw.trim() !== ""
-      ? fontSizeRaw
-      : DEFAULT_SETTINGS.fontSize;
-
+        ? fontSizeRaw
+        : DEFAULT_SETTINGS.fontSize;
   const fontWeight =
     typeof merged.fontWeight === "string"
       ? merged.fontWeight
       : DEFAULT_SETTINGS.fontWeight;
+  const allowedFonts = new Set(["Geist Mono", "Atkinson Hyperlegible", "Monaco"]);
+  const fontFamilyList = Array.isArray(merged.fontFamilyList)
+    ? merged.fontFamilyList
+      .map((s: any) => (typeof s === "string" ? s : ""))
+      .filter((s: string) => allowedFonts.has(s))
+    : DEFAULT_SETTINGS.fontFamilyList;
+  const customFontList =
+    typeof merged.customFontList === "string"
+      ? merged.customFontList
+      : DEFAULT_SETTINGS.customFontList;
   const debugMode = toBool(
     merged.debugMode,
     DEFAULT_SETTINGS.debugMode ?? false
@@ -88,15 +121,49 @@ export function normalizeConfig(input: any): DefaultConfig {
     merged.smartBackspace,
     DEFAULT_SETTINGS.smartBackspace
   );
+  const maxAbbreviationLength = clamp(
+    toNumber(
+      merged.maxAbbreviationLength,
+      DEFAULT_SETTINGS.maxAbbreviationLength
+    ),
+    1,
+    64
+  );
+  const abbreviationInsertMode =
+    merged.abbreviationInsertMode === "space" ? "space" : "immediate";
+  const abbreviationHintClamp = clamp(
+    toNumber(
+      merged.abbreviationHintClamp,
+      DEFAULT_SETTINGS.abbreviationHintClamp
+    ),
+    8,
+    200
+  );
   const rankingPosition = merged.rankingPosition === "left" ? "left" : "right";
   const keyBindings = coerceKBD(
     merged.keyBindings,
     DEFAULT_SETTINGS.keyBindings
   );
+  const abbreviations: Record<string, string> = {};
+  if (merged.abbreviations && typeof merged.abbreviations === "object") {
+    for (const [k, v] of Object.entries(merged.abbreviations)) {
+      if (typeof k === "string" && typeof v === "string") {
+        abbreviations[k] = v;
+      } else if (typeof k === "string") {
+        abbreviations[k] = String(v);
+      }
+    }
+  } else {
+    Object.assign(abbreviations, DEFAULT_SETTINGS.abbreviations);
+  }
   const accessibility = {
     boldSuffix: toBool(
       merged.accessibility?.boldSuffix,
       DEFAULT_SETTINGS.accessibility.boldSuffix
+    ),
+    boldPrefix: toBool(
+      merged.accessibility?.boldPrefix,
+      DEFAULT_SETTINGS.accessibility.boldPrefix
     ),
     uppercaseSuggestions: toBool(
       merged.accessibility?.uppercaseSuggestions,
@@ -107,6 +174,23 @@ export function normalizeConfig(input: any): DefaultConfig {
     )
       ? merged.accessibility.prefixColorIntensity
       : DEFAULT_SETTINGS.accessibility.prefixColorIntensity,
+    suffixColorIntensity: ["normal", "muted", "faint", "accent"].includes(
+      merged.accessibility?.suffixColorIntensity
+    )
+      ? merged.accessibility.suffixColorIntensity
+      : DEFAULT_SETTINGS.accessibility.suffixColorIntensity,
+    prefixColor:
+      typeof merged.accessibility?.prefixColor === "string"
+        ? merged.accessibility.prefixColor
+        : DEFAULT_SETTINGS.accessibility.prefixColor,
+    suffixColor:
+      typeof merged.accessibility?.suffixColor === "string"
+        ? merged.accessibility.suffixColor
+        : DEFAULT_SETTINGS.accessibility.suffixColor,
+    dyslexicFont: toBool(
+      merged.accessibility?.dyslexicFont,
+      DEFAULT_SETTINGS.accessibility.dyslexicFont ?? false
+    ),
     customColor:
       typeof merged.accessibility?.customColor === "string"
         ? merged.accessibility.customColor
@@ -125,6 +209,7 @@ export function normalizeConfig(input: any): DefaultConfig {
     minWordLength,
     maxSuggestions,
     debounceTime,
+    theme,
     numberSelection,
     showRankingOverride,
     compactMode,
@@ -132,8 +217,14 @@ export function normalizeConfig(input: any): DefaultConfig {
     menuBorderRadius,
     fontSize,
     fontWeight,
+    fontFamilyList,
+    customFontList,
     debugMode,
     abbreviationsEnabled,
+    abbreviations,
+    maxAbbreviationLength,
+    abbreviationInsertMode,
+    abbreviationHintClamp,
     autoInsertion,
     smartBackspace,
     rankingPosition,

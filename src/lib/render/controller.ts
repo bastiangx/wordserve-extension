@@ -8,6 +8,9 @@ import { calculateMenuPosition } from "@/lib/input/caret";
 import { getRowHeight } from "@/lib/utils";
 import { smartBackspace } from "@/lib/input/backspace";
 import type { DefaultConfig, RawSuggestion } from "@/types";
+import { buildFontFamilyFromConfig } from "@/lib/render/font";
+import { ABBREVIATION_CONFIG } from "@/types";
+import { findAbbreviation } from "@/lib/input/abbrv";
 import { browser } from "wxt/browser";
 
 export interface AutocompleteControllerOptions {
@@ -73,47 +76,28 @@ export class AutocompleteController {
     }
     this.debounceTimer = setTimeout(async () => {
       try {
-        console.log(
-          "WordServe: Fetching suggestions for:",
-          context.currentWord
-        );
         const suggestions = await this.fetchSuggestions(context.currentWord);
-        console.log("WordServe: Got suggestions:", suggestions);
         this.showSuggestions(suggestions, context);
       } catch (error) {
-        console.error("Failed to fetch suggestions:", error);
         this.hideMenu();
       }
     }, this.settings.debounceTime) as any;
   }
 
   private async fetchSuggestions(word: string): Promise<Suggestion[]> {
-    console.log(
-      "WordServe: fetchSuggestions called with:",
-      word,
-      "minLength:",
-      this.settings.minWordLength
-    );
     if (word.length < this.settings.minWordLength) {
-      console.log("WordServe: Word too short, returning empty suggestions");
       return [];
     }
     try {
-      console.log("WordServe: Calling background service for completion");
       const response = await browser.runtime.sendMessage({
         type: "wordserve-complete",
         prefix: word,
         limit: this.settings.maxSuggestions,
       });
       if (response?.error) {
-        console.error("WordServe: Background service error:", response.error);
         return [];
       }
       const rawSuggestions = response?.suggestions || [];
-      console.log(
-        "WordServe: Raw suggestions from background:",
-        rawSuggestions
-      );
       const suggestions = rawSuggestions.map(
         (raw: RawSuggestion, index: number) => ({
           word: raw.word,
@@ -121,10 +105,8 @@ export class AutocompleteController {
           id: `${raw.word}-${index}`,
         })
       );
-      console.log("WordServe: Converted suggestions:", suggestions);
       return suggestions;
     } catch (error) {
-      console.error("Failed to fetch suggestions:", error);
       return [];
     }
   }
@@ -138,6 +120,28 @@ export class AutocompleteController {
       suggestions.length,
       "suggestions"
     );
+    if (
+      this.settings.abbreviationsEnabled &&
+      this.settings.abbreviationInsertMode === "space"
+    ) {
+      const match = findAbbreviation(context.currentWord, this.settings);
+      if (match) {
+        const clamp = Math.max(
+          8,
+          Math.min(200, this.settings.abbreviationHintClamp)
+        );
+        const hint =
+          match.value.length > clamp
+            ? match.value.slice(0, clamp - 1) + "…"
+            : match.value;
+        const hintSuggestion: Suggestion = {
+          word: hint,
+          rank: ABBREVIATION_CONFIG.SPACE_BADGE as unknown as number,
+          id: `abbr-hint-${context.currentWord}`,
+        } as any;
+        suggestions = [hintSuggestion, ...suggestions];
+      }
+    }
     if (suggestions.length === 0) {
       console.log("WordServe: No suggestions, hiding menu");
       this.hideMenu();
@@ -185,6 +189,10 @@ export class AutocompleteController {
       black: "900",
     };
     const fontWeight = weightMap[this.settings.fontWeight] || "400";
+    const fontFamily = buildFontFamilyFromConfig({
+      fontFamilyList: this.settings.fontFamilyList,
+      customFontList: this.settings.customFontList,
+    });
     this.menuRenderer.render({
       suggestions: this.suggestions,
       selectedIndex: this.selectedIndex,
@@ -196,11 +204,22 @@ export class AutocompleteController {
       compact: this.settings.compactMode,
       fontSize,
       fontWeight,
+  fontFamily,
       menuBorder: this.settings.menuBorder,
       menuBorderRadius: this.settings.menuBorderRadius,
       numberSelection: this.settings.numberSelection,
       showRankingOverride: this.settings.showRankingOverride,
       rankingPosition: this.settings.rankingPosition,
+      uppercaseSuggestions: this.settings.accessibility.uppercaseSuggestions,
+      boldSuffix: this.settings.accessibility.boldSuffix,
+      boldPrefix: this.settings.accessibility.boldPrefix,
+      prefixColorIntensity: this.settings.accessibility.prefixColorIntensity,
+      suffixColorIntensity: this.settings.accessibility.suffixColorIntensity,
+      prefixColor: this.settings.accessibility.prefixColor,
+      suffixColor: this.settings.accessibility.suffixColor,
+      dyslexicFont: this.settings.accessibility.dyslexicFont,
+      currentPrefixLength: this.currentWord.length,
+  theme: this.settings.theme ?? "dark",
     });
   }
 
@@ -208,7 +227,16 @@ export class AutocompleteController {
     suggestion: Suggestion,
     addSpace: boolean = false
   ): void {
-    this.insertSuggestion(suggestion.word, addSpace);
+    if (
+      suggestion.rank === (ABBREVIATION_CONFIG.SPACE_BADGE as unknown as number)
+    ) {
+      const match = findAbbreviation(this.currentWord, this.settings);
+      if (match) {
+        this.insertSuggestion(match.value, addSpace);
+      }
+    } else {
+      this.insertSuggestion(suggestion.word, addSpace);
+    }
     this.hideMenu();
   }
 
@@ -259,7 +287,19 @@ export class AutocompleteController {
     if (!this.isVisible || this.suggestions.length === 0) return;
     const selectedSuggestion = this.suggestions[this.selectedIndex];
     if (selectedSuggestion) {
-      this.insertSuggestion(selectedSuggestion.word, addSpace);
+      // Check if this is an abbreviation hint
+      if (
+        selectedSuggestion.rank ===
+        (ABBREVIATION_CONFIG.SPACE_BADGE as unknown as number)
+      ) {
+        // For abbreviation hints, we need to get the full expansion text
+        const match = findAbbreviation(this.currentWord, this.settings);
+        if (match) {
+          this.insertSuggestion(match.value, addSpace);
+        }
+      } else {
+        this.insertSuggestion(selectedSuggestion.word, addSpace);
+      }
       this.hideMenu();
     }
   }
@@ -276,7 +316,19 @@ export class AutocompleteController {
     if (!this.isVisible || this.suggestions.length === 0) return;
     if (index >= 0 && index < this.suggestions.length) {
       const suggestion = this.suggestions[index];
-      this.insertSuggestion(suggestion.word, true);
+      // Check if this is an abbreviation hint
+      if (
+        suggestion.rank ===
+        (ABBREVIATION_CONFIG.SPACE_BADGE as unknown as number)
+      ) {
+        // For abbreviation hints, we need to get the full expansion text
+        const match = findAbbreviation(this.currentWord, this.settings);
+        if (match) {
+          this.insertSuggestion(match.value, true);
+        }
+      } else {
+        this.insertSuggestion(suggestion.word, true);
+      }
       this.hideMenu();
     }
   }
@@ -412,7 +464,10 @@ export class AutocompleteController {
   public updateSettings(settings: Partial<DefaultConfig>): void {
     this.settings = { ...this.settings, ...settings };
     this.inputHandler.updateSettings(this.settings);
-    this.hideMenu();
+    // Re-render with new settings if menu is visible
+    if (this.isVisible) {
+      this.renderMenuWithCurrentPosition();
+    }
   }
 
   public enable(): void {

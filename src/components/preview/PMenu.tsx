@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { initOpenDyslexic, buildFontFamilyFromConfig } from "@/lib/render/font";
 import type { DefaultConfig, DisplaySuggestion } from "@/types";
 import { getRowHeight, clamp, toNumber } from "@/lib/utils";
+import { themeToClass } from "@/lib/render/themes";
+import { Input } from "@/components/ui/input";
 import { browser } from "wxt/browser";
+import { cn } from "@/lib/utils";
+import "@/components/styles.css";
 
 export interface MenuPreviewProps {
   settings: DefaultConfig;
   className?: string;
 }
 
+// Single component for Menu preview
 export const MenuPreview: React.FC<MenuPreviewProps> = ({
   settings,
   className,
@@ -25,7 +28,29 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
   const debounceTimeoutRef = useRef<number | undefined>(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
   const selectedItemRef = useRef<HTMLDivElement>(null);
-
+  const [caretPos, setCaretPos] = useState<number>(() => {
+    const init = localStorage.getItem("wordserve-preview-text") || "pro";
+    return init.length;
+  });
+  const extractWordAtPosition = useCallback(
+    (text: string, position: number) => {
+      let wordStart = position;
+      let wordEnd = position;
+      const isSep = (ch?: string) => !ch || /\s/.test(ch);
+      while (wordStart > 0 && !isSep(text[wordStart - 1])) wordStart--;
+      while (wordEnd < text.length && !isSep(text[wordEnd])) wordEnd++;
+      return {
+        prefix: text.slice(
+          wordStart,
+          Math.max(wordStart, Math.min(position, wordEnd))
+        ),
+        wordStart,
+        wordEnd,
+      };
+    },
+    []
+  );
+  // Store input in localStorage for persistence across reloads
   useEffect(() => {
     localStorage.setItem("wordserve-preview-text", inputValue);
   }, [inputValue]);
@@ -36,7 +61,6 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
         setShowMenu(false);
         return;
       }
-
       try {
         const response = await browser.runtime.sendMessage({
           type: "wordserve-complete",
@@ -50,47 +74,43 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
               word: s.word,
               rank: s.rank || index + 1,
             }));
-
           setSuggestions(displaySuggestions);
           setShowMenu(displaySuggestions.length > 0);
           setSelectedIndex(0);
-        } else if (response?.error) {
-          console.warn(
-            "WordServe preview: Error fetching suggestions:",
-            response.error
-          );
-          setSuggestions([]);
-          setShowMenu(false);
         }
       } catch (error) {
-        console.warn("WordServe preview: Failed to fetch suggestions:", error);
+        console.warn("[PRV]Failed to fetch suggestions:", error);
         setSuggestions([]);
         setShowMenu(false);
       }
     },
     [settings.minWordLength, settings.maxSuggestions]
   );
-
   // Debounced input handler
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
+      const caret = e.target.selectionStart ?? value.length;
       setInputValue(value);
-
+      setCaretPos(caret);
+      const { prefix } = extractWordAtPosition(value, caret);
       if (debounceTimeoutRef.current !== undefined) {
         clearTimeout(debounceTimeoutRef.current);
       }
       debounceTimeoutRef.current = window.setTimeout(() => {
-        fetchSuggestions(value);
+        fetchSuggestions(prefix);
       }, settings.debounceTime || 100);
     },
-    [fetchSuggestions, settings.debounceTime]
+    [extractWordAtPosition, fetchSuggestions, settings.debounceTime]
   );
-
+  // Caret tracking and fetching on caret change
   useEffect(() => {
-    fetchSuggestions(inputValue);
-  }, [fetchSuggestions]);
-
+    const caret = inputRef.current?.selectionStart ?? inputValue.length;
+    setCaretPos(caret);
+    const { prefix } = extractWordAtPosition(inputValue, caret);
+    fetchSuggestions(prefix);
+  }, [extractWordAtPosition, fetchSuggestions]);
+  // Debounce cleanup on unmount
   useEffect(() => {
     return () => {
       if (debounceTimeoutRef.current !== undefined) {
@@ -98,7 +118,6 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
       }
     };
   }, []);
-
   // scrolling into view
   useEffect(() => {
     const menu = menuRef.current;
@@ -113,9 +132,11 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
     }
   }, [selectedIndex]);
 
-  // derive numeric font size, clamp to sensible range (12-28)
+  // derive numeric font size, clamp to range (12-28)
   const fontSize = clamp(toNumber(settings.fontSize, 15), 12, 28);
-
+  useEffect(() => {
+    if (settings.accessibility.dyslexicFont) initOpenDyslexic();
+  }, [settings.accessibility.dyslexicFont]);
   const getFontWeight = (weight: string): string => {
     const weightMap: Record<string, string> = {
       thin: "100",
@@ -137,27 +158,34 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
       const clamped = Math.max(0, Math.min(index, suggestions.length - 1));
       const chosen = suggestions[clamped];
       if (!chosen) return;
-      setInputValue(chosen.word);
-      localStorage.setItem("wordserve-preview-text", chosen.word);
+      // Replace only the current word at caret with the suggestion
+      const { wordStart, wordEnd } = extractWordAtPosition(
+        inputValue,
+        caretPos
+      );
+      const before = inputValue.slice(0, wordStart);
+      const after = inputValue.slice(wordEnd);
+      const newValue = before + chosen.word + after;
+      const newCaret = before.length + chosen.word.length;
+      setInputValue(newValue);
+      localStorage.setItem("wordserve-preview-text", newValue);
       setShowMenu(false);
       setSelectedIndex(clamped);
-      // Optionally refetch for the new word after a short delay to simulate flow
-      if (settings.debounceTime && settings.debounceTime > 0) {
-        window.setTimeout(
-          () => fetchSuggestions(chosen.word),
-          settings.debounceTime
-        );
-      }
-      // Keep focus on the input for a smooth preview
-      inputRef.current?.focus();
+      // Restore caret after state update
+      requestAnimationFrame(() => {
+        const el = inputRef.current;
+        if (el) {
+          el.focus();
+          el.setSelectionRange(newCaret, newCaret);
+          setCaretPos(newCaret);
+        }
+      });
     },
-    [suggestions, settings.debounceTime, fetchSuggestions]
+    [suggestions, extractWordAtPosition, inputValue, caretPos]
   );
-
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (!showMenu || suggestions.length === 0) return;
-      // Arrow navigation
       if (e.key === "ArrowDown") {
         e.preventDefault();
         e.stopPropagation();
@@ -182,13 +210,14 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
         setSelectedIndex(suggestions.length - 1);
         return;
       }
-      // Digit selection (1-9)
+      // Digit selection
       if (
         settings.numberSelection &&
         /^[1-9]$/.test(e.key) &&
         !e.altKey &&
         !e.ctrlKey &&
-        !e.metaKey
+        !e.metaKey &&
+        !e.shiftKey
       ) {
         const idx = parseInt(e.key, 10) - 1;
         if (idx >= 0 && idx < suggestions.length) {
@@ -198,14 +227,12 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
         }
         return;
       }
-      // Accept selection
       if (e.key === "Enter") {
         e.preventDefault();
         e.stopPropagation();
         selectByIndex(selectedIndex);
         return;
       }
-      // Close menu
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
@@ -222,14 +249,39 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
   );
 
   return (
-    <div className={cn("relative w-full", className)}>
+    <div
+      className={cn(
+        "relative w-full",
+        themeToClass(settings.theme ?? "dark"),
+        className
+      )}
+    >
       <div className="mb-2">
         <Input
           ref={inputRef}
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={onKeyDown}
+          onClick={() => {
+            const el = inputRef.current;
+            if (!el) return;
+            const caret = el.selectionStart ?? el.value.length;
+            setCaretPos(caret);
+            const { prefix } = extractWordAtPosition(el.value, caret);
+            fetchSuggestions(prefix);
+          }}
+          onKeyUp={() => {
+            const el = inputRef.current;
+            if (!el) return;
+            const caret = el.selectionStart ?? el.value.length;
+            setCaretPos(caret);
+          }}
           onFocus={() => {
+            const el = inputRef.current;
+            const caret = el?.selectionStart ?? inputValue.length;
+            setCaretPos(caret);
+            const { prefix } = extractWordAtPosition(inputValue, caret);
+            fetchSuggestions(prefix);
             if (suggestions.length > 0) setShowMenu(true);
           }}
           onBlur={() => {
@@ -243,103 +295,156 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
       {/* Menu Preview */}
       {showMenu && suggestions.length > 0 && (
         <div
-          ref={menuRef}
           className={cn(
-            "border shadow-lg overflow-hidden font-mono",
-            settings.menuBorderRadius ? "rounded-md" : "rounded-none",
-            settings.menuBorder ? "" : "border-transparent",
-            settings.compactMode ? "py-1" : "py-2",
-            "transition-all duration-100 ease-out"
+            "wordserve-menu-container",
+            settings.compactMode ? "compact" : "",
+            themeToClass(settings.theme ?? "dark")
           )}
-          style={{
-            backgroundColor: "#191724",
-            borderColor: settings.menuBorder ? "#403d52" : "transparent",
-            color: "#e0def4",
-            fontSize: `${fontSize}px`,
-            fontWeight: getFontWeight(settings.fontWeight),
-            maxHeight: "200px",
-            overflowY: "auto" as const,
-          }}
         >
-          {suggestions.map((suggestion, index) => {
-            const isSelected = index === selectedIndex;
-            const showRanking =
-              settings.showRankingOverride ||
-              (settings.numberSelection && index < 9);
-            const rowHeight = getRowHeight(fontSize, settings.compactMode);
+          <div
+            ref={menuRef}
+            className={cn(
+              "wordserve-autocomplete-menu",
+              settings.menuBorder ? "" : "no-border",
+              settings.menuBorderRadius ? "" : "no-radius"
+            )}
+            style={{
+              fontSize: `${fontSize}px`,
+              fontWeight: getFontWeight(settings.fontWeight),
+              fontFamily: settings.accessibility.dyslexicFont
+                ? `'OpenDyslexic', ` +
+                buildFontFamilyFromConfig({
+                  fontFamilyList: settings.fontFamilyList,
+                  customFontList: settings.customFontList,
+                })
+                : buildFontFamilyFromConfig({
+                  fontFamilyList: settings.fontFamilyList,
+                  customFontList: settings.customFontList,
+                }),
+              maxHeight: "200px",
+              overflowY: "auto" as const,
+            }}
+          >
+            {suggestions.map((suggestion, index) => {
+              const isSelected = index === selectedIndex;
+              const showRanking =
+                settings.showRankingOverride ||
+                (settings.numberSelection && index < 9);
+              const rowHeight = getRowHeight(fontSize, settings.compactMode);
+              const displayWord = settings.accessibility.uppercaseSuggestions
+                ? suggestion.word.toUpperCase()
+                : suggestion.word;
+              const { prefix } = extractWordAtPosition(inputValue, caretPos);
+              const prefixLen = prefix.length;
+              const pre = displayWord.slice(0, prefixLen);
+              const suf = displayWord.slice(prefixLen);
+              const intensityMap: Record<string, string> = {
+                normal: "var(--ws-intensity-normal)",
+                muted: "var(--ws-intensity-muted)",
+                faint: "var(--ws-intensity-faint)",
+                accent: "var(--ws-intensity-accent)",
+              };
+              const preColor =
+                settings.accessibility.prefixColor ||
+                intensityMap[
+                settings.accessibility.prefixColorIntensity || "normal"
+                ];
+              const sufColor =
+                settings.accessibility.suffixColor ||
+                intensityMap[
+                settings.accessibility.suffixColorIntensity || "normal"
+                ];
 
-            return (
-              <div
-                key={`${suggestion.word}-${index}`}
-                ref={isSelected ? selectedItemRef : null}
-                className={cn(
-                  "flex items-center cursor-default transition-colors duration-75",
-                  settings.compactMode ? "px-3" : "px-4",
-                  settings.rankingPosition === "right" ? "justify-between" : ""
-                )}
-                style={{
-                  backgroundColor: isSelected ? "#21202e" : "transparent",
-                  color: "#e0def4",
-                  height: `${rowHeight}px`,
-                }}
-                role="option"
-                aria-selected={isSelected}
-                onMouseEnter={() => setSelectedIndex(index)}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  selectByIndex(index);
-                }}
-              >
-                {settings.rankingPosition === "left" && (
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    {/* Rank badge on left */}
-                    {showRanking && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs font-medium shrink-0"
-                        style={{
-                          borderColor: "#403d52",
-                          color: "#e0def4",
-                          fontSize: `${Math.max(10, fontSize - 2)}px`,
-                        }}
-                      >
-                        {settings.numberSelection ? index + 1 : suggestion.rank}
-                      </Badge>
-                    )}
+              return (
+                <div
+                  key={`${suggestion.word}-${index}`}
+                  ref={isSelected ? selectedItemRef : null}
+                  className={cn(
+                    "wordserve-menu-item",
+                    isSelected ? "selected" : "",
+                    settings.rankingPosition === "right" ? "justify-between" : ""
+                  )}
+                  style={{
+                    height: `${rowHeight}px`,
+                    paddingLeft: settings.rankingPosition === "left" ? 0 : undefined,
+                  }}
+                  role="option"
+                  aria-selected={isSelected}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    selectByIndex(index);
+                  }}
+                >
+                  {settings.rankingPosition === "left" && (
+                    <div className="wordserve-menu-item-content">
+                      {showRanking && (
+                        <span className="wordserve-menu-item-rank">
+                          {settings.numberSelection ? index + 1 : suggestion.rank}
+                        </span>
+                      )}
+                      <span className="wordserve-menu-item-word truncate">
+                        <span
+                          style={{
+                            color: preColor,
+                            fontWeight: settings.accessibility.boldPrefix
+                              ? 700
+                              : undefined,
+                          }}
+                        >
+                          {pre}
+                        </span>
+                        <span
+                          style={{
+                            color: sufColor,
+                            fontWeight: settings.accessibility.boldSuffix
+                              ? 700
+                              : undefined,
+                          }}
+                        >
+                          {suf}
+                        </span>
+                      </span>
+                    </div>
+                  )}
 
-                    {/* Word */}
-                    <span className="font-medium truncate">
-                      {suggestion.word}
-                    </span>
-                  </div>
-                )}
-
-                {settings.rankingPosition === "right" && (
-                  <>
-                    {/* Word */}
-                    <span className="font-medium truncate">
-                      {suggestion.word}
-                    </span>
-
-                    {/* Rank badge on right */}
-                    {showRanking && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs font-medium ml-2 shrink-0"
-                        style={{
-                          borderColor: "#403d52",
-                          color: "#e0def4",
-                          fontSize: `${Math.max(10, fontSize - 2)}px`,
-                        }}
-                      >
-                        {settings.numberSelection ? index + 1 : suggestion.rank}
-                      </Badge>
-                    )}
-                  </>
-                )}
-              </div>
-            );
-          })}
+                  {settings.rankingPosition === "right" && (
+                    <>
+                      <div className="wordserve-menu-item-content">
+                        <span className="wordserve-menu-item-word truncate">
+                          <span
+                            style={{
+                              color: preColor,
+                              fontWeight: settings.accessibility.boldPrefix
+                                ? 700
+                                : undefined,
+                            }}
+                          >
+                            {pre}
+                          </span>
+                          <span
+                            style={{
+                              color: sufColor,
+                              fontWeight: settings.accessibility.boldSuffix
+                                ? 700
+                                : undefined,
+                            }}
+                          >
+                            {suf}
+                          </span>
+                        </span>
+                      </div>
+                      {showRanking && (
+                        <span className="wordserve-menu-item-rank">
+                          {settings.numberSelection ? index + 1 : suggestion.rank}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

@@ -5,6 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Minus, Plus } from "lucide-react";
 import type { DefaultConfig } from "@/types";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { CircleHelp } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export interface GeneralSettingsProps {
   pendingSettings: DefaultConfig;
@@ -64,11 +73,16 @@ export function GeneralSettings({
 
   return (
     <div className="space-y-6">
-      <Card className="rounded-md card">
-        <CardContent className="space-y-6 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="minWordLength">Minimum word length</Label>
+      <Card className="border-transparent">
+        <CardContent className="space-y-6 p-2">
+          <div className="space-y-8">
+            <div className="flex justify-between items-center">
+              <div className="space-y-2">
+                <Label htmlFor="minWordLength">Minimum word length</Label>
+                <p className="font-mono text-xs text-muted-foreground lg:max-w-[65ch] max-w-[45ch] ">
+                  Type these many letters to see suggestions
+                </p>
+              </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -112,13 +126,15 @@ export function GeneralSettings({
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Words shorter than this won't trigger suggestions
-              </p>
             </div>
 
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="maxSuggestions">Maximum suggestions</Label>
+            <div className="flex justify-between items-center">
+              <div className="space-y-2">
+                <Label htmlFor="maxSuggestions">Suggestions count</Label>
+                <p className="text-xs font-mono text-muted-foreground">
+                  Number of suggestions to show in menu
+                </p>
+              </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -163,18 +179,51 @@ export function GeneralSettings({
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Maximum number of suggestions to show
-              </p>
             </div>
 
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="debounceTime">Response delay (ms)</Label>
+            <Separator />
+
+            <div className="flex justify-between items-center">
+              <div className="space-y-2">
+                <Label htmlFor="debounceTime">
+                  Response delay (ms)
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          asChild
+                          variant="outline"
+                          className="border-transparent"
+                        >
+                          <button type="button" aria-label="What is suffix?">
+                            <CircleHelp className="size-6 sm:size-7" />
+                          </button>
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-w-xs whitespace-normal break-words"
+                      >
+                        <p>
+                          Use higher values if you want to wait a bit longer to see suggestions.
+                        </p>
+                        <Separator className="my-2 bg-slate-500" />
+                        <p>
+                          Every 1000ms is 1 second.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </Label>
+                <p className=" font-mono text-xs text-muted-foreground">
+                  To show suggestions
+                </p>
+              </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => adjustNumber("debounceTime", -50, 0, 1000)}
+                  onClick={() => adjustNumber("debounceTime", -50, 0, 3000)}
                   disabled={pendingSettings.debounceTime <= 0}
                   className="h-8 w-8 p-0"
                 >
@@ -184,7 +233,7 @@ export function GeneralSettings({
                   id="debounceTime"
                   type="number"
                   min="0"
-                  max="1000"
+                  max="3000"
                   step="50"
                   value={inputValues.debounceTime}
                   onChange={(e) => {
@@ -207,16 +256,13 @@ export function GeneralSettings({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => adjustNumber("debounceTime", 50, 0, 1000)}
+                  onClick={() => adjustNumber("debounceTime", 50, 0, 3000)}
                   disabled={pendingSettings.debounceTime >= 1000}
                   className="h-8 w-8 p-0"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Delay before showing suggestions while typing
-              </p>
             </div>
           </div>
         </CardContent>

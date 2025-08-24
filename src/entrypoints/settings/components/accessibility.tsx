@@ -2,14 +2,16 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { DefaultConfig } from "@/types";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { CircleHelp } from "lucide-react";
 
 export interface AccessibilitySettingsProps {
   pendingSettings: DefaultConfig["accessibility"];
@@ -24,16 +26,44 @@ export function AccessibilitySettings({
   updatePendingAccessibilitySetting,
 }: AccessibilitySettingsProps) {
   return (
-    <div className="space-y-6">
-      <Card className="rounded-md card">
-        <CardContent className="space-y-6 p-6">
-          <div className="space-y-4">
+    <div className="space-y-2">
+      <Card className="border-transparent">
+        <CardContent className="space-y-2 p-2">
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Bold suffix</Label>
-                <p className="text-sm text-muted-foreground">
-                  Make the completion part of suggestions bold
-                </p>
+              <div className="space-y-2">
+                <Label>
+                  Bold suffix
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          asChild
+                          variant="outline"
+                          className="border-transparent"
+                        >
+                          <button type="button" aria-label="What is suffix?">
+                            <CircleHelp className="size-6 sm:size-7" />
+                          </button>
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-w-xs whitespace-normal break-words"
+                      >
+                        <p>
+                          Suffixes are the last few letters of a word that you
+                          want to retrieve as suggestions.
+                        </p>
+                        <Separator className="my-2 bg-slate-500" />
+                        <p>
+                          If you type "ame", the suggested suffxies could be
+                          "rican", "rica", "ndment", etc.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </Label>
               </div>
               <Switch
                 checked={pendingSettings.boldSuffix}
@@ -42,13 +72,47 @@ export function AccessibilitySettings({
                 }
               />
             </div>
-
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>Uppercase suggestions</Label>
-                <p className="text-sm text-muted-foreground">
-                  Convert all suggestions to uppercase
-                </p>
+              <div className="space-y-2">
+                <Label>
+                  Bold prefix
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          asChild
+                          variant="outline"
+                          className="border-transparent"
+                        >
+                          <button type="button" aria-label="What is suffix?">
+                            <CircleHelp className="size-6 sm:size-7" />
+                          </button>
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-w-xs whitespace-normal break-words"
+                      >
+                        <p>
+                          Prefixes are the first few letters of a word that you
+                          type.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </Label>
+              </div>
+              <Switch
+                checked={pendingSettings.boldPrefix}
+                onCheckedChange={(checked) =>
+                  updatePendingAccessibilitySetting("boldPrefix", checked)
+                }
+              />
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <Label>Uppercase letters</Label>
               </div>
               <Switch
                 checked={pendingSettings.uppercaseSuggestions}
@@ -61,31 +125,18 @@ export function AccessibilitySettings({
               />
             </div>
 
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="prefixColorIntensity">
-                Prefix color intensity
-              </Label>
-              <Select
-                value={pendingSettings.prefixColorIntensity}
-                onValueChange={(
-                  value: "normal" | "muted" | "faint" | "accent"
-                ) =>
-                  updatePendingAccessibilitySetting(
-                    "prefixColorIntensity",
-                    value
-                  )
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <Label>Dyslexic-friendly font</Label>
+              </div>
+              <Switch
+                checked={pendingSettings.dyslexicFont || false}
+                onCheckedChange={(checked) =>
+                  updatePendingAccessibilitySetting("dyslexicFont", checked)
                 }
-              >
-                <SelectTrigger id="prefixColorIntensity">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="muted">Muted</SelectItem>
-                  <SelectItem value="faint">Faint</SelectItem>
-                  <SelectItem value="accent">Accent</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
           </div>
         </CardContent>

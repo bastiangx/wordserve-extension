@@ -1,12 +1,13 @@
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MenuPreview } from "./PMenu";
 import type { DefaultConfig } from "@/types";
+import { MenuPreview } from "./PMenu";
+import React from "react";
 
 export interface PreviewTabProps {
   settings: DefaultConfig;
 }
 
+// Disaply a live preview of the menu based on the current live settings
 export const PreviewTab: React.FC<PreviewTabProps> = ({ settings }) => {
   return (
     <Card className="rounded-md">

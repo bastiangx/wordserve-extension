@@ -18,36 +18,25 @@ export default defineConfig({
       page: "settings.html",
       open_in_tab: true,
     },
-    permissions: ["tabs", "scripting", "storage"],
+  permissions: ["tabs", "scripting", "storage", "downloads"],
     ...(manifestVersion === 3
       ? {
           content_security_policy: {
             extension_pages:
-              "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; upgrade-insecure-requests;",
+              "script-src 'self'; object-src 'self'; upgrade-insecure-requests;",
           },
         }
       : {
-          content_security_policy:
-            "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+          content_security_policy: "script-src 'self'; object-src 'self';",
         }),
     web_accessible_resources:
       manifestVersion === 3
         ? [
             {
-              resources: [
-                "wasm_exec.js",
-                "wordserve.wasm",
-                "data/*.bin",
-                "asset-manifest.json",
-              ],
+              resources: ["data/*.bin", "asset-manifest.json"],
               matches: ["http://*/*", "https://*/*"],
             },
           ]
-        : [
-            "wasm_exec.js",
-            "wordserve.wasm",
-            "data/*.bin",
-            "asset-manifest.json",
-          ],
+        : ["data/*.bin", "asset-manifest.json"],
   }),
 });

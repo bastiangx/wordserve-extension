@@ -30,11 +30,7 @@ export function toBool(value: any, fallback: boolean) {
 
 // Calculate suggestion item row height based on font size and compact mode
 const rowHeightCache = new Map<string, number>();
-/**
- * Compute the row height in pixels for suggestion items.
- * fontSizePx: font size in pixels (12-28)
- * compact: whether compact mode is enabled
- */
+
 export function getRowHeight(fontSizePx: number, compact: boolean): number {
   const key = `${fontSizePx}-${compact}`;
   const cached = rowHeightCache.get(key);
