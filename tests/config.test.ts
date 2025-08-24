@@ -20,5 +20,3 @@ describe("normalizeConfig", () => {
     expect(cfg.abbreviations.HELLO).toBe("42");
   });
 });
-
-
