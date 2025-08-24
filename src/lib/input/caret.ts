@@ -28,8 +28,6 @@ export function getCaretCoordinates(
   // Create a mirror div to measure text
   const mirror = document.createElement("div");
   const computedStyle = window.getComputedStyle(element);
-
-  // Copy all relevant styles
   const stylesToCopy = [
     "fontFamily",
     "fontSize",
@@ -50,8 +48,6 @@ export function getCaretCoordinates(
   stylesToCopy.forEach((prop) => {
     mirror.style[prop as any] = computedStyle[prop as any];
   });
-
-  // Additional styles for accurate measurement
   mirror.style.position = "absolute";
   mirror.style.visibility = "hidden";
   mirror.style.height = "auto";
@@ -59,36 +55,29 @@ export function getCaretCoordinates(
   mirror.style.maxHeight = "none";
   mirror.style.overflow = "hidden";
   mirror.style.zIndex = "-1000";
-
   document.body.appendChild(mirror);
-
   try {
     const value = element.value;
     const textBeforeCaret = value.substring(0, selectionStart);
     const textAtCaret =
       value.substring(selectionStart, selectionStart + 1) || "|";
-
     // Set text with a marker at caret position
     mirror.textContent = textBeforeCaret;
-
     // Create marker element
     const marker = document.createElement("span");
     marker.textContent = textAtCaret;
     marker.style.position = "relative";
     mirror.appendChild(marker);
-
     // Add remaining text
     const remainingText = document.createTextNode(
       value.substring(selectionStart + 1)
     );
     mirror.appendChild(remainingText);
-
     // Get element position
     const elementRect = element.getBoundingClientRect();
     const markerRect = marker.getBoundingClientRect();
     const mirrorRect = mirror.getBoundingClientRect();
-
-    // Calculate relative position
+    // Calc relative position
     const x =
       elementRect.left +
       (markerRect.left - mirrorRect.left) +
@@ -114,21 +103,17 @@ export function getCaretCoordinatesContentEditable(
   if (!selection || selection.rangeCount === 0) {
     return { x: 0, y: 0, height: 16 };
   }
-
   const range = selection.getRangeAt(0);
   const rect = range.getBoundingClientRect();
-
   if (rect.width === 0 && rect.height === 0) {
-    // Fallback: create a temporary element at caret position
+    // Fallback: create a temp element at caret position
     const marker = document.createElement("span");
     marker.style.position = "absolute";
     marker.textContent = "|";
-
     try {
       range.insertNode(marker);
       const markerRect = marker.getBoundingClientRect();
       marker.remove();
-
       return {
         x: markerRect.left,
         y: markerRect.top,
@@ -144,7 +129,6 @@ export function getCaretCoordinatesContentEditable(
       };
     }
   }
-
   return {
     x: rect.left,
     y: rect.top,
@@ -164,14 +148,11 @@ export function calculateMenuPosition(
   }
 ): { x: number; y: number; placement: "above" | "below" } {
   const padding = 8;
-
   // Check if menu fits below caret
   const spaceBelow = viewport.height - (caretPos.y + caretPos.height);
   const spaceAbove = caretPos.y;
-
   let y: number;
   let placement: "above" | "below";
-
   if (spaceBelow >= menuSize.height + padding) {
     // Place below
     y = caretPos.y + caretPos.height + padding;
@@ -188,17 +169,14 @@ export function calculateMenuPosition(
     );
     placement = "below";
   }
-
   // Horizontal positioning
   let x = caretPos.x;
-
-  // Ensure menu doesn't go off-screen horizontally
+  // menu should not go off-screen horizontally
   if (x + menuSize.width > viewport.width - padding) {
     x = viewport.width - menuSize.width - padding;
   }
   if (x < padding) {
     x = padding;
   }
-
   return { x, y, placement };
 }

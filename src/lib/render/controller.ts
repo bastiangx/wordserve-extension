@@ -35,10 +35,6 @@ export class AutocompleteController {
   private keyboardNavigationActive = false;
 
   constructor(options: AutocompleteControllerOptions) {
-    console.log(
-      "WordServe: Creating controller for element:",
-      options.element.tagName
-    );
     this.element = options.element;
     this.settings = options.settings;
     this.onSelectionMade = options.onSelectionMade;
@@ -49,9 +45,7 @@ export class AutocompleteController {
       this.settings,
       this.createCallbacks()
     );
-
     this.menuRenderer = new AutocompleteMenuRenderer();
-    console.log("WordServe: Controller created successfully");
   }
 
   private createCallbacks(): InputHandlerCallbacks {
@@ -66,10 +60,6 @@ export class AutocompleteController {
   }
 
   private async handleWordChange(context: InputContext): Promise<void> {
-    console.log(
-      "WordServe: handleWordChange called with:",
-      context.currentWord
-    );
     this.currentWord = context.currentWord;
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
@@ -115,11 +105,6 @@ export class AutocompleteController {
     suggestions: Suggestion[],
     context: InputContext
   ): void {
-    console.log(
-      "WordServe: showSuggestions called with:",
-      suggestions.length,
-      "suggestions"
-    );
     if (
       this.settings.abbreviationsEnabled &&
       this.settings.abbreviationInsertMode === "space"
@@ -143,7 +128,6 @@ export class AutocompleteController {
       }
     }
     if (suggestions.length === 0) {
-      console.log("WordServe: No suggestions, hiding menu");
       this.hideMenu();
       return;
     }
@@ -305,14 +289,6 @@ export class AutocompleteController {
   }
 
   private handleNumberSelection(index: number): void {
-    console.log(
-      "WordServe: Number selection for index:",
-      index,
-      "visible:",
-      this.isVisible,
-      "suggestions:",
-      this.suggestions.length
-    );
     if (!this.isVisible || this.suggestions.length === 0) return;
     if (index >= 0 && index < this.suggestions.length) {
       const suggestion = this.suggestions[index];
@@ -334,19 +310,11 @@ export class AutocompleteController {
   }
 
   private handleBackspace(context: InputContext, event: any): void {
-    console.log(
-      "WordServe handleBackspace - checking at current position:",
-      context.caretPosition
-    );
     const state = smartBackspace.canRestore(
       context.element,
       context.caretPosition
     );
     if (state) {
-      console.log(
-        "WordServe handleBackspace - preventing default, restoring:",
-        state
-      );
       event.preventDefault();
       event.stopPropagation();
       smartBackspace.restore(context.element, state);

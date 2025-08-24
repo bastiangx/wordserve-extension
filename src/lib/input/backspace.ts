@@ -16,7 +16,7 @@ export class SmartBackspace {
     position: number
   ): void {
     const elementId = this.getElementId(element);
-    
+
     // Store only the most recent commit for this element
     this.elementStates.set(elementId, {
       lastCommittedWord: committedWord,
@@ -25,19 +25,11 @@ export class SmartBackspace {
       elementId: elementId,
       timestamp: Date.now(),
     });
-
-    console.log("WordServe: SmartBackspace recorded commit:", {
-      committedWord,
-      originalWord,
-      position,
-      elementId,
-    });
   }
 
   public invalidateForElement(element: HTMLElement): void {
     const elementId = this.getElementId(element);
     this.elementStates.delete(elementId);
-    console.log("WordServe: SmartBackspace invalidated for element:", elementId);
   }
 
   public canRestore(
@@ -46,19 +38,13 @@ export class SmartBackspace {
   ): SmartBackspaceState | null {
     const elementId = this.getElementId(element);
     const state = this.elementStates.get(elementId);
-
     if (!state) {
-      console.log("WordServe: SmartBackspace - no state found for element:", elementId);
       return null;
     }
-
     // Check if the current position is exactly at the end of the committed word
     if (currentPosition === state.commitPosition) {
-      console.log("WordServe: SmartBackspace - can restore:", state);
       return state;
     }
-
-    console.log("WordServe: SmartBackspace - position mismatch. Current:", currentPosition, "Expected:", state.commitPosition);
     return null;
   }
 
@@ -71,7 +57,7 @@ export class SmartBackspace {
     } else if (this.isContentEditable(element)) {
       this.restoreInContentEditable(element, state);
     }
-    
+
     // Remove the state after successful restore
     const elementId = this.getElementId(element);
     this.elementStates.delete(elementId);

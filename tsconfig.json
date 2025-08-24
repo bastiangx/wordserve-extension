@@ -2,10 +2,8 @@
   "extends": "./.wxt/tsconfig.json",
   "compilerOptions": {
     "allowImportingTsExtensions": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "types": ["bun-types"]
   },
-  "exclude": [
-    "ws-obsidian/**/*",
-    "wordserve/**/*"
-  ]
+  "exclude": ["ws-obsidian/**/*", "wordserve/**/*"]
 }
