@@ -55,18 +55,6 @@ export class WordServeDownloader {
     }
   }
 
-  private async getLatestRelease(): Promise<GitHubRelease> {
-    const response = await fetch(
-      `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`
-    );
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch release info: ${response.status} ${response.statusText}`
-      );
-    }
-    return await response.json();
-  }
-
   // Downloads a file and saves it to outputPath
   private async downloadFile(
     url: string,
