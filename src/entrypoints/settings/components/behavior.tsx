@@ -36,7 +36,7 @@ export function BehaviorSettings({
           <div className="space-y-8">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <Label>
+                <Label className="text-base">
                   Abbreviations
                   <TooltipProvider>
                     <Tooltip>
@@ -78,7 +78,7 @@ export function BehaviorSettings({
             </div>
             <div className="flex justify-between">
               <div className="space-y-2">
-                <Label>
+                <Label className="text-base">
                   Abbrv. insert mode
                   <TooltipProvider>
                     <Tooltip>
@@ -132,7 +132,7 @@ export function BehaviorSettings({
             <Separator />
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <Label>Smart backspace</Label>
+                <Label className="text-base">Smart backspace</Label>
                 <p className="text-xs font-mono text-muted-foreground lg:max-w-[65ch] max-w-[45ch]">
                   Restores original text when backspacing over an inserted
                   word

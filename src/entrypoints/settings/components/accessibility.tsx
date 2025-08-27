@@ -32,7 +32,7 @@ export function AccessibilitySettings({
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <Label>
+                <Label className="text-base">
                   Bold suffix
                   <TooltipProvider>
                     <Tooltip>
@@ -74,7 +74,7 @@ export function AccessibilitySettings({
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <Label>
+                <Label className="text-base">
                   Bold prefix
                   <TooltipProvider>
                     <Tooltip>
@@ -112,7 +112,7 @@ export function AccessibilitySettings({
             <Separator />
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <Label>Uppercase letters</Label>
+                <Label className="text-base">Uppercase letters</Label>
               </div>
               <Switch
                 checked={pendingSettings.uppercaseSuggestions}
@@ -129,7 +129,7 @@ export function AccessibilitySettings({
 
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <Label>Dyslexic-friendly font</Label>
+                <Label className="text-base">Use OpenDyslexic font</Label>
               </div>
               <Switch
                 checked={pendingSettings.dyslexicFont || false}

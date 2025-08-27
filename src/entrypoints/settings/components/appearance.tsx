@@ -80,7 +80,7 @@ export function AppearanceSettings({
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <div className="space-y-1">
-                <Label htmlFor="theme">Theme</Label>
+                <Label className="text-base" htmlFor="theme">Theme</Label>
               </div>
               <Select
                 value={(pendingSettings.theme as ThemeId) ?? "dark"}
@@ -118,7 +118,7 @@ export function AppearanceSettings({
             {/* Font family */}
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <Label>Menu text font</Label>
+                <Label className="text-base">Menu text font</Label>
                 <Select
                   value={
                     (pendingSettings.fontFamilyList?.[0] as any) || "Geist Mono"
@@ -141,7 +141,7 @@ export function AppearanceSettings({
               </div>
               <div className="flex items-center justify-between gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="customFontList">Use local font</Label>
+                  <Label className="text-base" htmlFor="customFontList">Use local font</Label>
                   <p className="text-xs font-mono text-muted-foreground max-w-[28ch]">
                     Has to be installed on your system
                   </p>
@@ -160,7 +160,7 @@ export function AppearanceSettings({
 
             <div className="flex justify-between items-center">
               <div className="space-y-1">
-                <Label htmlFor="fontSize">Font size [px]</Label>
+                <Label className="text-base" htmlFor="fontSize">Font size [px]</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -215,7 +215,7 @@ export function AppearanceSettings({
 
             <div className="flex justify-between items-center">
               <div className="space-y-1">
-                <Label htmlFor="fontWeight">Font weight</Label>
+                <Label className="text-base" htmlFor="fontWeight">Font weight</Label>
               </div>
               <Select
                 value={pendingSettings.fontWeight}
@@ -246,7 +246,7 @@ export function AppearanceSettings({
           <div className="space-y-8">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <Label>Compact mode</Label>
+                <Label className="text-base">Compact mode</Label>
                 <p className="text-xs font-mono text-muted-foreground">
                   Reduces spacing and padding
                 </p>
@@ -263,7 +263,7 @@ export function AppearanceSettings({
 
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <Label>Ranking number position</Label>
+                <Label className="text-base">Ranking number position</Label>
                 <p className="text-xs font-mono text-muted-foreground">
                   Relative to the suggestion texts
                 </p>
@@ -286,7 +286,7 @@ export function AppearanceSettings({
 
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <Label>Ranking render override</Label>
+                <Label className="text-base">Ranking render override</Label>
                 <p className="text-xs font-mono text-muted-foreground lg:max-w-[65ch] max-w-[45ch] ">
                   Always show rankings even when digit selection is off
                 </p>
@@ -303,7 +303,7 @@ export function AppearanceSettings({
 
             <div className="flex items-center justify-between">
               <div>
-                <Label>Bordered menu</Label>
+                <Label className="text-base">Bordered menu</Label>
               </div>
               <Switch
                 checked={pendingSettings.menuBorder}
@@ -314,7 +314,7 @@ export function AppearanceSettings({
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label>Rounded corners</Label>
+                <Label className="text-base">Rounded corners</Label>
               </div>
               <Switch
                 checked={pendingSettings.menuBorderRadius}
@@ -328,7 +328,7 @@ export function AppearanceSettings({
 
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <Label>Prefix intensity</Label>
+                <Label className="text-base">Prefix intensity</Label>
                 <Select
                   value={pendingSettings.accessibility.prefixColorIntensity}
                   onValueChange={(
@@ -353,7 +353,7 @@ export function AppearanceSettings({
               </div>
 
               <div className="flex items-center justify-between">
-                <Label>Suffix intensity</Label>
+                <Label className="text-base">Suffix intensity</Label>
                 <Select
                   value={pendingSettings.accessibility.suffixColorIntensity}
                   onValueChange={(
@@ -381,7 +381,7 @@ export function AppearanceSettings({
 
               <div className="flex flex-col gap-6">
                 <div className="flex items-center gap-3">
-                  <Label className="min-w-[120px]">Custom prefix color</Label>
+                  <Label className="min-w-[120px] text-base">Custom prefix color</Label>
                   <Input
                     type="color"
                     value={
@@ -409,7 +409,7 @@ export function AppearanceSettings({
                   </Button>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Label className="min-w-[120px]">Custom suffix color</Label>
+                  <Label className="min-w-[120px] text-base">Custom suffix color</Label>
                   <Input
                     type="color"
                     value={

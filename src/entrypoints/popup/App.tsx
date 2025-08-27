@@ -1,4 +1,4 @@
-import { Plus, Power, Shield, ShieldOff, X, CheckCheck } from "lucide-react";
+import { Plus, Power, Shield, ShieldOff, X, CheckCheck, HeartPlus } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { FaGithub } from "react-icons/fa";
 import { browser } from "wxt/browser";
+
 import {
   type DomainSettings,
   matchesDomainPattern,
@@ -348,10 +349,8 @@ export default function App() {
           className="flex-1 hover:bg-interaction hover:text-interaction-foreground"
           onClick={() => window.open("https://ko-fi.com/bastiangx", "_blank")}
         >
-          <img
-            className="h-6 w-6 mr-2"
-            src="https://files.catbox.moe/f8y8k0.png"
-          />
+
+          <HeartPlus />
           Donate!
         </Button>
       </div>

@@ -198,7 +198,7 @@ export function DomainSettingsComponent({
           <div className="space-y-6">
             <div className="flex items-center justify-between ">
               <div className="space-y-2">
-                <Label>Blacklist mode</Label>
+                <Label className="text-base">Blacklist mode</Label>
                 <p className="text-xs font-mono text-muted-foreground lg:max-w-[65ch] max-w-[45ch]">
                   Blacklist mode enables suggestions on all domains except the
                   list below. IF turned off, WordServe will only work on the

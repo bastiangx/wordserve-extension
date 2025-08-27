@@ -78,7 +78,7 @@ export function GeneralSettings({
           <div className="space-y-8">
             <div className="flex justify-between items-center">
               <div className="space-y-2">
-                <Label htmlFor="minWordLength">Minimum word length</Label>
+                <Label className="text-base" htmlFor="minWordLength">Minimum word length</Label>
                 <p className="font-mono text-xs text-muted-foreground lg:max-w-[65ch] max-w-[45ch] ">
                   Type these many letters to see suggestions
                 </p>
@@ -130,7 +130,7 @@ export function GeneralSettings({
 
             <div className="flex justify-between items-center">
               <div className="space-y-2">
-                <Label htmlFor="maxSuggestions">Suggestions count</Label>
+                <Label className="text-base" htmlFor="maxSuggestions">Suggestions count</Label>
                 <p className="text-xs font-mono text-muted-foreground">
                   Number of suggestions to show in menu
                 </p>
@@ -185,7 +185,7 @@ export function GeneralSettings({
 
             <div className="flex justify-between items-center">
               <div className="space-y-2">
-                <Label htmlFor="debounceTime">
+                <Label className="text-base"  htmlFor="debounceTime">
                   Response delay (ms)
                   <TooltipProvider>
                     <Tooltip>

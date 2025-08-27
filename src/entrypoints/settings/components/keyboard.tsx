@@ -28,7 +28,7 @@ export function KeyboardSettings({
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <Label>Digit selection</Label>
+                <Label className="text-base">Digit selection</Label>
                 <p className="text-xs font-mono text-muted-foreground">
                   Use [1-9] keys to insert a word quickly
                 </p>
@@ -45,7 +45,7 @@ export function KeyboardSettings({
 
             <div className="flex justify-between items-center">
               <div className="space-y-1">
-                <Label>Insert without space</Label>
+                <Label className="text-base">Insert without space</Label>
               </div>
               <div className="flex gap-2 font-mono">
                 <Select
@@ -101,7 +101,7 @@ export function KeyboardSettings({
 
             <div className="flex justify-between items-center">
               <div className="space-y-1">
-                <Label>Insert with space</Label>
+                <Label className="text-base">Insert with space</Label>
               </div>
               <div className="flex gap-2 font-mono">
                 <Select

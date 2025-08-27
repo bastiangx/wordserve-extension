@@ -14,8 +14,8 @@ export type ThemeId =
   | "darling";
 
 export const DARK_THEMES: { id: ThemeId; label: string }[] = [
-  { id: "dark", label: "Rosé Pine (dark)" },
-  { id: "catppuccin-mocha", label: "Catppuccin Mocha" },
+  { id: "dark", label: "Rosé Pine" },
+  { id: "catppuccin-mocha", label: "Catppuccin (Mocha)" },
   { id: "iv-spade", label: "IV spade" },
   { id: "iceberg-dark", label: "Iceberg dark" },
   { id: "nord-dark", label: "Nord dark" },
@@ -25,9 +25,9 @@ export const DARK_THEMES: { id: ThemeId; label: string }[] = [
 ];
 
 export const LIGHT_THEMES: { id: ThemeId; label: string }[] = [
-  { id: "light", label: "Rosé Pine (light)" },
-  { id: "iceberg-light", label: "Iceberg light" },
-  { id: "nord-light", label: "Nord light" },
+  { id: "light", label: "Rosé Pine (Dawn)" },
+  { id: "iceberg-light", label: "Iceberg" },
+  { id: "nord-light", label: "Nord" },
   { id: "blueberry", label: "Blueberry" },
   { id: "darling", label: "Darling" },
 ];

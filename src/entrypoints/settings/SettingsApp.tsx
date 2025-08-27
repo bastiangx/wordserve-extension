@@ -98,7 +98,7 @@ const menuItems = [
     id: "accessibility",
     label: "Accessibility",
     icon: Glasses,
-    desc: "Various accessiblity improvements",
+    desc: "Various accessiblity options",
   },
 ];
 
@@ -314,12 +314,12 @@ function SettingsApp() {
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel className="font-mono">Settings</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {menuItems.map((item) => (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
+                      className="text-base"
                       isActive={activeSection === item.id}
                       onClick={() => setActiveSection(item.id)}
                     >
@@ -367,8 +367,10 @@ function SettingsApp() {
             </SidebarGroupContent>
           </SidebarGroup>
 
+          <Separator  />
+
           <SidebarGroup>
-            <SidebarGroupLabel className="font-mono">Live preview</SidebarGroupLabel>
+            <SidebarGroupLabel className="font-mono pl-2">Live preview</SidebarGroupLabel>
             <SidebarGroupContent>
               <div className="p-2">
                 <MenuPreview settings={pendingSettings} className="w-full" />
@@ -394,7 +396,7 @@ function SettingsApp() {
                         className="h-16 w-16 mb-6 "
                         src="https://files.catbox.moe/aw4243.gif"
                       />
-                      Donate!
+                      Support the project!
                     </Button>
                     <Label className="text-xs text-muted-foreground flex items-center gap-1 select-none pointer-events-none">
                       Made with{" "}
@@ -432,8 +434,7 @@ function SettingsApp() {
         </header>
 
         <div className="flex flex-1 flex-col gap-3 p-3">
-          <div className="mb-2">
-            <h1 className="text-2xl font-bold mb-1">{currentSection?.label}</h1>
+          <div className="m-2">
             <h4 className="text-sm text-muted-foreground">
               {currentSection?.desc}
             </h4>

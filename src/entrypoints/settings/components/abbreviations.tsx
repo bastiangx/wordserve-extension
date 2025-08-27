@@ -183,7 +183,7 @@ export function AbbreviationsSettings({
           setTimeout(() => URL.revokeObjectURL(url), 2000);
           toast.success("Exported abbreviations");
           return;
-        } catch (e) {}
+        } catch (e) { }
       }
       const a = document.createElement("a");
       a.href = url;
@@ -290,7 +290,7 @@ export function AbbreviationsSettings({
           <div key={row.id} className="rounded-md border p-4 space-y-3">
             <div className="grid grid-cols-12 gap-4 items-start">
               <div className="col-span-12 md:col-span-3 space-y-4">
-                <Label className="font-mono" htmlFor={`abbr-key-${row.id}`}>Shortcut</Label>
+                <Label className="font-mono text-gray-400" htmlFor={`abbr-key-${row.id}`}>Shortcut</Label>
                 <Input
                   className="font-mono text-sm"
                   id={`abbr-key-${row.id}`}
@@ -310,7 +310,7 @@ export function AbbreviationsSettings({
                 />
               </div>
               <div className="col-span-12 md:col-span-8 space-y-4">
-                <Label className="font-mono" htmlFor={`abbr-val-${row.id}`}>Target phrase</Label>
+                <Label className="font-mono text-gray-400 pt-2 " htmlFor={`abbr-val-${row.id}`}>Target phrase</Label>
                 <ScrollArea className="max-h-48  font-mono">
                   <Textarea
                     id={`abbr-val-${row.id}`}
