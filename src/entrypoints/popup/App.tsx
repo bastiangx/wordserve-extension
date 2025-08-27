@@ -336,7 +336,14 @@ export default function App() {
   const getDisplayHostname = (hostname: string): string => {
     if (!hostname) return "empty";
     if (isExtensionId(hostname)) return "N/A";
-    return hostname;
+    // Strip leading www.
+    let display = hostname.replace(/^www\./i, "");
+    // clamp
+    const MAX_LEN = 28;
+    if (display.length > MAX_LEN) {
+      display = display.slice(0, MAX_LEN - 1) + "\u2026"; // …
+    }
+    return display;
   };
   const currentList = domainSettings.blacklistMode
     ? domainSettings.blacklist
@@ -397,24 +404,38 @@ export default function App() {
         </div>
 
         {currentHost && (
-          <div className="border rounded p-2 space-y-2 justify-items-center">
-            <div className="text-xs text-muted-foreground">
-              current:{" "}
-              <Badge variant="outline" className="text-xs">
-                {protectedPage ? "N/A" : getDisplayHostname(currentHost)}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <div
-                className={`flex items-center gap-1.5 text-xs px-1.5 py-0.5 rounded border ${
+          <div className="space-y-2 p-2">
+            <Button
+              type="button"
+              variant="outline"
+              className={`w-full h-8 justify-start gap-2 font-mono min-w-0 ${
+                isExtensionId(currentHost) || protectedPage
+                  ? "text-muted-foreground opacity-70"
+                  : isDomainEnabled()
+                  ? "text-foreground"
+                  : "text-muted-foreground opacity-60"
+              }`}
+              title={protectedPage ? "N/A" : currentHost}
+            >
+              <span
+                className={`flex items-center gap-1.5 text-[11px] px-1.5 py-0.5 rounded  flex-none ${
                   isExtensionId(currentHost)
                     ? "bg-background text-muted-foreground border-muted"
                     : protectedPage
                     ? "bg-background text-muted-foreground border-muted"
                     : isDomainEnabled()
-                    ? "bg-background text-success-foreground border-success"
+                    ? "bg-background"
                     : "bg-background text-error-foreground border/10"
                 }`}
+                aria-label={
+                  isExtensionId(currentHost)
+                    ? "Extension"
+                    : protectedPage
+                    ? "Protected"
+                    : isDomainEnabled()
+                    ? "Active"
+                    : "Inactive"
+                }
               >
                 {isExtensionId(currentHost) ? (
                   <Shield className="h-3 w-3" />
@@ -425,15 +446,12 @@ export default function App() {
                 ) : (
                   <X className="h-3 w-3" />
                 )}
-                {isExtensionId(currentHost)
-                  ? "Extension"
-                  : protectedPage
-                  ? "Protected"
-                  : isDomainEnabled()
-                  ? "Active"
-                  : "Inactive"}
-              </div>
-            </div>
+              </span>
+              <span className="text-xs truncate flex-1 min-w-0">
+                {protectedPage ? "N/A" : getDisplayHostname(currentHost)}
+              </span>
+            </Button>
+
             {!isExtensionId(currentHost) &&
               !protectedPage &&
               (() => {
@@ -448,9 +466,8 @@ export default function App() {
                     size="sm"
                     variant="outline"
                     className="
-                      w-full h-7 text-xs 
-                      text-destructive 
-                      hover:bg-destructive hover:text-card"
+                    font-mono
+                    w-full h-7 text-destructive hover:bg-destructive hover:text-card"
                   >
                     {buttonState.buttonText}
                   </Button>
@@ -461,7 +478,7 @@ export default function App() {
 
         <div className="border rounded p-2 space-y-2">
           <div className="flex items-center justify-between">
-            <Label className="text-xs">
+            <Label className="text-sm">
               {domainSettings.blacklistMode
                 ? "Blacklist mode"
                 : "Whitelist mode"}
@@ -534,7 +551,7 @@ export default function App() {
           </div>
         </div>
 
-        <Button onClick={openSettings} className="w-full h-7 text-xs">
+        <Button onClick={openSettings} className="w-full h-7 text-sm font-mono">
           Open Settings
         </Button>
       </div>
