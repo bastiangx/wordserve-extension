@@ -1,4 +1,12 @@
-import { Plus, Power, Shield, ShieldOff, X, CheckCheck, HeartPlus } from "lucide-react";
+import {
+  Plus,
+  Power,
+  Shield,
+  ShieldOff,
+  X,
+  CheckCheck,
+  HeartPlus,
+} from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +23,7 @@ import {
   matchesDomainPattern,
   validateUserDomainInput,
   isExtensionId,
+  isProtectedUrl,
 } from "@/lib/domains";
 import "../../globals.css";
 import "./App.css";
@@ -22,8 +31,10 @@ import "./App.css";
 const LOGO_URL = "icon/96.png";
 
 export default function App() {
+  const [protectedPage, setProtectedPage] = useState(false);
   const [globalEnabled, setGlobalEnabled] = useState(true);
   const [currentHost, setCurrentHost] = useState("");
+  const [, setCurrentUrl] = useState("");
   const [domainSettings, setDomainSettings] = useState<DomainSettings>({
     blacklistMode: true,
     blacklist: [],
@@ -51,8 +62,10 @@ export default function App() {
       currentWindow: true,
     });
     const url = tabs[0]?.url || "";
+    setCurrentUrl(url);
     const host = new URL(url).hostname || "";
     setCurrentHost(host);
+    setProtectedPage(isProtectedUrl(url));
   };
   const toggleGlobal = async (val: boolean) => {
     setGlobalEnabled(val);
@@ -65,7 +78,7 @@ export default function App() {
             type: "wordserve-toggle",
             enabled: val,
           });
-        } catch (error) { }
+        } catch (error) {}
       }
     }
   };
@@ -85,7 +98,7 @@ export default function App() {
             type: "settingsUpdated",
             settings: updated,
           });
-        } catch (error) { }
+        } catch (error) {}
       }
     }
   };
@@ -126,7 +139,7 @@ export default function App() {
             type: "settingsUpdated",
             settings: updated,
           });
-        } catch { }
+        } catch {}
       }
     }
 
@@ -141,7 +154,7 @@ export default function App() {
           type: "settingsUpdated",
           settings: updated,
         });
-      } catch (error) { }
+      } catch (error) {}
     }
   };
 
@@ -166,7 +179,7 @@ export default function App() {
             type: "settingsUpdated",
             settings: updated,
           });
-        } catch { }
+        } catch {}
       }
     }
 
@@ -188,6 +201,10 @@ export default function App() {
 
   const addCurrentDomain = async () => {
     if (!currentHost) return;
+    if (protectedPage) return;
+    // Validate and normalize the host before adding
+    const valid = validateUserDomainInput(currentHost);
+    if (!valid.ok) return;
     let newDomainSettings = { ...domainSettings };
     if (domainSettings.blacklistMode) {
       // Adding to blacklist - remove from whitelist if exists
@@ -203,7 +220,7 @@ export default function App() {
       ) {
         // Newest first: prepend
         newDomainSettings.blacklist = [
-          currentHost,
+          valid.value,
           ...newDomainSettings.blacklist,
         ];
       }
@@ -219,7 +236,7 @@ export default function App() {
         )
       ) {
         newDomainSettings.whitelist = [
-          currentHost,
+          valid.value,
           ...newDomainSettings.whitelist,
         ];
       }
@@ -241,7 +258,7 @@ export default function App() {
           type: "domainSettingsChanged",
           settings: newDomainSettings,
         });
-      } catch (error) { }
+      } catch (error) {}
     }
   };
 
@@ -286,7 +303,7 @@ export default function App() {
           type: "domainSettingsChanged",
           settings: newDomainSettings,
         });
-      } catch (error) { }
+      } catch (error) {}
     }
   };
 
@@ -349,7 +366,6 @@ export default function App() {
           className="flex-1 hover:bg-interaction hover:text-interaction-foreground"
           onClick={() => window.open("https://ko-fi.com/bastiangx", "_blank")}
         >
-
           <HeartPlus />
           Donate!
         </Button>
@@ -385,19 +401,24 @@ export default function App() {
             <div className="text-xs text-muted-foreground">
               current:{" "}
               <Badge variant="outline" className="text-xs">
-                {getDisplayHostname(currentHost)}
+                {protectedPage ? "N/A" : getDisplayHostname(currentHost)}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <div
-                className={`flex items-center gap-1.5 text-xs px-1.5 py-0.5 rounded border ${isExtensionId(currentHost)
-                  ? "bg-background text-muted-foreground border-muted"
-                  : isDomainEnabled()
+                className={`flex items-center gap-1.5 text-xs px-1.5 py-0.5 rounded border ${
+                  isExtensionId(currentHost)
+                    ? "bg-background text-muted-foreground border-muted"
+                    : protectedPage
+                    ? "bg-background text-muted-foreground border-muted"
+                    : isDomainEnabled()
                     ? "bg-background text-success-foreground border-success"
                     : "bg-background text-error-foreground border/10"
-                  }`}
+                }`}
               >
                 {isExtensionId(currentHost) ? (
+                  <Shield className="h-3 w-3" />
+                ) : protectedPage ? (
                   <Shield className="h-3 w-3" />
                 ) : isDomainEnabled() ? (
                   <CheckCheck className="h-3 w-3" />
@@ -406,12 +427,15 @@ export default function App() {
                 )}
                 {isExtensionId(currentHost)
                   ? "Extension"
+                  : protectedPage
+                  ? "Protected"
                   : isDomainEnabled()
-                    ? "Active"
-                    : "Inactive"}
+                  ? "Active"
+                  : "Inactive"}
               </div>
             </div>
             {!isExtensionId(currentHost) &&
+              !protectedPage &&
               (() => {
                 const buttonState = getDomainButtonState();
                 return (

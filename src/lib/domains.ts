@@ -151,47 +151,52 @@ export function isExtensionId(hostname: string): boolean {
 
 export function isProtectedPage(hostname: string): boolean {
   const url = window.location.href.toLowerCase();
-  const host = normalizeHostname(hostname);
-  // Allow our own extension pages (settings, popup, etc.)
+  return isProtectedUrl(url);
+}
+
+/**
+ * If a given URL is protected or non webpage where the
+ * extension should not work (e.g., new tab, settings, internal).
+ * Own extension settings pages are explicitly allowed.
+ */
+export function isProtectedUrl(urlRaw: string): boolean {
+  if (!urlRaw) return true;
+  const url = urlRaw.toLowerCase();
   try {
     if (browser?.runtime?.getURL) {
-      const extensionBaseUrl = browser.runtime.getURL("").toLowerCase();
-      if (url.startsWith(extensionBaseUrl)) {
-        return false;
-      }
+      const base = browser.runtime.getURL("").toLowerCase();
+      if (base && url.startsWith(base)) return false;
     }
-  } catch (e) { }
-  if (isExtensionId(host)) {
-    try {
-      if (browser?.runtime?.getURL) {
-        const extensionBaseUrl = browser.runtime.getURL("").toLowerCase();
-        const ownExtensionId = extensionBaseUrl.match(
-          /chrome-extension:\/\/([^\/]+)/
-        )?.[1];
+  } catch {}
 
-        if (ownExtensionId && host === ownExtensionId) {
-          return false;
-        }
-      }
-    } catch (e) { }
-  }
-
+  // Common protected schemes and vendor internal pages
   const protectedSchemes = [
+    "about:",
     "chrome://",
+    "chrome-untrusted://",
+    "chrome-search://",
+    "edge://",
+    "opera://",
+    "vivaldi://",
+    "brave://",
     "moz-extension://",
     "ms-browser-extension://",
-    "edge://",
-    "about:",
+    "chrome-extension://",
     "file://",
     "data:",
     "javascript:",
-    "chrome-search://",
     "chrome-devtools://",
     "devtools://",
     "view-source:",
   ];
-  if (protectedSchemes.some((p) => url.startsWith(p))) return true;
-  return isExtensionId(host);
+  // If it's another extension (chrome-extension://) but not ours, treat as protected.
+  if (protectedSchemes.some((p) => url.startsWith(p))) {
+    return true;
+  }
+  if (url === "about:newtab" || url === "about:home" || url === "about:blank") {
+    return true;
+  }
+  return false;
 }
 
 export function shouldActivateForDomain(
@@ -293,7 +298,7 @@ export function scanPageSensitivity(): SensitivityResult {
         reasons.push(`payment iframe (${host})`);
         break;
       }
-    } catch { }
+    } catch {}
   }
   if (location.protocol === "https:") {
     if (creditCount >= 2) {

@@ -6,6 +6,7 @@ let matchesDomainPattern: any;
 let validateUserDomainInput: any;
 let shouldActivateForDomain: any;
 let scanPageSensitivity: any;
+let isProtectedUrl: any;
 
 describe("domains", () => {
   beforeEach(async () => {
@@ -22,6 +23,7 @@ describe("domains", () => {
     validateUserDomainInput = mod.validateUserDomainInput;
     shouldActivateForDomain = mod.shouldActivateForDomain;
     scanPageSensitivity = mod.scanPageSensitivity;
+  isProtectedUrl = mod.isProtectedUrl;
   });
   test("matchesDomainPattern exact and wildcard", () => {
     expect(matchesDomainPattern("example.com", "example.com")).toBe(true);
@@ -55,6 +57,15 @@ describe("domains", () => {
     };
     expect(shouldActivateForDomain("foo.com", settings)).toBe(true);
     expect(shouldActivateForDomain("a.bank.com", settings)).toBe(false);
+  });
+
+  test("isProtectedUrl covers new tab and internal pages", () => {
+    expect(isProtectedUrl("about:newtab")).toBe(true);
+    expect(isProtectedUrl("about:home")).toBe(true);
+    expect(isProtectedUrl("about:blank")).toBe(true);
+    expect(isProtectedUrl("chrome://new-tab-page")).toBe(true);
+    expect(isProtectedUrl("edge://newtab")).toBe(true);
+    expect(isProtectedUrl("https://example.com")).toBe(false);
   });
 
   test("scanPageSensitivity detects password and payment cues", () => {
