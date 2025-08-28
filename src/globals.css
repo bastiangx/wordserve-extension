@@ -7,20 +7,20 @@
 
 @layer base {
   :root {
-    /* Rosépine color scheme - official HSL values */
+    /* Rosépine + Catppuccin */
     --background: 249 22% 12%; /* #191724 base */
     --foreground: 245 50% 91%; /* #e0def4 text */
     --card: 247 23% 15%; /* #1f1d2e surface */
     --card-foreground: 245 50% 91%; /* #e0def4 text */
     --popover: 248 25% 18%; /* #26233a overlay */
     --popover-foreground: 245 50% 91%; /* #e0def4 text */
-    --primary: 189 43% 73%; /* #9ccfd8 foam */
+    --primary: 228, 24%, 72%; /* #6c7086 overlay1 */
     --primary-foreground: 249 22% 12%; /* #191724 base */
-    --secondary: 267 57% 78%; /* #c4a7e7 iris */
+    --secondary: 0, 59%, 88%; /* #f2cdcd flamingo */
     --secondary-foreground: 249 22% 12%; /* #191724 base */
     --muted: 249 12% 47%; /* #6e6a86 muted */
     --muted-foreground: 248 15% 61%; /* #908caa subtle */
-    --accent: 189 43% 73%; /* #9ccfd8 foam */
+    --accent: 232, 97%, 85%; /* #b4befe lavendar */
     --accent-foreground: 249 22% 12%; /* #191724 base */
     --destructive: 343 76% 68%; /* #eb6f92 love */
     --destructive-foreground: 245 50% 91%; /* #e0def4 text */
@@ -31,7 +31,7 @@
     --border: 248 25% 18%; /* #26233a overlay */
     --input: 247 23% 15%; /* #1f1d2e surface */
     --ring: 189 43% 73%; /* #9ccfd8 foam */
-    --interaction: 253 12% 26%; /* #393552 Rose Pine interaction overlay */
+    --interaction: 253 12% 26%; /* #393552 interaction overlay */
     --interaction-foreground: 245 50% 91%; /* #e0def4 text */
     --radius: 6px;
     --sidebar-background: 0 0% 98%;

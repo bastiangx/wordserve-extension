@@ -120,7 +120,7 @@ export function AppearanceSettings({
             {/* Font family */}
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <Label className="text-base">Menu text font</Label>
+                <Label className="text-base">Text font</Label>
                 <Select
                   value={
                     (pendingSettings.fontFamilyList?.[0] as any) ||
@@ -144,20 +144,6 @@ export function AppearanceSettings({
                     <SelectItem value="Monaco">Monaco</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <Label className="text-base">Use OpenDyslexic font</Label>
-                </div>
-                <Switch
-                  checked={pendingSettings.accessibility.dyslexicFont || false}
-                  onCheckedChange={(checked) =>
-                    updatePendingSetting("accessibility", {
-                      ...pendingSettings.accessibility,
-                      dyslexicFont: checked,
-                    })
-                  }
-                />
               </div>
               <div className="flex items-center justify-between gap-3">
                 <div className="space-y-2">

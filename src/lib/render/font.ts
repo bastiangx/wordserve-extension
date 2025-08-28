@@ -37,7 +37,7 @@ export function buildFontFamilyFromConfig(settings: {
   const allowedCatalog = new Set([
     "JetBrains Mono",
     "Atkinson Hyperlegible",
-  "OpenDyslexic",
+    "OpenDyslexic",
     "Monaco",
   ]);
   const selected = (settings.fontFamilyList || [])

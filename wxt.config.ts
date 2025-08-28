@@ -24,8 +24,8 @@ export default defineConfig({
     commands: {
       "wordserve-open-settings": {
         suggested_key: {
-          default: "Ctrl+Shift+V",
-          mac: "Command+Shift+V",
+          default: "Ctrl+Shift+Y",
+          mac: "Command+Shift+Y",
         },
         description: "Open settings page",
       },

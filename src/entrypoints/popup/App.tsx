@@ -444,7 +444,7 @@ export default function App() {
           className="flex-1 hover:bg-interaction hover:text-interaction-foreground"
           onClick={() =>
             window.open(
-              "https://github.com/bastiangx/wordserve-plugin",
+              "https://github.com/bastiangx/wordserve-extension",
               "_blank"
             )
           }
@@ -471,7 +471,7 @@ export default function App() {
             className="px-2 py-2 h-auto justify-start gap-2"
             onClick={() =>
               window.open(
-                "https://github.com/bastiangx/wordserve-plugin",
+                "https://github.com/bastiangx/wordserve-extension",
                 "_blank"
               )
             }
@@ -638,7 +638,7 @@ export default function App() {
         </div>
 
         <Button onClick={openSettings} className="w-full h-7 text-sm font-mono">
-          Open Settings
+          Open settings
         </Button>
       </div>
     </div>
