@@ -12,23 +12,6 @@
   z-index: 999999;
   position: fixed;
   pointer-events: none;
-
-  --ws-bg: #191724; /* base */
-  --ws-surface: #1f1d2e; /* surface */
-  --ws-overlay: #26233a; /* overlay */
-  --ws-fg: #e0def4; /* text */
-  --ws-border: #403d52; /* highlight-med */
-  --ws-hover: #1f1d2e; /* surface */
-  --ws-selected: #21202e; /* highlight-low */
-  --ws-rank-border: #403d52;
-  --ws-scrollbar-thumb: #44415a;
-  --ws-scrollbar-thumb-hover: #908caa;
-
-  /* prefix/suffix intensity palette */
-  --ws-intensity-normal: #e0def4; /* text */
-  --ws-intensity-muted: #c4c1d9; /* slightly muted text */
-  --ws-intensity-faint: #a8a5c3; /* more muted */
-  --ws-intensity-accent: #c4a7e7; /* iris */
 }
 
 /* base theme scopes for reuse outside the injected container (e.g., previews) */
@@ -104,6 +87,9 @@
   overflow-y: auto;
   pointer-events: auto;
   transition: opacity 100ms ease-out, transform 100ms ease-out;
+  /* Firefox: thin scrollbar, invisible by default  */
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
 }
 
 .wordserve-autocomplete-menu.ws-no-mouse,
@@ -142,6 +128,15 @@
 
 .wordserve-autocomplete-menu::-webkit-scrollbar-thumb:hover {
   background: var(--ws-scrollbar-thumb-hover) !important;
+}
+
+/* Firefox: reveal thumb color on hover */
+.wordserve-autocomplete-menu:hover {
+  scrollbar-color: var(--ws-scrollbar-thumb) transparent;
+}
+
+.wordserve-autocomplete-menu.ws-no-mouse:hover {
+  scrollbar-color: transparent transparent !important;
 }
 
 .wordserve-menu-item {
