@@ -301,7 +301,8 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
             className={cn(
               "wordserve-autocomplete-menu",
               settings.menuBorder ? "" : "no-border",
-              settings.menuBorderRadius ? "" : "no-radius"
+              settings.menuBorderRadius ? "" : "no-radius",
+              settings.allowMouseInteractions === false ? "ws-no-mouse" : ""
             )}
             style={{
               fontSize: `${fontSize}px`,
@@ -318,6 +319,8 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                 }),
               maxHeight: "200px",
               overflowY: "auto" as const,
+              pointerEvents:
+                settings.allowMouseInteractions === false ? ("none" as const) : undefined,
             }}
           >
             {suggestions.map((suggestion, index) => {

@@ -78,6 +78,9 @@ export class InputHandler {
   }
 
   private handleInput = (event: Event) => {
+    if (!this.isActive) {
+      return;
+    }
     const context = this.getCurrentContext();
     if (!context) {
       return;
@@ -132,6 +135,28 @@ export class InputHandler {
     const hasAnyModifier = () =>
       event.ctrlKey || event.metaKey || event.altKey || event.shiftKey;
 
+    // Allow these global actions even when inactive
+    if (eventMatchesAny(event as any, this.settings.keyBindings.openSettings)) {
+      event.preventDefault();
+      event.stopPropagation();
+      browser.runtime
+        .sendMessage({ type: "wordserve-open-settings" })
+        .catch(() => {});
+      return;
+    }
+    if (eventMatchesAny(event as any, this.settings.keyBindings.toggleGlobal)) {
+      event.preventDefault();
+      event.stopPropagation();
+      browser.runtime
+        .sendMessage({ type: "wordserve-toggle-global" })
+        .catch(() => {});
+      return;
+    }
+
+    if (!this.isActive) {
+      return;
+    }
+
     // Handle backspace for smart backspace functionality
     if (
       key === "Backspace" &&
@@ -171,23 +196,7 @@ export class InputHandler {
       }
       return;
     }
-    if (eventMatchesAny(event as any, this.settings.keyBindings.openSettings)) {
-      // optional action
-      event.preventDefault();
-      event.stopPropagation();
-      browser.runtime
-        .sendMessage({ type: "wordserve-open-settings" })
-        .catch(() => {});
-      return;
-    }
-    if (eventMatchesAny(event as any, this.settings.keyBindings.toggleGlobal)) {
-      event.preventDefault();
-      event.stopPropagation();
-      browser.runtime
-        .sendMessage({ type: "wordserve-toggle-global" })
-        .catch(() => {});
-      return;
-    }
+  // handled above
 
     // Only handle these keys when menu is visible
     if (!this.menuVisible) {

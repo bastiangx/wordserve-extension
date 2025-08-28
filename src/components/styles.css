@@ -106,6 +106,14 @@
   transition: opacity 100ms ease-out, transform 100ms ease-out;
 }
 
+.wordserve-autocomplete-menu.ws-no-mouse,
+.wordserve-autocomplete-menu.ws-no-mouse * {
+  pointer-events: none !important;
+}
+.wordserve-autocomplete-menu.ws-no-mouse:hover::-webkit-scrollbar-thumb {
+  background: transparent !important;
+}
+
 .wordserve-autocomplete-menu.no-border {
   border-color: transparent !important;
 }
@@ -155,6 +163,10 @@
 
 .wordserve-menu-item:hover {
   background: var(--ws-hover);
+}
+
+.wordserve-autocomplete-menu.ws-no-mouse .wordserve-menu-item:hover {
+  background: inherit !important;
 }
 
 .wordserve-menu-item.selected {

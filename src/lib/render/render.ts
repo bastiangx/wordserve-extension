@@ -88,6 +88,11 @@ export class AutocompleteMenuRenderer {
     const menuEl = this.menu!;
     menuEl.style.fontSize = `${fontSize}px`;
     menuEl.style.fontWeight = fontWeight;
+    // Toggle full mouse disable class
+    menuEl.classList.toggle(
+      "ws-no-mouse",
+      options.allowMouseInteractions === false
+    );
     if (options.dyslexicFont) {
       initOpenDyslexic();
       // If provided, prefix OpenDyslexic to the provided list; else use a sensible default with Geist Mono

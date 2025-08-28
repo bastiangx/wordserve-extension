@@ -18,7 +18,16 @@ export default defineConfig({
       page: "settings.html",
       open_in_tab: true,
     },
-  permissions: ["tabs", "scripting", "storage", "downloads"],
+    permissions: ["tabs", "scripting", "storage", "downloads"],
+    commands: {
+      "wordserve-open-settings": {
+        suggested_key: {
+          default: "Ctrl+Shift+V",
+          mac: "Command+Shift+V",
+        },
+        description: "Open WordServe settings",
+      },
+    },
     ...(manifestVersion === 3
       ? {
           content_security_policy: {

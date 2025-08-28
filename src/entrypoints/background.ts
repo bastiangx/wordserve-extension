@@ -302,6 +302,26 @@ export default defineBackground(() => {
         })();
         return true;
       }
+      if (message.type === "wordserve-open-shortcuts-manager") {
+        (async () => {
+          try {
+            // Prefer native API if available (Firefox)
+            if ((browser as any).commands?.openShortcutSettings) {
+              await (browser as any).commands.openShortcutSettings();
+              sendResponse({ success: true });
+              return;
+            }
+          } catch {}
+          try {
+            // Try Chromium shortcuts page; may be blocked on some versions
+            await browser.tabs.create({ url: "chrome://extensions/shortcuts" });
+            sendResponse({ success: true });
+          } catch (e) {
+            sendResponse({ success: false, error: String(e) });
+          }
+        })();
+        return true;
+      }
       return true;
     }
   );
@@ -315,6 +335,22 @@ export default defineBackground(() => {
       } catch (e) {
         await recordError(`Default settings init failed: ${String(e)}`);
       }
+    }
+  });
+
+  // Commands from manifest (toggle/open settings)
+  browser.commands?.onCommand.addListener(async (command) => {
+    try {
+      if (command === "wordserve-toggle-global") {
+        const data = await browser.storage.sync.get("globalEnabled");
+        const next = !data.globalEnabled;
+        await browser.storage.sync.set({ globalEnabled: next });
+        broadcast("wordserve-toggle", { enabled: next });
+      } else if (command === "wordserve-open-settings") {
+        await browser.runtime.openOptionsPage();
+      }
+    } catch (e) {
+      await recordError(`Command failed: ${String(e)}`);
     }
   });
   (async () => {

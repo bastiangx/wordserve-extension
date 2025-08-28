@@ -7,6 +7,9 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { parseChordString, formatChords } from "@/lib/input/kbd";
+import { Button } from "@/components/ui/button";
+import { browser } from "wxt/browser";
+import { Globe } from "lucide-react";
 
 export interface KeyboardSettingsProps {
   pendingSettings: DefaultConfig;
@@ -42,6 +45,28 @@ export function KeyboardSettings({
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
+                <Label className="text-base">Manage browser shortcuts</Label>
+                <p className="text-xs font-mono text-muted-foreground">
+                  Edit global commands
+                </p>
+              </div>
+              <Button
+                className="font-mono"
+                variant="secondary"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await browser.runtime.sendMessage({
+                      type: "wordserve-open-shortcuts-manager",
+                    });
+                  } catch {}
+                }}
+              >
+                <Globe className="h-4 w-4 mr-2" /> Open manager
+              </Button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
                 <Label className="text-base">Digit selection</Label>
                 <p className="text-xs font-mono text-muted-foreground">
                   Use [1-9] keys to insert a word quickly
@@ -70,7 +95,7 @@ export function KeyboardSettings({
                   Type sequences like <code>cmd+shift+k</code> or{" "}
                   <code>alt+comma</code> <br />
                   To assign multiple keys or combos for an action, separate with
-                  commas: <code>escape, cmd+colon</code>
+                  commas: <code>escape, cmd+semicolon</code>
                   <br />
                   <i>Whitespace is ignored.</i>
                 </p>
@@ -125,8 +150,8 @@ export function KeyboardSettings({
                   <code className="text-muted-foreground">1–9</code> will be
                   reserved for quick insert and can’t be used here, unless you
                   turn digit selection OFF (or use combos like{" "}
-                  <code className="text-muted-foreground">ctrl+1</code>) or{" "}
-                  <code className="text-muted-foreground">cmd+5</code>
+                  <code className="text-muted-foreground">ctrl+1</code> or{" "}
+                  <code className="text-muted-foreground">cmd+5)</code>
                 </div>
               </div>
               {(
@@ -137,7 +162,6 @@ export function KeyboardSettings({
                   ["navDown", "Menu [move Down]", "down"],
                   ["closeMenu", "Close menu", "escape"],
                   ["openSettings", "Open WordServe's settings", "cmd+comma"],
-                  ["toggleGlobal", "Toggle WordServe ON or OFF", "ctrl+alt+w"],
                 ] as const
               ).map(([field, label, placeholder]) => (
                 <div

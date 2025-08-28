@@ -31,6 +31,13 @@ import { Separator } from "@/components/ui/separator";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import {
+  detectEnvironment,
+  validateKeyBindings,
+  formatIssue,
+  findDuplicateKeybinds,
+} from "@/lib/input/validate";
+import type { KeyChord } from "@/lib/input/kbd";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -131,19 +138,235 @@ function SettingsApp() {
       const loadedSettings = result.wordserveSettings
         ? normalizeConfig(result.wordserveSettings)
         : normalizeConfig({});
-      setSettings(loadedSettings);
-      setPendingSettings(loadedSettings);
+      // Merge browser command shortcuts for toggle/open into our settings
+      const merged = await mergeBrowserCommandsIntoSettings(loadedSettings);
+      setSettings(merged);
+      setPendingSettings(merged);
     } catch (error) {
       showNotification("error", "Failed to load settings");
     } finally {
       setIsLoading(false);
     }
   };
+  // Map a browser command shortcut string (e.g., "Ctrl+Shift+Y") into our KeyChord
+  const parseBrowserShortcut = (s?: string | null): KeyChord | null => {
+    if (!s) return null;
+    const parts = s.split("+").map((p) => p.trim());
+    const mods: Array<"ctrl" | "alt" | "shift" | "cmd"> = [];
+    let key = "";
+    for (const p of parts) {
+      switch (p) {
+        case "Ctrl":
+          mods.push("ctrl");
+          continue;
+        case "Alt":
+          mods.push("alt");
+          continue;
+        case "Shift":
+          mods.push("shift");
+          continue;
+        case "Command":
+          mods.push("cmd");
+          continue;
+        case "MacCtrl":
+          mods.push("ctrl");
+          continue;
+      }
+      const map: Record<string, string> = {
+        Comma: "comma",
+        Period: "period",
+        Home: "home",
+        End: "end",
+        PageUp: "pageup",
+        PageDown: "pagedown",
+        Space: "space",
+        Insert: "insert",
+        Delete: "forwarddelete",
+        Up: "up",
+        Down: "down",
+        Left: "left",
+        Right: "right",
+      };
+      if (map[p]) {
+        key = map[p];
+      } else if (/^[A-Z]$/.test(p)) {
+        key = p.toLowerCase();
+      } else if (/^[0-9]$/.test(p)) {
+        key = p;
+      }
+    }
+    if (!key) return null;
+    return { key, modifiers: Array.from(new Set(mods)) } as KeyChord;
+  };
+
+  // Format our KeyChord into a browser commands shortcut string for the platform
+  const formatBrowserShortcut = (
+    c: KeyChord,
+    platform: "mac" | "win" | "linux" | "other"
+  ): string => {
+    const parts: string[] = [];
+    const has = (m: string) => (c.modifiers || []).includes(m as any);
+    if (platform === "mac") {
+      if (has("cmd")) parts.push("Command");
+      if (has("ctrl")) parts.push("MacCtrl");
+    } else {
+      if (has("ctrl")) parts.push("Ctrl");
+    }
+    if (has("alt")) parts.push("Alt");
+    if (has("shift")) parts.push("Shift");
+    const key = c.key;
+    const rev: Record<string, string> = {
+      comma: "Comma",
+      period: "Period",
+      home: "Home",
+      end: "End",
+      pageup: "PageUp",
+      pagedown: "PageDown",
+      space: "Space",
+      forwarddelete: "Delete",
+      up: "Up",
+      down: "Down",
+      left: "Left",
+      right: "Right",
+    };
+    if (rev[key]) {
+      parts.push(rev[key]);
+    } else if (/^[a-z]$/.test(key)) {
+      parts.push(key.toUpperCase());
+    } else if (/^[0-9]$/.test(key)) {
+      parts.push(key);
+    } else if (/^f([1-9]|1[0-9]|20)$/.test(key)) {
+      parts.push(key.toUpperCase());
+    } else {
+      // unsupported -> empty string; the update will likely fail
+      parts.push("");
+    }
+    return parts.filter(Boolean).join("+");
+  };
+
+  const mergeBrowserCommandsIntoSettings = async (
+    base: DefaultConfig
+  ): Promise<DefaultConfig> => {
+    try {
+      const cmds = await (browser as any).commands?.getAll?.();
+      if (!Array.isArray(cmds)) return base;
+      const byName: Record<string, { shortcut?: string | null }> = {};
+      for (const c of cmds) byName[c.name] = c;
+      const next = { ...base } as DefaultConfig;
+      const patchAction = (
+        action: keyof DefaultConfig["keyBindings"],
+        name: string
+      ) => {
+        const sc = byName[name]?.shortcut || "";
+        const chord = parseBrowserShortcut(sc);
+        if (chord) {
+          const list = next.keyBindings[action] || [];
+          const sig = (c: KeyChord) =>
+            `${(c.modifiers || []).slice().sort().join("+")}::${c.key}`;
+          const exists = list.some((c) => sig(c) === sig(chord));
+          if (!exists) {
+            next.keyBindings[action] = [...list, chord];
+          }
+        }
+      };
+      patchAction("toggleGlobal", "wordserve-toggle-global");
+      patchAction("openSettings", "wordserve-open-settings");
+      return next;
+    } catch {
+      return base;
+    }
+  };
 
   const saveSettings = async () => {
     try {
+      // 1) Hard-stop on duplicate chords across actions
+      const dups = findDuplicateKeybinds(pendingSettings.keyBindings);
+      if (dups.length > 0) {
+        const lines = dups
+          .map(
+            (d) =>
+              `${(d.chord.modifiers || []).slice().sort().join("+")}${
+                (d.chord.modifiers || []).length ? "+" : ""
+              }${d.chord.key} used in: ${d.actions.join(", ")}`
+          )
+          .join("\n");
+        toast.error(`Duplicate combos found:\n${lines}`, { duration: 5000 });
+        return;
+      }
       const normalized = normalizeConfig(pendingSettings);
-      await browser.storage.sync.set({ wordserveSettings: normalized });
+      // Validate keybindings against browser/OS reserved combos
+      const env = detectEnvironment();
+      const issues = validateKeyBindings(normalized.keyBindings, env);
+      const errors = issues.filter((i) => i.level === "error");
+      const warns = issues.filter((i) => i.level === "warn");
+      if (errors.length > 0) {
+        toast.error(
+          `Some combos clash with browser shortcuts and were not saved.`,
+          { duration: 3500 }
+        );
+        // Discard offending chords from the pending settings and proceed
+        const cleaned = { ...normalized } as typeof normalized;
+        const discardSig = new Set(
+          errors.map(
+            (e) =>
+              `${e.action}::${(e.chord.modifiers || [])
+                .slice()
+                .sort()
+                .join("+")}::${e.chord.key}`
+          )
+        );
+        const kb: any = { ...cleaned.keyBindings };
+        for (const e of errors) {
+          kb[e.action] = (kb[e.action] || []).filter(
+            (c: any) =>
+              !discardSig.has(
+                `${e.action}::${(c.modifiers || [])
+                  .slice()
+                  .sort()
+                  .join("+")}::${c.key}`
+              )
+          );
+        }
+        cleaned.keyBindings = kb;
+        // Also reflect the cleaned version in pendingSettings to keep UI in sync
+        setPendingSettings(cleaned);
+        // Continue with cleaned configs
+        await browser.storage.sync.set({ wordserveSettings: cleaned });
+      } else {
+        await browser.storage.sync.set({ wordserveSettings: normalized });
+      }
+      if (warns.length > 0) {
+        toast.warning(
+          `Some keybinds may be intercepted by the browser:\n` +
+            warns.map((w) => `- ${formatIssue(w)}`).join("\n"),
+          { duration: 5000 }
+        );
+      }
+      // Push manifest command updates for toggle/open
+      try {
+        const env2 = detectEnvironment();
+        const plat = env2.platform;
+        const updateCmd = async (
+          action: keyof DefaultConfig["keyBindings"],
+          name: string
+        ) => {
+          const first = (normalized.keyBindings[action] || [])[0];
+          if (!first) {
+            // clear to manifest defaults
+            if ((browser as any).commands?.reset) {
+              await (browser as any).commands.reset({ name });
+            }
+            return;
+          }
+          const shortcut = formatBrowserShortcut(first, plat);
+          if ((browser as any).commands?.update) {
+            await (browser as any).commands.update({ name, shortcut });
+          }
+        };
+        await updateCmd("toggleGlobal", "wordserve-toggle-global");
+        await updateCmd("openSettings", "wordserve-open-settings");
+      } catch {}
+
       const tabs = await browser.tabs.query({
         url: ["http://*/*", "https://*/*"],
       });
@@ -156,7 +379,7 @@ function SettingsApp() {
               settings: pendingSettings,
             });
             successfulUpdates++;
-          } catch (error) { }
+          } catch (error) {}
         }
       }
       setSettings(pendingSettings);
@@ -367,10 +590,12 @@ function SettingsApp() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <Separator  />
+          <Separator />
 
           <SidebarGroup>
-            <SidebarGroupLabel className="font-mono pl-2">Live preview</SidebarGroupLabel>
+            <SidebarGroupLabel className="font-mono pl-2">
+              Live preview
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <div className="p-2">
                 <MenuPreview settings={pendingSettings} className="w-full" />
