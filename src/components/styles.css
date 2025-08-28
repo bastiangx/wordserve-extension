@@ -179,14 +179,14 @@
 
 .wordserve-menu-item-number {
   font-size: 12px;
-  font-weight: 500;
+  font-weight: inherit;
   opacity: 0.6;
   min-width: 12px;
   text-align: center;
 }
 
 .wordserve-menu-item-word {
-  font-weight: 500;
+  font-weight: inherit;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -194,7 +194,7 @@
 
 .wordserve-menu-item-rank {
   font-size: 11px;
-  font-weight: 500;
+  font-weight: inherit;
   background: transparent;
   border: 1px solid var(--ws-rank-border);
   color: var(--ws-fg);
