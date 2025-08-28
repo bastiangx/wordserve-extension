@@ -125,19 +125,6 @@ export function AccessibilitySettings({
               />
             </div>
 
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <Label className="text-base">Use OpenDyslexic font</Label>
-              </div>
-              <Switch
-                checked={pendingSettings.dyslexicFont || false}
-                onCheckedChange={(checked) =>
-                  updatePendingAccessibilitySetting("dyslexicFont", checked)
-                }
-              />
-            </div>
           </div>
         </CardContent>
       </Card>

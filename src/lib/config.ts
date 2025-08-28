@@ -151,11 +151,28 @@ export function normalizeConfig(input: any): DefaultConfig {
       : typeof fontSizeRaw === "string" && fontSizeRaw.trim() !== ""
         ? fontSizeRaw
         : DEFAULT_SETTINGS.fontSize;
+  // Support legacy string values by mapping to numeric
+  const legacyMap: Record<string, number> = {
+    thin: 100,
+    extralight: 200,
+    light: 300,
+    normal: 400,
+    medium: 500,
+    semibold: 600,
+    bold: 700,
+    extrabold: 800,
+    black: 900,
+  };
+  const fwRaw = merged.fontWeight;
   const fontWeight =
-    typeof merged.fontWeight === "string"
-      ? merged.fontWeight
-      : DEFAULT_SETTINGS.fontWeight;
-  const allowedFonts = new Set(["JetBrains Mono", "Atkinson Hyperlegible", "Monaco"]);
+    typeof fwRaw === "number"
+      ? clamp(fwRaw, 100, 900)
+      : typeof fwRaw === "string"
+        ? legacyMap[fwRaw] ?? DEFAULT_SETTINGS.fontWeight
+        : DEFAULT_SETTINGS.fontWeight;
+  const fontItalic = toBool(merged.fontItalic, DEFAULT_SETTINGS.fontItalic ?? false);
+  const fontBold = toBool(merged.fontBold, DEFAULT_SETTINGS.fontBold ?? false);
+  const allowedFonts = new Set(["JetBrains Mono", "Atkinson Hyperlegible", "OpenDyslexic", "Monaco"]);
   const fontFamilyList = Array.isArray(merged.fontFamilyList)
     ? merged.fontFamilyList
       .map((s: any) => (typeof s === "string" ? s : ""))
@@ -260,6 +277,10 @@ export function normalizeConfig(input: any): DefaultConfig {
       merged.accessibility?.dyslexicFont,
       DEFAULT_SETTINGS.accessibility.dyslexicFont ?? false
     ),
+    rankingColor:
+      typeof merged.accessibility?.rankingColor === "string"
+        ? merged.accessibility.rankingColor
+        : DEFAULT_SETTINGS.accessibility.rankingColor,
     customColor:
       typeof merged.accessibility?.customColor === "string"
         ? merged.accessibility.customColor
@@ -286,6 +307,8 @@ export function normalizeConfig(input: any): DefaultConfig {
     menuBorderRadius,
     fontSize,
     fontWeight,
+  fontItalic,
+  fontBold,
     fontFamilyList,
     customFontList,
     debugMode,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { initOpenDyslexic, buildFontFamilyFromConfig } from "@/lib/render/font";
+import { buildFontFamilyFromConfig } from "@/lib/render/font";
 import type { DefaultConfig, DisplaySuggestion } from "@/types";
 import { getRowHeight, clamp, toNumber } from "@/lib/utils";
 import { themeToClass } from "@/lib/render/themes";
@@ -136,21 +136,12 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
   // derive numeric font size, clamp to range (12-28)
   const fontSize = clamp(toNumber(settings.fontSize, 15), 12, 28);
   useEffect(() => {
-    if (settings.accessibility.dyslexicFont) initOpenDyslexic();
+    // no-op: OpenDyslexic is pre-bundled via @font-face
   }, [settings.accessibility.dyslexicFont]);
-  const getFontWeight = (weight: string): string => {
-    const weightMap: Record<string, string> = {
-      thin: "100",
-      extralight: "200",
-      light: "300",
-      normal: "400",
-      medium: "500",
-      semibold: "600",
-      bold: "700",
-      extrabold: "800",
-      black: "900",
-    };
-    return weightMap[weight] || "400";
+  const getFontWeight = (value: number | undefined, isBold: boolean | undefined): string => {
+    const base = typeof value === "number" ? value : 400;
+    const effective = isBold ? Math.max(base, 700) : base;
+    return String(effective);
   };
 
   const selectByIndex = useCallback(
@@ -306,7 +297,8 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
             )}
             style={{
               fontSize: `${fontSize}px`,
-              fontWeight: getFontWeight(settings.fontWeight),
+              fontWeight: getFontWeight(settings.fontWeight as any, settings.fontBold),
+              fontStyle: settings.fontItalic ? "italic" : "normal",
               fontFamily: settings.accessibility.dyslexicFont
                 ? `'OpenDyslexic', ` +
                 buildFontFamilyFromConfig({
@@ -384,7 +376,15 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                   {settings.rankingPosition === "left" && (
                     <div className="wordserve-menu-item-content">
                       {showRanking && (
-                        <span className="wordserve-menu-item-rank">
+                        <span
+                          className="wordserve-menu-item-rank"
+                          style={{
+                            borderColor:
+                              settings.accessibility.rankingColor || undefined,
+                            color:
+                              settings.accessibility.rankingColor || undefined,
+                          }}
+                        >
                           {settings.numberSelection ? index + 1 : suggestion.rank}
                         </span>
                       )}
@@ -440,7 +440,15 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                         </span>
                       </div>
                       {showRanking && (
-                        <span className="wordserve-menu-item-rank">
+                        <span
+                          className="wordserve-menu-item-rank"
+                          style={{
+                            borderColor:
+                              settings.accessibility.rankingColor || undefined,
+                            color:
+                              settings.accessibility.rankingColor || undefined,
+                          }}
+                        >
                           {settings.numberSelection ? index + 1 : suggestion.rank}
                         </span>
                       )}

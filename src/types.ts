@@ -53,7 +53,9 @@ export interface DefaultConfig {
   menuBorder: boolean;
   menuBorderRadius: boolean;
   fontSize: string | number;
-  fontWeight: string;
+  fontWeight: number; // 100-900
+  fontItalic?: boolean;
+  fontBold?: boolean;
   /** Ordered list of preferred fonts for suggestions/PMenu (not settings UI) */
   fontFamilyList?: string[];
   /** Optional custom CSS font-family list string entered by user */
@@ -95,6 +97,7 @@ export interface DefaultConfig {
     prefixColor?: string;
     suffixColor?: string;
     dyslexicFont?: boolean;
+  rankingColor?: string;
     customColor?: string;
     customFontFamily?: string;
     customFontSize?: number;
@@ -213,7 +216,9 @@ export const DEFAULT_SETTINGS: DefaultConfig = {
   menuBorder: true,
   menuBorderRadius: true,
   fontSize: 13,
-  fontWeight: "normal",
+  fontWeight: 400,
+  fontItalic: false,
+  fontBold: false,
   fontFamilyList: [
     "JetBrains Mono",
     "Atkinson Hyperlegible",
@@ -252,6 +257,7 @@ export const DEFAULT_SETTINGS: DefaultConfig = {
     prefixColor: undefined,
     suffixColor: undefined,
     dyslexicFont: false,
+  rankingColor: undefined,
   },
   domains: {
     blacklistMode: true,

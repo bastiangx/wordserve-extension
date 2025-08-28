@@ -1,6 +1,5 @@
 import "@/components/styles.css";
 import { getRowHeight } from "@/lib/utils";
-import { initOpenDyslexic } from "@/lib/render/font";
 import { AUTOCOMPLETE_DEFAULTS } from "@/types";
 import { themeToClass } from "@/lib/render/themes";
 import { ABBREVIATION_CONFIG } from "@/types";
@@ -22,7 +21,9 @@ export interface AutocompleteMenuOptions {
   maxItems?: number;
   compact?: boolean;
   fontSize?: number;
-  fontWeight?: string;
+  fontWeight?: number; // 100-900
+  fontItalic?: boolean;
+  fontBold?: boolean;
   fontFamily?: string;
   menuBorder?: boolean;
   menuBorderRadius?: boolean;
@@ -37,6 +38,7 @@ export interface AutocompleteMenuOptions {
   prefixColor?: string;
   suffixColor?: string;
   dyslexicFont?: boolean;
+  rankingColor?: string;
   currentPrefixLength?: number;
   theme?: import("@/lib/render/themes").ThemeId;
   allowMouseInsert?: boolean;
@@ -81,20 +83,22 @@ export class AutocompleteMenuRenderer {
     this.container!.className = `wordserve-menu-container ${themeClass} ${
       options.compact ? "compact" : ""
     }`;
-    const fontSize = options.fontSize ?? 14;
-    const fontWeight = options.fontWeight ?? "400";
+  const fontSize = options.fontSize ?? 14;
+  const baseWeight = typeof options.fontWeight === "number" ? options.fontWeight : 400;
+  const effectiveWeight = options.fontBold ? Math.max(baseWeight, 700) : baseWeight;
+  const fontWeight = String(effectiveWeight);
     const showBorder = options.menuBorder ?? true;
     const useRadius = options.menuBorderRadius ?? true;
     const menuEl = this.menu!;
     menuEl.style.fontSize = `${fontSize}px`;
-    menuEl.style.fontWeight = fontWeight;
+  menuEl.style.fontWeight = fontWeight;
+  menuEl.style.fontStyle = options.fontItalic ? "italic" : "normal";
     // Toggle full mouse disable class
     menuEl.classList.toggle(
       "ws-no-mouse",
       options.allowMouseInteractions === false
     );
     if (options.dyslexicFont) {
-      initOpenDyslexic();
       const rest = options.fontFamily
         ? options.fontFamily
         : `'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace`;
@@ -160,7 +164,7 @@ export class AutocompleteMenuRenderer {
     content.style.gap = compact
       ? `${Math.max(4, Math.round(fontSize * 0.35))}px`
       : `${Math.max(6, Math.round(fontSize * 0.5))}px`;
-    const badgeEl = document.createElement("span");
+  const badgeEl = document.createElement("span");
     badgeEl.className = "wordserve-menu-item-rank";
 
     // Check if this is an abbreviation hint (special badge)
@@ -173,13 +177,17 @@ export class AutocompleteMenuRenderer {
       badgeEl.style.fontWeight = "500";
     } else {
       // For normal suggestions, show the menu position (1-based)
-      badgeEl.textContent = (index + 1).toString();
+  badgeEl.textContent = (index + 1).toString();
       // Scale badge typography and padding with font size
       const badgeFont = Math.max(10, Math.round(fontSize - 2));
       const badgePadY = Math.max(1, Math.round(fontSize * 0.12));
       const badgePadX = Math.max(4, Math.round(fontSize * 0.4));
       badgeEl.style.fontSize = `${badgeFont}px`;
       badgeEl.style.padding = `${badgePadY}px ${badgePadX}px`;
+    }
+    if (options.rankingColor) {
+      badgeEl.style.borderColor = options.rankingColor;
+      badgeEl.style.color = options.rankingColor;
     }
     if (options.rankingPosition === "left" && showRanking) {
       content.appendChild(badgeEl);

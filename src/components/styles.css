@@ -4,7 +4,7 @@
 
 .wordserve-menu-container {
   all: initial;
-  font-family: "Geist Mono", "Monaco", monospace;
+  font-family: "JetBrains Mono", "Monaco", monospace;
   font-size: 14px;
   line-height: 1.4;
   color: var(--ws-fg);

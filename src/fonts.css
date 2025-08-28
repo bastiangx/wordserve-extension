@@ -1,6 +1,5 @@
 /* Local font-face declarations for bundled fonts */
 
-/* Atkinson Hyperlegible Next mapped to font-family: "Atkinson Hyperlegible" */
 @font-face {
   font-family: "Atkinson Hyperlegible";
   src: url("./assets/fonts/AtkinsonHyperlegibleNext-ExtraLight.woff2") format("woff2");
@@ -211,5 +210,21 @@
   src: url("./assets/fonts/JetBrainsMono-ExtraBoldItalic.woff2") format("woff2");
   font-weight: 800;
   font-style: italic;
+  font-display: swap;
+}
+
+/* OpenDyslexic (accessibility opt-in) */
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("./assets/fonts/OpenDyslexic-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("./assets/fonts/OpenDyslexic-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
   font-display: swap;
 }

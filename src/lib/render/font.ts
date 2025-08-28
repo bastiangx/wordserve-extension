@@ -1,49 +1,4 @@
-import { browser } from "wxt/browser";
-
-/**
- * Injects the OpenDyslexic font into the document & handles deduplication.
- */
-
-let injected = false;
 const SAFE_FONT_CHARS = /[^a-zA-Z0-9_\-\s,\"']/g;
-
-export function initOpenDyslexic(): void {
-  if (injected || typeof document === "undefined") return;
-  try {
-    const id = "ws-odyslexic-font";
-    if (document.getElementById(id)) {
-      injected = true;
-      return;
-    }
-    const regular = (browser.runtime.getURL as any)(
-      "/fonts/OpenDyslexic-Regular.woff2"
-    );
-    const bold = (browser.runtime.getURL as any)(
-      "/fonts/OpenDyslexic-Bold.woff2"
-    );
-    const style = document.createElement("style");
-    style.id = id;
-    style.textContent = `
-@font-face {
-  font-family: 'OpenDyslexic';
-  src: url('${regular}') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'OpenDyslexic';
-  src: url('${bold}') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}`;
-    document.head.appendChild(style);
-    injected = true;
-  } catch {
-    console.warn("WordServe: Failed to inject OpenDyslexic font");
-  }
-}
 
 function quoteIfNeeded(name: string): string {
   const trimmed = name.trim();
@@ -82,6 +37,7 @@ export function buildFontFamilyFromConfig(settings: {
   const allowedCatalog = new Set([
     "JetBrains Mono",
     "Atkinson Hyperlegible",
+  "OpenDyslexic",
     "Monaco",
   ]);
   const selected = (settings.fontFamilyList || [])

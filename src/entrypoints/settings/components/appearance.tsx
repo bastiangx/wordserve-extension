@@ -140,9 +140,24 @@ export function AppearanceSettings({
                     <SelectItem value="Atkinson Hyperlegible">
                       Atkinson hyperlegible
                     </SelectItem>
+                    <SelectItem value="OpenDyslexic">OpenDyslexic</SelectItem>
                     <SelectItem value="Monaco">Monaco</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <Label className="text-base">Use OpenDyslexic font</Label>
+                </div>
+                <Switch
+                  checked={pendingSettings.accessibility.dyslexicFont || false}
+                  onCheckedChange={(checked) =>
+                    updatePendingSetting("accessibility", {
+                      ...pendingSettings.accessibility,
+                      dyslexicFont: checked,
+                    })
+                  }
+                />
               </div>
               <div className="flex items-center justify-between gap-3">
                 <div className="space-y-2">
@@ -229,26 +244,50 @@ export function AppearanceSettings({
                 </Label>
               </div>
               <Select
-                value={pendingSettings.fontWeight}
-                onValueChange={(value: DefaultConfig["fontWeight"]) =>
-                  updatePendingSetting("fontWeight", value)
+                value={String(pendingSettings.fontWeight || 400)}
+                onValueChange={(value: string) =>
+                  updatePendingSetting("fontWeight", parseInt(value, 10))
                 }
               >
                 <SelectTrigger id="fontWeight" className="w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="thin">Thin</SelectItem>
-                  <SelectItem value="extralight">Extra Light</SelectItem>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="semibold">Semi Bold</SelectItem>
-                  <SelectItem value="bold">Bold</SelectItem>
-                  <SelectItem value="extrabold">Extra Bold</SelectItem>
-                  <SelectItem value="black">Black</SelectItem>
+                  <SelectItem value="100">100 – Thin</SelectItem>
+                  <SelectItem value="200">200 – Extra Light</SelectItem>
+                  <SelectItem value="300">300 – Light</SelectItem>
+                  <SelectItem value="400">400 – Regular</SelectItem>
+                  <SelectItem value="500">500 – Medium</SelectItem>
+                  <SelectItem value="600">600 – Semi Bold</SelectItem>
+                  <SelectItem value="700">700 – Bold</SelectItem>
+                  <SelectItem value="800">800 – Extra Bold</SelectItem>
+                  <SelectItem value="900">900 – Black</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <Label className="text-base">Italic font</Label>
+              </div>
+              <Switch
+                checked={pendingSettings.fontItalic || false}
+                onCheckedChange={(checked) =>
+                  updatePendingSetting("fontItalic", checked)
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <Label className="text-base">Bold font</Label>
+              </div>
+              <Switch
+                checked={pendingSettings.fontBold || false}
+                onCheckedChange={(checked) =>
+                  updatePendingSetting("fontBold", checked)
+                }
+              />
             </div>
           </div>
 
@@ -445,6 +484,36 @@ export function AppearanceSettings({
                       updatePendingSetting("accessibility", {
                         ...pendingSettings.accessibility,
                         suffixColor: undefined,
+                      })
+                    }
+                  >
+                    Reset
+                  </Button>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Label className="min-w-[120px] text-base">
+                    Custom ranking color
+                  </Label>
+                  <Input
+                    type="color"
+                    value={
+                      pendingSettings.accessibility.rankingColor || "#6c7086"
+                    }
+                    onChange={(e) =>
+                      updatePendingSetting("accessibility", {
+                        ...pendingSettings.accessibility,
+                        rankingColor: e.target.value,
+                      })
+                    }
+                    className="w-16 p-0 h-8"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      updatePendingSetting("accessibility", {
+                        ...pendingSettings.accessibility,
+                        rankingColor: undefined,
                       })
                     }
                   >

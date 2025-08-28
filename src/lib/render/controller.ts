@@ -161,18 +161,7 @@ export class AutocompleteController {
       typeof rawFontSize === "string"
         ? parseInt(rawFontSize, 10) || 14
         : rawFontSize;
-    const weightMap: Record<string, string> = {
-      thin: "100",
-      extralight: "200",
-      light: "300",
-      normal: "400",
-      medium: "500",
-      semibold: "600",
-      bold: "700",
-      extrabold: "800",
-      black: "900",
-    };
-    const fontWeight = weightMap[this.settings.fontWeight] || "400";
+  const fontWeight = this.settings.fontWeight ?? 400;
     const fontFamily = buildFontFamilyFromConfig({
       fontFamilyList: this.settings.fontFamilyList,
       customFontList: this.settings.customFontList,
@@ -189,6 +178,8 @@ export class AutocompleteController {
       fontSize,
       fontWeight,
   fontFamily,
+      fontItalic: this.settings.fontItalic ?? false,
+      fontBold: this.settings.fontBold ?? false,
       menuBorder: this.settings.menuBorder,
       menuBorderRadius: this.settings.menuBorderRadius,
       numberSelection: this.settings.numberSelection,
@@ -201,6 +192,7 @@ export class AutocompleteController {
       suffixColorIntensity: this.settings.accessibility.suffixColorIntensity,
       prefixColor: this.settings.accessibility.prefixColor,
       suffixColor: this.settings.accessibility.suffixColor,
+  rankingColor: this.settings.accessibility.rankingColor,
       dyslexicFont: this.settings.accessibility.dyslexicFont,
       currentPrefixLength: this.currentWord.length,
   theme: this.settings.theme ?? "dark",
