@@ -1,9 +1,9 @@
 <h1 align="center">
-  <a href="https://github.com/bastiangx/wordserve-obsidian">
+  <a href="https://github.com/bastiangx/wordserve-extension/">
  <picture>
-      <source media="(prefers-color-scheme: light)" srcset="https://files.catbox.moe/89vvzu.png">
-      <source media="(prefers-color-scheme: dark)" srcset="https://files.catbox.moe/5gb4ye.png">
-      <img src="https://files.catbox.moe/5gb4ye.png"/>
+      <source media="(prefers-color-scheme: light)" srcset="https://files.catbox.moe/su0r1m.png">
+      <source media="(prefers-color-scheme: dark)" srcset="https://files.catbox.moe/syqbr0.png">
+      <img src="https://files.catbox.moe/syqbr0.png"/>
     </picture>
   </a>
 </h1>
@@ -27,9 +27,9 @@ Lightweight Autosuggestions and abbrevations for Obsidian!
 <a href="https://github.com/bastiangx/wordserve/releases/latest"><img src="https://img.shields.io/github/v/release/bastiangx/wordserve?sort=semver&display_name=tag&style=for-the-badge&labelColor=%23363A4F&color=%23f5a97f" alt="Latest Release"></a> <a href="https://github.com/bastiangx/wordserve/blob/main/LICENSE"><img src="https://img.shields.io/badge/MIT-black?style=for-the-badge&label=license&labelColor=%23363A4F&color=%23b7bdf8" alt="MIT License"></a>
 <br />
 
-  <a href="https://github.com/bastiangx/wordserve-obsidian/issues/new?assignees=&labels=bug&template=BUG-REPORT.yml&title=%5BBug%5D%3A+">Report a Bug</a>
+  <a href="https://github.com/bastiangx/wordserve-extension/issues/new?assignees=&labels=bug&template=BUG-REPORT.yml&title=%5BBug%5D%3A+">Report a Bug</a>
   ·
-  <a href="https://github.com/bastiangx/wordserve-obsidian/issues/new?assignees=&labels=enhancement&template=FEATURE-REQUEST.yml&title=%5BFeature%5D%3A+">Request a Feature</a>
+  <a href="https://github.com/bastiangx/wordserve-extension/issues/new?assignees=&labels=enhancement&template=FEATURE-REQUEST.yml&title=%5BFeature%5D%3A+">Request a Feature</a>
 </div>
 
 #### What's it about?
@@ -134,9 +134,9 @@ Read more about how all this works in our [Go library's docs](https://github.com
 ### Colorschemes
 
  <picture>
-      <source media="(prefers-color-scheme: light)" srcset="https://files.catbox.moe/1aeu53.png">
-      <source media="(prefers-color-scheme: dark)" srcset="https://files.catbox.moe/n07i2r.png">
-      <img src="https://files.catbox.moe/n07i2r.png"/>
+      <source media="(prefers-color-scheme: light)" srcset="https://files.catbox.moe/ip7m7h.png">
+      <source media="(prefers-color-scheme: dark)" srcset="https://files.catbox.moe/jr5cl6.png">
+      <img src="https://files.catbox.moe/jr5cl6.png"/>
     </picture>
 <br />
 Adapts to your Obsidian's current theme! with lots of accessbility options too (font / colors / size)
@@ -217,3 +217,15 @@ See [LICENSE](LICENSE)
 
 - The _Beautiful_ [Rosepine theme](https://rosepinetheme.com/) used for graphics and screenshots throughout the readme.
 - The Incredible mono font, Berkeley Mono by [U.S. Graphics](https://usgraphics.com/products/berkeley-mono) used in screenshots, graphics, gifs and more.
+
+## Fonts
+
+This extension bundles local WOFF2 fonts for:
+
+- Atkinson Hyperlegible Next (registered as "Atkinson Hyperlegible")
+- JetBrains Mono
+- OpenDyslexic (accessibility option)
+
+These are licensed under their respective open licenses (typically OFL). Keep the appropriate license notices if you change or add fonts.
+
+It’s fine to commit .woff/.woff2 in a public repo for distribution. To avoid noisy diffs, .gitattributes marks them as binary (-diff). If the repo grows large, consider Git LFS for font binaries.
