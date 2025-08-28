@@ -22,6 +22,7 @@ export default defineContentScript({
 
       private async startup(): Promise<void> {
         await this.initializeSettings();
+        this.setupStorageListener();
         this.setupDOMObserver();
         this.attachToExistingInputs();
         this.checkEngineStatus();
@@ -98,6 +99,19 @@ export default defineContentScript({
             }
           }
         );
+      }
+
+      private setupStorageListener(): void {
+        try {
+          browser.storage.onChanged.addListener((changes, area) => {
+            if (area !== "sync" && area !== "local") return;
+            const changed = changes["wordserveSettings"];
+            if (!changed) return;
+            const next = (changed as any).newValue ?? (changed as any).oldValue;
+            if (!next) return;
+            this.updateSettings(next);
+          });
+        } catch {}
       }
 
       private setupDOMObserver(): void {
@@ -250,9 +264,21 @@ export default defineContentScript({
       private updateSettings(newSettings: Partial<DefaultConfig>): void {
         this.settings = normalizeConfig({ ...this.settings, ...newSettings });
         this.domainEnabledCache = null;
-        this.controllers.forEach((controller) => {
-          controller.updateSettings(this.settings);
-        });
+        const allowedNow = shouldActivateForDomain(
+          window.location.hostname,
+          this.settings.domains
+        );
+        if (!allowedNow) {
+          // Domain disabled: tear down all controllers immediately
+          this.controllers.forEach((controller) => controller.destroy());
+          this.controllers.clear();
+        } else {
+          // Domain enabled: ensure controllers exist and are up to date
+          this.controllers.forEach((controller) => {
+            controller.updateSettings(this.settings);
+          });
+          this.attachToExistingInputs();
+        }
       }
 
       private toggle(enabled: boolean): void {

@@ -48,28 +48,60 @@ export default function App() {
   }, []);
 
   const loadSettings = async () => {
-    const result = await browser.storage.sync.get([
-      "globalEnabled",
-      "wordserveSettings",
-    ]);
+    let result: any = {};
+    try {
+      result = await browser.storage.sync.get([
+        "globalEnabled",
+        "wordserveSettings",
+      ]);
+    } catch {
+      try {
+        result = await browser.storage.local.get([
+          "globalEnabled",
+          "wordserveSettings",
+        ]);
+      } catch {}
+    }
     setGlobalEnabled(
       result.globalEnabled !== undefined ? result.globalEnabled : true
     );
     const normalized = normalizeConfig(result.wordserveSettings || {});
     setDomainSettings(normalized.domains);
-    const tabs = await browser.tabs.query({
+    // Try to resolve the active tab robustly across browsers
+    let tabs = await browser.tabs.query({
       active: true,
       currentWindow: true,
     });
-    const url = tabs[0]?.url || "";
+    if (!tabs || tabs.length === 0) {
+      try {
+        tabs = await browser.tabs.query({
+          active: true,
+          lastFocusedWindow: true,
+        });
+      } catch {}
+    }
+    let url = tabs && tabs[0]?.url ? tabs[0].url : "";
     setCurrentUrl(url);
-    const host = new URL(url).hostname || "";
+    const protectedFlag = isProtectedUrl(url);
+    setProtectedPage(protectedFlag);
+    let host = "";
+    try {
+      if (url && !protectedFlag) {
+        host = new URL(url).hostname || "";
+      }
+    } catch {}
     setCurrentHost(host);
-    setProtectedPage(isProtectedUrl(url));
   };
   const toggleGlobal = async (val: boolean) => {
     setGlobalEnabled(val);
-    await browser.storage.sync.set({ globalEnabled: val });
+    try {
+      if ((browser as any).storage?.sync?.set) {
+        await (browser as any).storage.sync.set({ globalEnabled: val });
+      }
+    } catch {}
+    try {
+      await browser.storage.local.set({ globalEnabled: val });
+    } catch {}
     const tabs = await browser.tabs.query({});
     for (const tab of tabs) {
       if (tab.id) {
@@ -86,10 +118,20 @@ export default function App() {
   const toggleDomainMode = async (blacklistMode: boolean) => {
     const newDomainSettings = { ...domainSettings, blacklistMode };
     setDomainSettings(newDomainSettings);
-    const result = await browser.storage.sync.get("wordserveSettings");
+    let result: any = {};
+    try {
+      result = await browser.storage.sync.get("wordserveSettings");
+    } catch {}
     const current = normalizeConfig(result.wordserveSettings || {});
     const updated = normalizeConfig({ ...current, domains: newDomainSettings });
-    await browser.storage.sync.set({ wordserveSettings: updated });
+    try {
+      if ((browser as any).storage?.sync?.set) {
+        await (browser as any).storage.sync.set({ wordserveSettings: updated });
+      }
+    } catch {}
+    try {
+      await browser.storage.local.set({ wordserveSettings: updated });
+    } catch {}
     const tabs = await browser.tabs.query({});
     for (const tab of tabs) {
       if (tab.id) {
@@ -244,10 +286,32 @@ export default function App() {
     // Persist and propagate changes
     setDomainSettings(newDomainSettings);
 
-    const result = await browser.storage.sync.get("wordserveSettings");
+    let result: any = {};
+    try {
+      result = await browser.storage.sync.get("wordserveSettings");
+    } catch {}
     const current = normalizeConfig(result.wordserveSettings || {});
     const updated = normalizeConfig({ ...current, domains: newDomainSettings });
-    await browser.storage.sync.set({ wordserveSettings: updated });
+    try {
+      if ((browser as any).storage?.sync?.set) {
+        await (browser as any).storage.sync.set({ wordserveSettings: updated });
+      }
+    } catch {}
+    try {
+      await browser.storage.local.set({ wordserveSettings: updated });
+    } catch {}
+    // Broadcast full settings to all tabs for reliability across browsers
+    const allTabs = await browser.tabs.query({});
+    for (const tab of allTabs) {
+      if (tab.id) {
+        try {
+          await browser.tabs.sendMessage(tab.id, {
+            type: "settingsUpdated",
+            settings: updated,
+          });
+        } catch {}
+      }
+    }
     const tabs = await browser.tabs.query({
       active: true,
       currentWindow: true,
@@ -288,10 +352,32 @@ export default function App() {
       ),
     };
     setDomainSettings(newDomainSettings);
-    const result = await browser.storage.sync.get("wordserveSettings");
+    let result: any = {};
+    try {
+      result = await browser.storage.sync.get("wordserveSettings");
+    } catch {}
     const current = normalizeConfig(result.wordserveSettings || {});
     const updated = normalizeConfig({ ...current, domains: newDomainSettings });
-    await browser.storage.sync.set({ wordserveSettings: updated });
+    try {
+      if ((browser as any).storage?.sync?.set) {
+        await (browser as any).storage.sync.set({ wordserveSettings: updated });
+      }
+    } catch {}
+    try {
+      await browser.storage.local.set({ wordserveSettings: updated });
+    } catch {}
+    // Broadcast full settings to all tabs for reliability across browsers
+    const allTabs2 = await browser.tabs.query({});
+    for (const tab of allTabs2) {
+      if (tab.id) {
+        try {
+          await browser.tabs.sendMessage(tab.id, {
+            type: "settingsUpdated",
+            settings: updated,
+          });
+        } catch {}
+      }
+    }
 
     const tabs = await browser.tabs.query({
       active: true,

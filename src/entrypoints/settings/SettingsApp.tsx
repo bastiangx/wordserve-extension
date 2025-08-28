@@ -126,6 +126,58 @@ function SettingsApp() {
     })();
   }, []);
 
+  // sync domains when popup or other tabs change them
+  useEffect(() => {
+    const applyDomains = (domains: any) => {
+      if (!domains) return;
+      setSettings((prev) => {
+        const merged = normalizeConfig({ ...prev, domains });
+        return { ...prev, domains: merged.domains } as DefaultConfig;
+      });
+      setPendingSettings((prev) => {
+        const merged = normalizeConfig({ ...prev, domains });
+        return { ...prev, domains: merged.domains } as DefaultConfig;
+      });
+    };
+
+    const onMessage = (message: any) => {
+      try {
+        if (
+          message?.type === "settingsUpdated" ||
+          message?.type === "wordserve-settings-updated"
+        ) {
+          if (message.settings?.domains) applyDomains(message.settings.domains);
+        } else if (message?.type === "domainSettingsChanged") {
+          if (message.settings) applyDomains(message.settings);
+        }
+      } catch {}
+    };
+    const onStorage = (changes: any, area: string) => {
+      try {
+        if (area !== "sync" && area !== "local") return;
+        const changed = changes["wordserveSettings"];
+        if (!changed) return;
+        const next = (changed as any).newValue ?? (changed as any).oldValue;
+        if (!next) return;
+        if (next.domains) applyDomains(next.domains);
+      } catch {}
+    };
+    try {
+      browser.runtime.onMessage.addListener(onMessage);
+    } catch {}
+    try {
+      browser.storage.onChanged.addListener(onStorage);
+    } catch {}
+    return () => {
+      try {
+        browser.runtime.onMessage.removeListener(onMessage);
+      } catch {}
+      try {
+        browser.storage.onChanged.removeListener(onStorage);
+      } catch {}
+    };
+  }, []);
+
   useEffect(() => {
     const hasChanges =
       JSON.stringify(settings) !== JSON.stringify(pendingSettings);
@@ -344,7 +396,9 @@ function SettingsApp() {
         // Continue with cleaned configs
         try {
           if ((browser as any).storage?.sync?.set) {
-            await (browser as any).storage.sync.set({ wordserveSettings: cleaned });
+            await (browser as any).storage.sync.set({
+              wordserveSettings: cleaned,
+            });
           }
         } catch (e) {}
         try {
@@ -353,7 +407,9 @@ function SettingsApp() {
       } else {
         try {
           if ((browser as any).storage?.sync?.set) {
-            await (browser as any).storage.sync.set({ wordserveSettings: normalized });
+            await (browser as any).storage.sync.set({
+              wordserveSettings: normalized,
+            });
           }
         } catch (e) {}
         try {

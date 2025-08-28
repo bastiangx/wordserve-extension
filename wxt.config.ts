@@ -18,7 +18,7 @@ export default defineConfig({
       page: "settings.html",
       open_in_tab: true,
     },
-    permissions: ["tabs", "scripting", "storage", "downloads"],
+    permissions: ["tabs", "activeTab", "scripting", "storage", "downloads"],
     commands: {
       "wordserve-open-settings": {
         suggested_key: {
