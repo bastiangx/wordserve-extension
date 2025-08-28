@@ -14,6 +14,8 @@ export default defineConfig({
     },
   }),
   manifest: ({ manifestVersion }) => ({
+    name: "WordServe",
+    description: "Fast autosuggestions and completions for any website",
     options_ui: {
       page: "settings.html",
       open_in_tab: true,
