@@ -134,7 +134,17 @@ function SettingsApp() {
 
   const loadSettings = async () => {
     try {
-      const result = await browser.storage.sync.get("wordserveSettings");
+      // Prefer sync storage; fall back to local on Firefox or error
+      let result: any = {};
+      try {
+        if ((browser as any).storage?.sync?.get) {
+          result = await (browser as any).storage.sync.get("wordserveSettings");
+        } else {
+          result = await browser.storage.local.get("wordserveSettings");
+        }
+      } catch (e) {
+        result = await browser.storage.local.get("wordserveSettings");
+      }
       const loadedSettings = result.wordserveSettings
         ? normalizeConfig(result.wordserveSettings)
         : normalizeConfig({});
@@ -143,6 +153,7 @@ function SettingsApp() {
       setSettings(merged);
       setPendingSettings(merged);
     } catch (error) {
+      console.error("Settings load failed:", error);
       showNotification("error", "Failed to load settings");
     } finally {
       setIsLoading(false);
@@ -331,9 +342,23 @@ function SettingsApp() {
         // Also reflect the cleaned version in pendingSettings to keep UI in sync
         setPendingSettings(cleaned);
         // Continue with cleaned configs
-        await browser.storage.sync.set({ wordserveSettings: cleaned });
+        try {
+          if ((browser as any).storage?.sync?.set) {
+            await (browser as any).storage.sync.set({ wordserveSettings: cleaned });
+          }
+        } catch (e) {}
+        try {
+          await browser.storage.local.set({ wordserveSettings: cleaned });
+        } catch (e) {}
       } else {
-        await browser.storage.sync.set({ wordserveSettings: normalized });
+        try {
+          if ((browser as any).storage?.sync?.set) {
+            await (browser as any).storage.sync.set({ wordserveSettings: normalized });
+          }
+        } catch (e) {}
+        try {
+          await browser.storage.local.set({ wordserveSettings: normalized });
+        } catch (e) {}
       }
       if (warns.length > 0) {
         toast.warning(
@@ -367,24 +392,28 @@ function SettingsApp() {
         await updateCmd("openSettings", "wordserve-open-settings");
       } catch {}
 
-      const tabs = await browser.tabs.query({
-        url: ["http://*/*", "https://*/*"],
-      });
-      let successfulUpdates = 0;
-      for (const tab of tabs) {
-        if (tab.id) {
-          try {
-            await browser.tabs.sendMessage(tab.id, {
-              type: "settingsUpdated",
-              settings: pendingSettings,
-            });
-            successfulUpdates++;
-          } catch (error) {}
+      // Best-effort notify all tabs; avoid Firefox host permission errors
+      try {
+        const tabs = await browser.tabs.query({});
+        let successfulUpdates = 0;
+        for (const tab of tabs) {
+          if (tab.id) {
+            try {
+              await browser.tabs.sendMessage(tab.id, {
+                type: "settingsUpdated",
+                settings: pendingSettings,
+              });
+              successfulUpdates++;
+            } catch (error) {}
+          }
         }
+      } catch (e) {
+        // Ignore broadcast failures; settings have already been saved
       }
       setSettings(pendingSettings);
       showNotification("success", "Preference saved!");
     } catch (error) {
+      console.error("Settings save failed:", error);
       showNotification("error", "Failed to save preference");
     }
   };

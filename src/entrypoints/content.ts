@@ -50,9 +50,24 @@ export default defineContentScript({
 
       private async initializeSettings(): Promise<void> {
         try {
-          const stored = await browser.storage.sync.get("wordserveSettings");
-          if (stored.wordserveSettings) {
-            this.settings = normalizeConfig(stored.wordserveSettings);
+          let stored: any = {};
+          try {
+            if ((browser as any).storage?.sync?.get) {
+              console.info("[WordServe] Content: settings load via storage.sync");
+              stored = await (browser as any).storage.sync.get("wordserveSettings");
+            } else {
+              console.info("[WordServe] Content: settings load via storage.local (no sync)");
+              stored = await browser.storage.local.get("wordserveSettings");
+            }
+          } catch (e) {
+            console.info("[WordServe] Content: sync load failed, falling back to local");
+            stored = await browser.storage.local.get("wordserveSettings");
+          }
+          const source = stored.wordserveSettings
+            ? stored.wordserveSettings
+            : undefined;
+          if (source) {
+            this.settings = normalizeConfig(source);
             this.domainEnabledCache = null;
           }
         } catch (error) {
