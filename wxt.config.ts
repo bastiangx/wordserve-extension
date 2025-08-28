@@ -25,7 +25,7 @@ export default defineConfig({
           default: "Ctrl+Shift+V",
           mac: "Command+Shift+V",
         },
-        description: "Open WordServe settings",
+        description: "Open settings page",
       },
     },
     ...(manifestVersion === 3
