@@ -204,6 +204,8 @@ export class AutocompleteController {
       dyslexicFont: this.settings.accessibility.dyslexicFont,
       currentPrefixLength: this.currentWord.length,
   theme: this.settings.theme ?? "dark",
+  allowMouseInsert: this.settings.allowMouseInsert,
+  allowMouseInteractions: this.settings.allowMouseInteractions,
     });
   }
 

@@ -23,7 +23,6 @@ export interface AutocompleteMenuOptions {
   compact?: boolean;
   fontSize?: number;
   fontWeight?: string;
-  /** CSS font-family string to apply to suggestions/PMenu */
   fontFamily?: string;
   menuBorder?: boolean;
   menuBorderRadius?: boolean;
@@ -40,6 +39,8 @@ export interface AutocompleteMenuOptions {
   dyslexicFont?: boolean;
   currentPrefixLength?: number;
   theme?: import("@/lib/render/themes").ThemeId;
+  allowMouseInsert?: boolean;
+  allowMouseInteractions?: boolean;
 }
 
 export class AutocompleteMenuRenderer {
@@ -219,18 +220,22 @@ export class AutocompleteMenuRenderer {
     if (options.rankingPosition === "right" && showRanking) {
       item.appendChild(badgeEl);
     }
-    item.addEventListener(
-      "click",
-      (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        options.onSelect(suggestion, true);
-      },
-      { capture: true }
-    );
-    item.addEventListener("mouseenter", () => {
-      options.onHover(index);
-    });
+    if (options.allowMouseInteractions !== false) {
+      if (options.allowMouseInsert !== false) {
+        item.addEventListener(
+          "click",
+          (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            options.onSelect(suggestion, true);
+          },
+          { capture: true }
+        );
+      }
+      item.addEventListener("mouseenter", () => {
+        options.onHover(index);
+      });
+    }
 
     return item;
   }

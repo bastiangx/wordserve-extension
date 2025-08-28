@@ -36,6 +36,34 @@ export function BehaviorSettings({
           <div className="space-y-8">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
+                <Label className="text-base">Mouse interactions</Label>
+                <p className="text-xs font-mono text-muted-foreground lg:max-w-[65ch] max-w-[45ch]">
+                  Wether to allow mouse clicks and hovering on suggestions
+                </p>
+              </div>
+              <Switch
+                checked={pendingSettings.allowMouseInteractions !== false}
+                onCheckedChange={(checked) =>
+                  updatePendingSetting("allowMouseInteractions", checked)
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <Label className="text-base">Insert by mouse click</Label>
+              </div>
+              <Switch
+                checked={pendingSettings.allowMouseInsert !== false}
+                onCheckedChange={(checked) =>
+                  updatePendingSetting("allowMouseInsert", checked)
+                }
+              />
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
                 <Label className="text-base">
                   Abbreviations
                   <TooltipProvider>
@@ -134,8 +162,7 @@ export function BehaviorSettings({
               <div className="space-y-2">
                 <Label className="text-base">Smart backspace</Label>
                 <p className="text-xs font-mono text-muted-foreground lg:max-w-[65ch] max-w-[45ch]">
-                  Restores original text when backspacing over an inserted
-                  word
+                  Restores original text when backspacing over an inserted word
                 </p>
               </div>
               <Switch

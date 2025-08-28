@@ -6,6 +6,7 @@ import { themeToClass } from "@/lib/render/themes";
 import { Input } from "@/components/ui/input";
 import { browser } from "wxt/browser";
 import { cn } from "@/lib/utils";
+import { eventMatchesAny } from "@/lib/input/kbd";
 import "@/components/styles.css";
 
 export interface MenuPreviewProps {
@@ -185,29 +186,17 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
   );
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (!showMenu || suggestions.length === 0) return;
-      if (e.key === "ArrowDown") {
+  if (!showMenu || suggestions.length === 0) return;
+      if (eventMatchesAny(e, settings.keyBindings.navDown)) {
         e.preventDefault();
         e.stopPropagation();
         setSelectedIndex((i) => Math.min(i + 1, suggestions.length - 1));
         return;
       }
-      if (e.key === "ArrowUp") {
+      if (eventMatchesAny(e, settings.keyBindings.navUp)) {
         e.preventDefault();
         e.stopPropagation();
         setSelectedIndex((i) => Math.max(i - 1, 0));
-        return;
-      }
-      if (e.key === "Home") {
-        e.preventDefault();
-        e.stopPropagation();
-        setSelectedIndex(0);
-        return;
-      }
-      if (e.key === "End") {
-        e.preventDefault();
-        e.stopPropagation();
-        setSelectedIndex(suggestions.length - 1);
         return;
       }
       // Digit selection
@@ -227,13 +216,19 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
         }
         return;
       }
-      if (e.key === "Enter") {
+      if (eventMatchesAny(e, settings.keyBindings.insertWithSpace)) {
         e.preventDefault();
         e.stopPropagation();
         selectByIndex(selectedIndex);
         return;
       }
-      if (e.key === "Escape") {
+      if (eventMatchesAny(e, settings.keyBindings.insertWithoutSpace)) {
+        e.preventDefault();
+        e.stopPropagation();
+        selectByIndex(selectedIndex);
+        return;
+      }
+      if (eventMatchesAny(e, settings.keyBindings.closeMenu)) {
         e.preventDefault();
         e.stopPropagation();
         setShowMenu(false);
@@ -370,10 +365,17 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                   }}
                   role="option"
                   aria-selected={isSelected}
-                  onMouseEnter={() => setSelectedIndex(index)}
+                  onMouseEnter={() => {
+                    if (settings.allowMouseInteractions !== false) {
+                      setSelectedIndex(index);
+                    }
+                  }}
                   onMouseDown={(e) => {
+                    if (settings.allowMouseInteractions === false) return;
                     e.preventDefault();
-                    selectByIndex(index);
+                    if (settings.allowMouseInsert !== false) {
+                      selectByIndex(index);
+                    }
                   }}
                 >
                   {settings.rankingPosition === "left" && (

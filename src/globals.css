@@ -120,6 +120,17 @@
     border-color: hsl(var(--interaction));
   }
 
+  code {
+    font-family: "Geist Mono", ui-monospace, SFMono-Regular, Monaco, Consolas,
+      "Liberation Mono", "Courier New", monospace;
+    background-color: hsl(var(--card));
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+    border-radius: 6px;
+    padding: 0.15rem 0.35rem;
+    font-size: 0.9em;
+  }
+
   .dark {
     --sidebar-background: 249 22% 12%;
     --sidebar-foreground: 240 4.8% 95.9%;

@@ -1,4 +1,6 @@
 import type { DefaultConfig, InputState } from "@/types";
+import { eventMatchesAny, normalizeEventKey } from "@/lib/input/kbd";
+import { browser } from "wxt/browser";
 import { AUTOCOMPLETE_DEFAULTS } from "@/types";
 import {
   getCaretCoordinates,
@@ -127,37 +129,8 @@ export class InputHandler {
   private handleKeydown = (event: KeyboardEvent) => {
     const { key } = event;
 
-    const normKey = (k: string): "enter" | "tab" | "space" | "other" => {
-      if (k === "Enter") return "enter";
-      if (k === "Tab") return "tab";
-      if (k === " ") return "space";
-      return "other";
-    };
-
     const hasAnyModifier = () =>
       event.ctrlKey || event.metaKey || event.altKey || event.shiftKey;
-
-    const eventMatchesBinding = (
-      ev: KeyboardEvent,
-      binding: DefaultConfig["keyBindings"][keyof DefaultConfig["keyBindings"]]
-    ): boolean => {
-      const k = normKey(ev.key);
-      if (k === "other") return false;
-      if (binding.key !== k) return false;
-      const req = new Set(
-        (binding.modifiers || []).map((m) => m.toLowerCase())
-      );
-      const wantCtrl = req.has("ctrl");
-      const wantCmd = req.has("cmd");
-      const wantAlt = req.has("alt");
-      const wantShift = req.has("shift");
-      // Exact match of modifier presence (no extra, no missing)
-      if (ev.ctrlKey !== wantCtrl) return false;
-      if (ev.metaKey !== wantCmd) return false;
-      if (ev.altKey !== wantAlt) return false;
-      if (ev.shiftKey !== wantShift) return false;
-      return true;
-    };
 
     // Handle backspace for smart backspace functionality
     if (
@@ -173,32 +146,47 @@ export class InputHandler {
       }
     }
 
-    // Handle navigation keys first (these work with modifier keys)
-    switch (key) {
-      case "ArrowDown":
-      case "ArrowUp":
-        // Only handle if menu is visible
-        if (this.menuVisible) {
-          event.preventDefault();
-          event.stopPropagation();
-          this.callbacks.onNavigate(key === "ArrowDown" ? "down" : "up");
-        }
-        return;
-      case "ArrowLeft":
-      case "ArrowRight":
-        // Close menu when left/right arrow keys are pressed
-        if (this.menuVisible) {
-          this.callbacks.onHideMenu();
-        }
-        return;
-      case "Escape":
-        // Only handle if menu is visible
-        if (this.menuVisible) {
-          event.preventDefault();
-          event.stopPropagation();
-          this.callbacks.onHideMenu();
-        }
-        return;
+    // Handle custom chords for navigation/close/open/toggle
+    if (eventMatchesAny(event as any, this.settings.keyBindings.navDown)) {
+      if (this.menuVisible) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.callbacks.onNavigate("down");
+      }
+      return;
+    }
+    if (eventMatchesAny(event as any, this.settings.keyBindings.navUp)) {
+      if (this.menuVisible) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.callbacks.onNavigate("up");
+      }
+      return;
+    }
+    if (eventMatchesAny(event as any, this.settings.keyBindings.closeMenu)) {
+      if (this.menuVisible) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.callbacks.onHideMenu();
+      }
+      return;
+    }
+    if (eventMatchesAny(event as any, this.settings.keyBindings.openSettings)) {
+      // optional action
+      event.preventDefault();
+      event.stopPropagation();
+      browser.runtime
+        .sendMessage({ type: "wordserve-open-settings" })
+        .catch(() => {});
+      return;
+    }
+    if (eventMatchesAny(event as any, this.settings.keyBindings.toggleGlobal)) {
+      event.preventDefault();
+      event.stopPropagation();
+      browser.runtime
+        .sendMessage({ type: "wordserve-toggle-global" })
+        .catch(() => {});
+      return;
     }
 
     // Only handle these keys when menu is visible
@@ -206,117 +194,66 @@ export class InputHandler {
       return;
     }
 
-    switch (key) {
-      case "Enter":
-        if (
-          eventMatchesBinding(event, this.settings.keyBindings.insertWithSpace)
-        ) {
+    // Handle selection via configured chords first
+    if (eventMatchesAny(event as any, this.settings.keyBindings.insertWithSpace)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.callbacks.onSelect(true);
+      return;
+    }
+    if (eventMatchesAny(event as any, this.settings.keyBindings.insertWithoutSpace)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.callbacks.onSelect(false);
+      return;
+    }
+    // Space fallback for abbreviation-on-space
+    const norm = normalizeEventKey(event.key, event.code);
+    if (
+      norm === "space" &&
+      this.settings.abbreviationsEnabled &&
+      this.settings.abbreviationInsertMode === "space"
+    ) {
+      const context = this.getCurrentContext();
+      if (context && context.currentWord) {
+        const match = findAbbreviation(context.currentWord, this.settings);
+        if (match) {
           event.preventDefault();
           event.stopPropagation();
-          this.callbacks.onSelect(true);
-        } else if (
-          eventMatchesBinding(
-            event,
-            this.settings.keyBindings.insertWithoutSpace
-          )
-        ) {
-          event.preventDefault();
-          event.stopPropagation();
-          this.callbacks.onSelect(false);
-        }
-        break;
-      case "Tab":
-        if (
-          eventMatchesBinding(event, this.settings.keyBindings.insertWithSpace)
-        ) {
-          event.preventDefault();
-          event.stopPropagation();
-          this.callbacks.onSelect(true);
-        } else if (
-          eventMatchesBinding(
-            event,
-            this.settings.keyBindings.insertWithoutSpace
-          )
-        ) {
-          event.preventDefault();
-          event.stopPropagation();
-          this.callbacks.onSelect(false);
-        }
-        break;
-      case " ":
-        if (
-          eventMatchesBinding(event, this.settings.keyBindings.insertWithSpace)
-        ) {
-          event.preventDefault();
-          event.stopPropagation();
-          this.callbacks.onSelect(true);
-        } else if (
-          eventMatchesBinding(
-            event,
-            this.settings.keyBindings.insertWithoutSpace
-          )
-        ) {
-          event.preventDefault();
-          event.stopPropagation();
-          this.callbacks.onSelect(false);
-        } else {
-          // If no binding matched, fall back to abbreviation-on-space behavior when configured
-          if (
-            this.settings.abbreviationsEnabled &&
-            this.settings.abbreviationInsertMode === "space"
-          ) {
-            const context = this.getCurrentContext();
-            if (context && context.currentWord) {
-              const match = findAbbreviation(
-                context.currentWord,
-                this.settings
-              );
-              if (match) {
-                event.preventDefault();
-                event.stopPropagation();
-                this.replaceCurrentWord(match.value, true);
-                this.markInputFromSuggestion();
-                this.callbacks.onHideMenu();
-                return;
-              }
-            }
-          }
-          if (this.settings.smartBackspace) {
-            smartBackspace.invalidateForElement(this.element);
-          }
-        }
-        break;
-      default:
-        // Only allow digit selection when no modifiers are pressed
-        if (
-          this.settings.numberSelection &&
-          !hasAnyModifier() &&
-          /^[1-9]$/.test(key)
-        ) {
-          const index = parseInt(key) - 1;
-          if (
-            index >= 0 &&
-            index < AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE
-          ) {
-            event.preventDefault();
-            event.stopPropagation();
-            this.callbacks.onSelectByNumber(index);
-          }
-        } else if (!/^[a-zA-Z0-9]$/.test(key) && key.length === 1) {
-          // Non-alphanumeric character typed, hide menu
+          this.replaceCurrentWord(match.value, true);
+          this.markInputFromSuggestion();
           this.callbacks.onHideMenu();
+          return;
         }
-        break;
+      }
+      if (this.settings.smartBackspace) {
+        smartBackspace.invalidateForElement(this.element);
+      }
+    }
+    // Digit quick select
+    if (
+      this.settings.numberSelection &&
+      !hasAnyModifier() &&
+      /^[1-9]$/.test(key)
+    ) {
+      const index = parseInt(key) - 1;
+      if (
+        index >= 0 &&
+        index < AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.callbacks.onSelectByNumber(index);
+        return;
+      }
+    }
+    // Non-alphanumeric single characters hide menu
+    if (!/^[a-zA-Z0-9]$/.test(key) && key.length === 1) {
+      this.callbacks.onHideMenu();
     }
   };
 
-  private shouldHandleKey(key: "enter" | "tab" | "space"): boolean {
-    // Deprecated: kept for backward compatibility if used elsewhere
-    return (
-      this.settings.keyBindings.insertWithoutSpace.key === key ||
-      this.settings.keyBindings.insertWithSpace.key === key
-    );
-  }
+  // removed legacy shouldHandleKey
 
   private handleBlur = () => {
     setTimeout(() => {

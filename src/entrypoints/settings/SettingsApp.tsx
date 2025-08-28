@@ -68,7 +68,7 @@ const menuItems = [
     id: "behavior",
     label: "Behavior",
     icon: BookType,
-    desc: "Insertions & input control",
+    desc: "Insertions & interactions",
   },
   {
     id: "abbreviations",

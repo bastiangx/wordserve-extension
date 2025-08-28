@@ -2,15 +2,11 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { DefaultConfig } from "@/types";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { parseChordString, formatChords } from "@/lib/input/kbd";
 
 export interface KeyboardSettingsProps {
   pendingSettings: DefaultConfig;
@@ -21,6 +17,24 @@ export function KeyboardSettings({
   pendingSettings,
   updatePendingSetting,
 }: KeyboardSettingsProps) {
+  const applyChordInput = (
+    field:
+      | "insertWithoutSpace"
+      | "insertWithSpace"
+      | "navUp"
+      | "navDown"
+      | "closeMenu"
+      | "openSettings"
+      | "toggleGlobal",
+    raw: string
+  ) => {
+    const chords = parseChordString(raw);
+    const next = {
+      ...pendingSettings.keyBindings,
+      [field]: chords,
+    } as DefaultConfig["keyBindings"];
+    updatePendingSetting("keyBindings", next as any);
+  };
   return (
     <div className="space-y-4">
       <Card className="border-transparent">
@@ -41,118 +55,107 @@ export function KeyboardSettings({
               />
             </div>
 
-            <Separator />
-
-            <div className="flex justify-between items-center">
-              <div className="space-y-1">
-                <Label className="text-base">Insert without space</Label>
+            <div className="space-y-4">
+              <Separator />
+              <div className="rounded-md border bg-muted/15 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Badge className="text-xs font-mono" variant="secondary">
+                    FAQ
+                  </Badge>
+                  <span className="font-bold text-base">
+                    How do I change the keybinds
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground leading-loose">
+                  Type sequences like <code>cmd+shift+k</code> or{" "}
+                  <code>alt+comma</code> <br />
+                  To assign multiple keys or combos for an action, separate with
+                  commas: <code>escape, cmd+colon</code>
+                  <br />
+                  <i>Whitespace is ignored.</i>
+                </p>
+                <Separator className="bg-slate-500" />
+                <ul className="list-disc list-inside space-y-1 text-sm leading-loose text-muted-foreground">
+                  <li>
+                    <b>Modifiers:</b> <code>cmd</code>, <code>alt</code>,{" "}
+                    <code>ctrl</code>, <code>shift</code>
+                  </li>
+                  <li>
+                    <b>Letters:</b> <code>a–z</code>
+                  </li>
+                  <li>
+                    <b>Digits:</b> <code>0–9</code> (if digit selection is OFF)
+                  </li>
+                  <li>
+                    <b>Arrows:</b> <code>left</code>, <code>down</code>,{" "}
+                    <code>up</code>, <code>right</code>
+                  </li>
+                  <li>
+                    <b>Fn keys:</b> <code>f1–f20</code>
+                  </li>
+                  <li>
+                    <b>Special keys:</b> <code>enter</code>, <code>tab</code>,{" "}
+                    <code>space</code>, <code>escape</code>,{" "}
+                    <code>backspace</code>, <code>pageUp</code>,{" "}
+                    <code>pageDown</code>, <code>home</code>, <code>end</code>,{" "}
+                    <code>forwardDelete</code>
+                  </li>
+                  <li>
+                    <b>Punctuation</b>: <code>comma</code>, <code>period</code>,{" "}
+                    <code>minus</code>, <code>equal</code>, <code>slash</code>,{" "}
+                    <code>backslash</code>, <code>quote</code>,{" "}
+                    <code>semicolon</code>, <code>backtick</code>,{" "}
+                    <code>leftSquareBracket</code>,{" "}
+                    <code>rightSquareBracket</code>
+                  </li>
+                  <li>
+                    <b>Keypad</b>: <code>keypad0-keypad9</code>
+                  </li>
+                  <li>
+                    <b>Keypad specials:</b> <code>keypadEnter</code>,{" "}
+                    <code>keypadDivide</code>, <code>keypadMultiply</code>,{" "}
+                    <code>keypadSubtract</code>, <code>keypadAdd</code>,{" "}
+                    <code>keypadDecimal</code>, <code>keypadEqual</code>,{" "}
+                    <code>keypadClear</code>
+                  </li>
+                </ul>
+                <Separator className="bg-slate-500 mb-8" />
+                <div className="text-sm text-muted-foreground leading-relaxed">
+                  <b>Note</b>: If Digit selection is ON, plain numbers{" "}
+                  <code className="text-muted-foreground">1–9</code> will be
+                  reserved for quick insert and can’t be used here, unless you
+                  turn digit selection OFF (or use combos like{" "}
+                  <code className="text-muted-foreground">ctrl+1</code>) or{" "}
+                  <code className="text-muted-foreground">cmd+5</code>
+                </div>
               </div>
-              <div className="flex gap-2 font-mono">
-                <Select
-                  value={
-                    pendingSettings.keyBindings.insertWithoutSpace
-                      .modifiers[0] || "none"
-                  }
-                  onValueChange={(value) =>
-                    updatePendingSetting("keyBindings", {
-                      ...pendingSettings.keyBindings,
-                      insertWithoutSpace: {
-                        ...pendingSettings.keyBindings.insertWithoutSpace,
-                        modifiers: value === "none" ? [] : [value],
-                      },
-                    })
-                  }
+              {(
+                [
+                  ["insertWithoutSpace", "Insert without space", "enter"],
+                  ["insertWithSpace", "Insert with space", "tab"],
+                  ["navUp", "Menu [move Up]", "up"],
+                  ["navDown", "Menu [move Down]", "down"],
+                  ["closeMenu", "Close menu", "escape"],
+                  ["openSettings", "Open WordServe's settings", "cmd+comma"],
+                  ["toggleGlobal", "Toggle WordServe ON or OFF", "ctrl+alt+w"],
+                ] as const
+              ).map(([field, label, placeholder]) => (
+                <div
+                  key={field}
+                  className="flex items-center justify-between gap-4"
                 >
-                  <SelectTrigger className="w-24">
-                    <SelectValue placeholder="None" />
-                  </SelectTrigger>
-                  <SelectContent className="font-mono">
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="ctrl">Ctrl</SelectItem>
-                    <SelectItem value="cmd">Cmd</SelectItem>
-                    <SelectItem value="alt">Alt</SelectItem>
-                    <SelectItem value="shift">Shift</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Label>+</Label>
-                <Select
-                  value={pendingSettings.keyBindings.insertWithoutSpace.key}
-                  onValueChange={(value: "enter" | "tab" | "space") =>
-                    updatePendingSetting("keyBindings", {
-                      ...pendingSettings.keyBindings,
-                      insertWithoutSpace: {
-                        ...pendingSettings.keyBindings.insertWithoutSpace,
-                        key: value,
-                      },
-                    })
-                  }
-                >
-                  <SelectTrigger className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="enter">Enter</SelectItem>
-                    <SelectItem value="tab">Tab</SelectItem>
-                    <SelectItem value="space">Space</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <div className="space-y-1">
-                <Label className="text-base">Insert with space</Label>
-              </div>
-              <div className="flex gap-2 font-mono">
-                <Select
-                  value={
-                    pendingSettings.keyBindings.insertWithSpace
-                      .modifiers[0] || "none"
-                  }
-                  onValueChange={(value) =>
-                    updatePendingSetting("keyBindings", {
-                      ...pendingSettings.keyBindings,
-                      insertWithSpace: {
-                        ...pendingSettings.keyBindings.insertWithSpace,
-                        modifiers: value === "none" ? [] : [value],
-                      },
-                    })
-                  }
-                >
-                  <SelectTrigger className="w-24">
-                    <SelectValue placeholder="None" />
-                  </SelectTrigger>
-                  <SelectContent className="font-mono">
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="ctrl">Ctrl</SelectItem>
-                    <SelectItem value="cmd">Cmd</SelectItem>
-                    <SelectItem value="alt">Alt</SelectItem>
-                    <SelectItem value="shift">Shift</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Label>+</Label>
-                <Select
-                  value={pendingSettings.keyBindings.insertWithSpace.key}
-                  onValueChange={(value: "enter" | "tab" | "space") =>
-                    updatePendingSetting("keyBindings", {
-                      ...pendingSettings.keyBindings,
-                      insertWithSpace: {
-                        ...pendingSettings.keyBindings.insertWithSpace,
-                        key: value,
-                      },
-                    })
-                  }
-                >
-                  <SelectTrigger className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="enter">Enter</SelectItem>
-                    <SelectItem value="tab">Tab</SelectItem>
-                    <SelectItem value="space">Space</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                  <Label className="text-base flex-1">{label}</Label>
+                  <Input
+                    className="font-mono w-80"
+                    spellCheck={false}
+                    placeholder={String(placeholder)}
+                    defaultValue={formatChords(
+                      (pendingSettings.keyBindings as any)[field]
+                    )}
+                    onBlur={(e) => applyChordInput(field, e.target.value)}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </CardContent>

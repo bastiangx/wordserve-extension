@@ -1,31 +1,91 @@
 import { clamp, toNumber, toBool } from "@/lib/utils";
 import type { ThemeId } from "@/lib/render/themes";
 import type { DefaultConfig } from "@/types";
+import { parseChordString, type KeyChord, ALLOWED_KEYS, formatChords } from "@/lib/input/kbd";
 import { DEFAULT_SETTINGS } from "@/types";
 
-// coerceKBD coerces an object into a keyBindings config, using fallback for missing/invalid values
-function coerceKBD(obj: any, fallback: DefaultConfig["keyBindings"]) {
-  if (!obj || typeof obj !== "object") return fallback;
-  const allowedKeys = ["enter", "tab", "space"] as const;
-  const makeBinding = (b: any, def: any) => {
-    if (!b || typeof b !== "object") return def;
-    const key =
-      typeof b.key === "string" &&
-        (allowedKeys as readonly string[]).includes(b.key)
-        ? b.key
-        : def.key;
-    const modifiers = Array.isArray(b.modifiers)
-      ? b.modifiers.map(String)
-      : def.modifiers;
-    return { key, modifiers };
+// coerce new chords config from string or arrays
+function sanitizeChords(value: any): KeyChord[] {
+  let list: KeyChord[] = [];
+  if (typeof value === "string") list = parseChordString(value);
+  else if (Array.isArray(value)) {
+    for (const v of value) {
+      if (v && typeof v === "object" && typeof v.key === "string") {
+        const key = v.key.toLowerCase();
+        if (!ALLOWED_KEYS.has(key)) continue;
+        const mods = Array.isArray(v.modifiers)
+          ? Array.from(new Set(v.modifiers.map((m: any) => String(m).toLowerCase())))
+          : [];
+        list.push({ key, modifiers: mods as any });
+      }
+    }
+  }
+  // dedupe within list
+  const seen = new Set<string>();
+  const out: KeyChord[] = [];
+  for (const c of list) {
+    const sig = `${(c.modifiers||[]).slice().sort().join("+")}::${c.key}`;
+    if (seen.has(sig)) continue;
+    seen.add(sig);
+    out.push(c);
+  }
+  return out;
+}
+
+function coerceKBD(obj: any, fallback: DefaultConfig["keyBindings"], numberSelection: boolean) {
+  const safe = (v: any, def: KeyChord[]) => {
+    if (v === undefined) return def;
+    const parsed = sanitizeChords(v);
+    // If user explicitly cleared it, keep empty to disable that action
+    return parsed;
   };
-  return {
-    insertWithoutSpace: makeBinding(
-      obj.insertWithoutSpace,
-      fallback.insertWithoutSpace
-    ),
-    insertWithSpace: makeBinding(obj.insertWithSpace, fallback.insertWithSpace),
+  let kb = {
+    insertWithoutSpace: safe(obj?.insertWithoutSpace, fallback.insertWithoutSpace),
+    insertWithSpace: safe(obj?.insertWithSpace, fallback.insertWithSpace),
+    navUp: safe(obj?.navUp, fallback.navUp),
+    navDown: safe(obj?.navDown, fallback.navDown),
+    closeMenu: safe(obj?.closeMenu, fallback.closeMenu),
+    openSettings: safe(obj?.openSettings, fallback.openSettings),
+    toggleGlobal: safe(obj?.toggleGlobal, fallback.toggleGlobal),
   };
+  // If number selection is enabled, disallow plain digit chords without modifiers to avoid conflicts
+  if (numberSelection) {
+    const filterDigits = (list: KeyChord[]) =>
+      list.filter((c) => !(c.key.length === 1 && /[0-9]/.test(c.key) && (!c.modifiers || c.modifiers.length === 0)));
+    kb.insertWithoutSpace = filterDigits(kb.insertWithoutSpace);
+    kb.insertWithSpace = filterDigits(kb.insertWithSpace);
+    kb.navUp = filterDigits(kb.navUp);
+    kb.navDown = filterDigits(kb.navDown);
+    kb.closeMenu = filterDigits(kb.closeMenu);
+    kb.openSettings = filterDigits(kb.openSettings);
+    kb.toggleGlobal = filterDigits(kb.toggleGlobal);
+  }
+  // Enforce no duplicate chords across actions; earlier actions win
+  const order: Array<keyof DefaultConfig["keyBindings"]> = [
+    "insertWithSpace",
+    "insertWithoutSpace",
+    "navDown",
+    "navUp",
+    "closeMenu",
+    "openSettings",
+    "toggleGlobal",
+  ];
+  const used = new Set<string>();
+  const cleaned: any = { ...kb };
+  for (const k of order) {
+    const list = (cleaned[k] || []) as KeyChord[];
+    const unique: KeyChord[] = [];
+    for (const c of list) {
+      const sig = `${(c.modifiers||[]).slice().sort().join("+")}::${c.key}`;
+      if (used.has(sig)) continue;
+      used.add(sig);
+      unique.push(c);
+    }
+    // Keep empty to explicitly disable the action
+    cleaned[k] = unique;
+  }
+  kb = cleaned;
+  return kb;
 }
 
 /**
@@ -140,9 +200,18 @@ export function normalizeConfig(input: any): DefaultConfig {
     200
   );
   const rankingPosition = merged.rankingPosition === "left" ? "left" : "right";
+  const allowMouseInsert = toBool(
+    merged.allowMouseInsert,
+    DEFAULT_SETTINGS.allowMouseInsert ?? true
+  );
+  const allowMouseInteractions = toBool(
+    merged.allowMouseInteractions,
+    DEFAULT_SETTINGS.allowMouseInteractions ?? true
+  );
   const keyBindings = coerceKBD(
     merged.keyBindings,
-    DEFAULT_SETTINGS.keyBindings
+    DEFAULT_SETTINGS.keyBindings,
+    numberSelection
   );
   const abbreviations: Record<string, string> = {};
   if (merged.abbreviations && typeof merged.abbreviations === "object") {
@@ -228,6 +297,8 @@ export function normalizeConfig(input: any): DefaultConfig {
     autoInsertion,
     smartBackspace,
     rankingPosition,
+  allowMouseInsert,
+  allowMouseInteractions,
     keyBindings,
     accessibility,
     domains,

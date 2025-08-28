@@ -40,6 +40,7 @@ export interface SensitivityResult {
 }
 
 import type { ThemeId } from "@/lib/render/themes";
+import type { KeyChord } from "@/lib/input/kbd";
 
 export interface DefaultConfig {
   minWordLength: number;
@@ -66,15 +67,24 @@ export interface DefaultConfig {
   autoInsertion: boolean;
   smartBackspace: boolean;
   rankingPosition: "left" | "right";
+  // Interaction toggles
+  allowMouseInsert?: boolean;
+  allowMouseInteractions?: boolean;
   keyBindings: {
-    insertWithoutSpace: {
-      key: "enter" | "tab" | "space";
-      modifiers: string[];
-    };
-    insertWithSpace: {
-      key: "enter" | "tab" | "space";
-      modifiers: string[];
-    };
+    /** Select/commit without adding a trailing space */
+    insertWithoutSpace: KeyChord[];
+    /** Select/commit and add a trailing space */
+    insertWithSpace: KeyChord[];
+    /** Move selection up in the menu */
+    navUp: KeyChord[];
+    /** Move selection down in the menu */
+    navDown: KeyChord[];
+    /** Close the menu */
+    closeMenu: KeyChord[];
+    /** Open the WordServe settings page (optional) */
+    openSettings: KeyChord[];
+    /** Toggle WordServe globally on/off (optional) */
+    toggleGlobal: KeyChord[];
   };
   accessibility: {
     boldSuffix: boolean;
@@ -217,15 +227,16 @@ export const DEFAULT_SETTINGS: DefaultConfig = {
   autoInsertion: false,
   smartBackspace: true,
   rankingPosition: "right",
+  allowMouseInsert: true,
+  allowMouseInteractions: true,
   keyBindings: {
-    insertWithoutSpace: {
-      key: "enter",
-      modifiers: [],
-    },
-    insertWithSpace: {
-      key: "tab",
-      modifiers: [],
-    },
+  insertWithoutSpace: [{ key: "enter", modifiers: [] }],
+  insertWithSpace: [{ key: "tab", modifiers: [] }],
+  navUp: [{ key: "up", modifiers: [] }],
+  navDown: [{ key: "down", modifiers: [] }],
+  closeMenu: [{ key: "escape", modifiers: [] }],
+  openSettings: [],
+  toggleGlobal: [],
   },
   accessibility: {
     boldSuffix: false,

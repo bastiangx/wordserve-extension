@@ -251,6 +251,31 @@ export default defineBackground(() => {
         })();
         return true;
       }
+      if (message.type === "wordserve-open-settings") {
+        (async () => {
+          try {
+            await browser.runtime.openOptionsPage();
+            sendResponse({ success: true });
+          } catch (e) {
+            sendResponse({ success: false, error: String(e) });
+          }
+        })();
+        return true;
+      }
+      if (message.type === "wordserve-toggle-global") {
+        (async () => {
+          try {
+            const data = await browser.storage.sync.get("globalEnabled");
+            const next = !data.globalEnabled;
+            await browser.storage.sync.set({ globalEnabled: next });
+            broadcast("wordserve-toggle", { enabled: next });
+            sendResponse({ success: true, enabled: next });
+          } catch (e) {
+            sendResponse({ success: false, error: String(e) });
+          }
+        })();
+        return true;
+      }
       if (message.type === "domain-override") {
         (async () => {
           try {

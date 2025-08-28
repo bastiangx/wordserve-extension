@@ -337,7 +337,7 @@ export function AbbreviationsSettings({
       </div>
 
       <Separator />
-      <div className="rounded-md border bg-muted/40 p-4 space-y-3">
+      <div className="rounded-md border bg-muted/15 p-4 space-y-3">
         <div className="flex items-center gap-2">
           <Badge className="text-xs font-mono" variant="secondary">
             FAQ

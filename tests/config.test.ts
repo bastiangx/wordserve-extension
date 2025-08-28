@@ -10,9 +10,10 @@ describe("normalizeConfig", () => {
 
   test("fills defaults and preserves allowed theme", () => {
     const cfg = normalizeConfig({ theme: "light" });
-    expect(cfg.theme).toBe("light");
-    expect(cfg.debounceTime).toBeDefined();
-    expect(cfg.keyBindings.insertWithSpace.key).toBeDefined();
+  expect(cfg.theme).toBe("light");
+  expect(cfg.debounceTime).toBeDefined();
+  expect(Array.isArray(cfg.keyBindings.insertWithSpace)).toBe(true);
+  expect(cfg.keyBindings.insertWithSpace.length).toBeGreaterThan(0);
   });
 
   test("coerces abbreviations map entries to strings", () => {
