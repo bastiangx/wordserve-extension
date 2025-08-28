@@ -1,5 +1,9 @@
 import { browser } from "wxt/browser";
 
+/**
+ * Injects the OpenDyslexic font into the document & handles deduplication.
+ */
+
 let injected = false;
 const SAFE_FONT_CHARS = /[^a-zA-Z0-9_\-\s,\"']/g;
 
@@ -41,7 +45,6 @@ export function initOpenDyslexic(): void {
   }
 }
 
-
 function quoteIfNeeded(name: string): string {
   const trimmed = name.trim();
   if (!trimmed) return "";
@@ -77,7 +80,7 @@ export function buildFontFamilyFromConfig(settings: {
   customFontList?: string;
 }): string {
   const allowedCatalog = new Set([
-    "Geist Mono",
+    "JetBrains Mono",
     "Atkinson Hyperlegible",
     "Monaco",
   ]);
@@ -105,7 +108,7 @@ export function buildFontFamilyFromConfig(settings: {
   const parts: string[] = [];
   if (custom) parts.push(custom);
   if (selected.length) parts.push(selected.join(", "));
-  else parts.push("'Geist Mono'");
+  else parts.push("'JetBrains Mono'");
   parts.push(...fallbacks);
   return parts.map(quoteIfNeeded).join(", ");
 }

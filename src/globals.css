@@ -1,5 +1,5 @@
+@import "./fonts.css";
 @import "./themes.css";
-@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Geist+Mono:wght@100..900&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -50,7 +50,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: "Atkinson Hyperlegible", "Geist Mono", sans-serif;
+    font-family: "Atkinson Hyperlegible", "JetBrains Mono", sans-serif;
   }
 
   h1,
@@ -121,8 +121,8 @@
   }
 
   code {
-    font-family: "Geist Mono", ui-monospace, SFMono-Regular, Monaco, Consolas,
-      "Liberation Mono", "Courier New", monospace;
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Monaco,
+      Consolas, "Liberation Mono", monospace;
     background-color: hsl(var(--card));
     color: hsl(var(--foreground));
     border: 1px solid hsl(var(--border));
@@ -142,7 +142,6 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
-  /* Atkinson Hyperlegible font classes */
   .atkinson-hyperlegible-regular {
     font-family: "Atkinson Hyperlegible", sans-serif;
     font-weight: 400;
@@ -167,57 +166,56 @@
     font-style: italic;
   }
 
-  /* Geist Mono font classes */
-  .geist-mono-100 {
-    font-family: "Geist Mono", monospace;
+  .jetbrains-mono-100 {
+    font-family: "JetBrains Mono", monospace;
     font-optical-sizing: auto;
     font-weight: 100;
     font-style: normal;
   }
-  .geist-mono-200 {
-    font-family: "Geist Mono", monospace;
+  .jetbrains-mono-200 {
+    font-family: "JetBrains Mono", monospace;
     font-optical-sizing: auto;
     font-weight: 200;
     font-style: normal;
   }
-  .geist-mono-300 {
-    font-family: "Geist Mono", monospace;
+  .jetbrains-mono-300 {
+    font-family: "JetBrains Mono", monospace;
     font-optical-sizing: auto;
     font-weight: 300;
     font-style: normal;
   }
-  .geist-mono-400 {
-    font-family: "Geist Mono", monospace;
+  .jetbrains-mono-400 {
+    font-family: "JetBrains Mono", monospace;
     font-optical-sizing: auto;
     font-weight: 400;
     font-style: normal;
   }
-  .geist-mono-500 {
-    font-family: "Geist Mono", monospace;
+  .jetbrains-mono-500 {
+    font-family: "JetBrains Mono", monospace;
     font-optical-sizing: auto;
     font-weight: 500;
     font-style: normal;
   }
-  .geist-mono-600 {
-    font-family: "Geist Mono", monospace;
+  .jetbrains-mono-600 {
+    font-family: "JetBrains Mono", monospace;
     font-optical-sizing: auto;
     font-weight: 600;
     font-style: normal;
   }
-  .geist-mono-700 {
-    font-family: "Geist Mono", monospace;
+  .jetbrains-mono-700 {
+    font-family: "JetBrains Mono", monospace;
     font-optical-sizing: auto;
     font-weight: 700;
     font-style: normal;
   }
-  .geist-mono-800 {
-    font-family: "Geist Mono", monospace;
+  .jetbrains-mono-800 {
+    font-family: "JetBrains Mono", monospace;
     font-optical-sizing: auto;
     font-weight: 800;
     font-style: normal;
   }
-  .geist-mono-900 {
-    font-family: "Geist Mono", monospace;
+  .jetbrains-mono-900 {
+    font-family: "JetBrains Mono", monospace;
     font-optical-sizing: auto;
     font-weight: 900;
     font-style: normal;

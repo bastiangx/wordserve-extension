@@ -155,7 +155,7 @@ export function normalizeConfig(input: any): DefaultConfig {
     typeof merged.fontWeight === "string"
       ? merged.fontWeight
       : DEFAULT_SETTINGS.fontWeight;
-  const allowedFonts = new Set(["Geist Mono", "Atkinson Hyperlegible", "Monaco"]);
+  const allowedFonts = new Set(["JetBrains Mono", "Atkinson Hyperlegible", "Monaco"]);
   const fontFamilyList = Array.isArray(merged.fontFamilyList)
     ? merged.fontFamilyList
       .map((s: any) => (typeof s === "string" ? s : ""))

@@ -16,7 +16,7 @@ export const theme = {
   extend: {
     fontFamily: {
       sans: ["Atkinson Hyperlegible", "sans-serif"],
-      mono: ["Geist Mono", "monospace"],
+      mono: ["JetBrains Mono", "monospace"],
       serif: ["Atkinson Hyperlegible", "serif"],
     },
     colors: {

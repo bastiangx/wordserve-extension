@@ -95,15 +95,13 @@ export class AutocompleteMenuRenderer {
     );
     if (options.dyslexicFont) {
       initOpenDyslexic();
-      // If provided, prefix OpenDyslexic to the provided list; else use a sensible default with Geist Mono
       const rest = options.fontFamily
         ? options.fontFamily
-        : `'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace`;
+        : `'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace`;
       menuEl.style.fontFamily = `'OpenDyslexic', ${rest}`;
     } else {
       menuEl.style.fontFamily = options.fontFamily || "inherit";
     }
-    // toggle helpers via classes instead of inline colors
     menuEl.classList.toggle("no-border", !showBorder);
     menuEl.classList.toggle("no-radius", !useRadius);
     this.container!.style.left = `${options.position.x}px`;
@@ -115,7 +113,6 @@ export class AutocompleteMenuRenderer {
     while (this.menu.firstChild) {
       this.menu.removeChild(this.menu.firstChild);
     }
-
     const displaySuggestions = options.suggestions.slice(
       0,
       options.maxItems || 9
