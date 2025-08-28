@@ -1,6 +1,6 @@
 {
   "name": "wordserve",
-  "description": "WordServe is a lightweight and fast autocompletion and suggestions engine for browsers.",
+  "description": "Lightweight and fast autocompletion and suggestions engine for browsers.",
   "private": false,
   "version": "0.1.0",
   "type": "module",

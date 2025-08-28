@@ -7,10 +7,6 @@ import { browser } from "wxt/browser";
 
 export default defineContentScript({
   matches: ["<all_urls>"],
-  includeGlobs: [
-    "chrome-extension://*/settings.html",
-    "moz-extension://*/settings.html",
-  ],
   main() {
     class WordServeContentScript {
       private controllers = new Map<HTMLElement, AutocompleteController>();
@@ -123,7 +119,7 @@ export default defineContentScript({
         // Find all input elements within the element
         const inputs = element.querySelectorAll(
           'input[type="text"], input[type="search"], input[type="email"], input[type="url"], ' +
-          'input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]'
+            'input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]'
         );
         inputs.forEach((input) => {
           if (this.isTargetElement(input)) {
@@ -201,7 +197,7 @@ export default defineContentScript({
           const controller = new AutocompleteController({
             element,
             settings: this.settings,
-            onSelectionChanged: () => { },
+            onSelectionChanged: () => {},
           });
           this.controllers.set(element, controller);
           const observer = new MutationObserver((mutations) => {
