@@ -56,5 +56,15 @@ export default defineConfig({
             },
           ]
         : ["data/*.bin", "asset-manifest.json"],
+    ...(manifestVersion === 2
+      ? {
+          browser_specific_settings: {
+            gecko: {
+              id: "wordserve@bastiangx.dev",
+              strict_min_version: "102.0",
+            },
+          },
+        }
+      : {}),
   }),
 });
