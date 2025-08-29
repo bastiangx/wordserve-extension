@@ -9,9 +9,10 @@
 </h1>
 
 <div align="center">
+<h4>
 Lightweight Autosuggestions and abbrevations in your browser!
+</h4>
 
-<br />
 <br />
 
 <div align="center">
