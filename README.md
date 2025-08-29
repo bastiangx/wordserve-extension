@@ -180,6 +180,8 @@ bun install
 bun run prep
 ```
 
+See [scripts/README.md](scripts/README.md) for details about dictionary assets and SHA256 checks.
+
 3. Make your changes
 
 4. run the development watch
@@ -210,6 +212,23 @@ WXT will output the build files to `.output/` folder.
 ```
 
 6. Enable the Developer mode in your browser and load the extension manifest (Unpacked)
+
+---
+
+### Permissions
+
+|          name          |                                                                           |
+| :--------------------: | ------------------------------------------------------------------------- |
+|   <code>tabs</code>    | Access basic tab context when needed (e.g., settings interactions).       |
+| <code>activeTab</code> | Allow actions on the current page when user interacts with the extension. |
+| <code>scripting</code> | Inject and manage the autocomplete UI handler on pages.                   |
+|  <code>storage</code>  | Store user options, theme, and abbreviations.                             |
+| <code>downloads</code> | Export settings and backups from the settings page.                       |
+
+> [!NOTE]
+> No user data is collected or transmitted. All processing is done locally.
+>
+> No external servers or APIs are used.
 
 ## Contributing
 
