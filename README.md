@@ -9,9 +9,9 @@
 </h1>
 
 <div align="center">
-<h4>
+<h3>
 Lightweight Autosuggestions and abbrevations in your browser!
-</h4>
+</h3>
 
 <br />
 
@@ -204,10 +204,12 @@ WXT will output the build files to `.output/` folder.
 
 ```txt
 .output
-├── chrome-mv3         // Manifest V3 for Chromium
-├── chrome-mv3-dev    // with devtools enabled
+├── chrome-mv3       // Manifest V3 for Chromium
+├── chrome-mv3-dev   // with devtools enabled
 └── firefox-mv2      // Manifest V2 for Firefox
 ```
+
+6. Enable the Developer mode in your browser and load the extension manifest (Unpacked)
 
 ## Contributing
 
