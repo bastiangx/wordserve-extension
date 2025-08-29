@@ -9,7 +9,7 @@
 </h1>
 
 <div align="center">
-Lightweight Autosuggestions and abbrevations for Obsidian!
+Lightweight Autosuggestions and abbrevations in your browser!
 
 <br />
 <br />
@@ -165,37 +165,52 @@ git clone https://github.com/bastiangx/wordserve-extension.git
 cd wordserve-extension
 ```
 
-install dependencies
+1. install dependencies
 
 ```sh
 bun install
 ```
 
-run the development watch
+> This extension is built on top of [WXT](https://wxt.dev/guide/introduction.html)
+
+2. Run the prep script to fetch the latest dictionary `.bin` data files
+
+```sh
+bun run prep
+```
+
+3. Make your changes
+
+4. run the development watch
 
 ```sh
 bun run dev
 # or simply
 bun dev
+# for Firefox
+bun run dev:firefox
 ```
 
-build for chromium based browsers
+5. build for chromium based browsers
 
 ```sh
 bun run build
-```
-
-or build for firefox
-
-```sh
+# for Firefox
 bun run build:firefox
 ```
 
 WXT will output the build files to `.output/` folder.
 
+```txt
+.output
+├── chrome-mv3         // Manifest V3 for Chromium
+├── chrome-mv3-dev    // with devtools enabled
+└── firefox-mv2      // Manifest V2 for Firefox
+```
+
 ## Contributing
 
-See the [open issues](https://github.com/bastiangx/wordserve-obsidian/issues) for a list of proposed features (and known issues).
+See the [open issues](https://github.com/bastiangx/wordserve-extension/issues) for a list of proposed features (and known issues).
 
 Any PRs are welcome! Refer to the [guidelines](.github/CONTRIBUTING.md)
 
@@ -213,4 +228,3 @@ See [LICENSE](LICENSE)
 
 - The _Beautiful_ [Rosepine theme](https://rosepinetheme.com/) used for graphics and screenshots throughout the readme.
 - The Incredible mono font, Berkeley Mono by [U.S. Graphics](https://usgraphics.com/products/berkeley-mono) used in screenshots, graphics, gifs and more.
-
