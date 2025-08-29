@@ -1,4 +1,4 @@
-name: Release Plugin
+name: Release Extension
 
 on:
   push:
@@ -25,11 +25,20 @@ jobs:
       - name: Install deps
         run: bun install
 
-      - name: Generate config files
-        run: bun run scripts/init.ts
+      - name: Fetch assets
+        run: bun run prep
 
-      - name: Build plugin
+      - name: Build (Chromium)
         run: bun run build
+
+      - name: Zip (Chromium)
+        run: bun run zip
+
+      - name: Build (Firefox)
+        run: bun run build:firefox
+
+      - name: Zip (Firefox)
+        run: bun run zip:firefox
 
       - name: Get version from tag
         id: version
@@ -38,22 +47,16 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building version: $VERSION"
 
-      - name: Verify files exist
+      - name: Verify ZIP artifacts
         run: |
-          if [ ! -f "main.js" ]; then
-            echo "Error: main.js not found after build"
+          ls -la .output | cat
+          NUM_ZIPS=$(ls -1 .output/*.zip 2>/dev/null | wc -l || true)
+          if [ "$NUM_ZIPS" -eq 0 ]; then
+            echo "Error: No zip artifacts found in .output/"
             exit 1
           fi
-          if [ ! -f "manifest.json" ]; then
-            echo "Error: manifest.json not found"
-            exit 1
-          fi
-          if [ ! -f "styles.css" ]; then
-            echo "Error: styles.css not found"
-            exit 1
-          fi
-          echo "All required files are present:"
-          ls -la main.js manifest.json styles.css
+          echo "Found zip artifacts:"
+          ls -la .output/*.zip | cat
 
       - name: Create release
         env:
@@ -63,4 +66,4 @@ jobs:
           gh release create "$tag" \
             --title="$tag" \
             --draft \
-            main.js manifest.json styles.css
+            .output/*.zip
