@@ -1,4 +1,4 @@
-<h1 align="center">
+<div align="center">
   <a href="https://github.com/bastiangx/wordserve-extension/">
  <picture>
       <source media="(prefers-color-scheme: light)" srcset="https://files.catbox.moe/su0r1m.png">
@@ -6,7 +6,7 @@
       <img src="https://files.catbox.moe/syqbr0.png"/>
     </picture>
   </a>
-</h1>
+</div>
 
 <div align="center">
 <h3>
@@ -18,11 +18,13 @@ Lightweight Autosuggestions and abbrevations in your browser!
 <div align="center">
     <picture>
       <source srcset="https://github.com/user-attachments/assets/0da6f300-0711-4f85-85c4-6a19c22a7f75" />
-      <img src="https://github.com/user-attachments/assets/0da6f300-0711-4f85-85c4-6a19c22a7f75" alt="Example usage of wordserve suggestions engine in a client app" />
+      <img src="https://github.com/user-attachments/assets/0da6f300-0711-4f85-85c4-6a19c22a7f75" 
+        alt="Example usage of wordserve suggestions engine in a client app"
+        width="550"/>
     </picture>
 </div>
-
 <br />
+
 <a href="https://pkg.go.dev/github.com/bastiangx/wordserve"><img src="https://img.shields.io/badge/reference-black?style=for-the-badge&logo=go&logoSize=auto&labelColor=%23363A4F&color=%237dc4e4" alt="Go Reference"></a> <a href="https://goreportcard.com/report/github.com/bastiangx/wordserve"><img src="https://img.shields.io/badge/A%2B-black?style=for-the-badge&logoSize=auto&label=go%20report&labelColor=%23363A4F&color=%23a6da95" alt="Go Report Card"></a>
 <br />
 <!-- <a href="https://github.com/bastiangx/wordserve-extension/releases/latest"><img src="https://img.shields.io/github/v/release/bastiangx/wordserve-extension?sort=semver&display_name=tag&style=for-the-badge&labelColor=%23363A4F&color=%23f5a97f" alt="Latest Release"> -->
@@ -66,27 +68,32 @@ Suggestions menu appear when typing any words + Expansions on text via abbreviat
 
 ## Features
 
-#### Batched Word Suggestions
+### Batched Word Suggestions
 
 Easily find the relevant words and phrases as you type,
 suggestions are shown in a simple menu
 
+<br />
+<div align="center">
  <picture>
       <source media="(prefers-color-scheme: light)" srcset="https://files.catbox.moe/zrosek.gif">
       <source media="(prefers-color-scheme: dark)" srcset="https://files.catbox.moe/ekrdxx.gif">
-      <img src="https://files.catbox.moe/ekrdxx.gif"/>
+      <img src="https://files.catbox.moe/ekrdxx.gif" width="550"  />
     </picture>
-
+</div>
 <br />
 <br />
 
-Super fast and efficient, even with large dictionaries (65,000+ words)
+- Super fast and efficient, even with large dictionaries (65,000+ words)
 
+<br />
+<div align="center">
  <picture>
       <source media="(prefers-color-scheme: light)" srcset="https://files.catbox.moe/sd3ikj.png">
       <source media="(prefers-color-scheme: dark)" srcset="https://files.catbox.moe/h26n6q.png">
-      <img src="https://files.catbox.moe/h26n6q.png"/>
+      <img src="https://files.catbox.moe/h26n6q.png" height="160"/>
     </picture>
+  </div>
 <br />
 
 #### Abbrevation expansions
@@ -94,31 +101,40 @@ Super fast and efficient, even with large dictionaries (65,000+ words)
 Automatically expands abbreviations as you type,
 for example typing `btw` will expand to `by the way`
 
+<br />
+<div align="center">
  <picture>
       <source media="(prefers-color-scheme: light)" srcset="https://files.catbox.moe/mlhfbn.gif">
       <source media="(prefers-color-scheme: dark)" srcset="https://files.catbox.moe/5inerx.gif">
-      <img src="https://files.catbox.moe/5inerx.gif"/>
+      <img src="https://files.catbox.moe/5inerx.gif" width="550"/>
     </picture>
+  </div>
 <br />
 
-Easily add and manage your own abbreviations in the settings tab
+- Easily add and manage your own abbreviations in the settings tab
 
+<br />
+<div align="center">
  <picture>
       <source media="(prefers-color-scheme: light)" srcset="https://files.catbox.moe/d8t3d2.png">
       <source media="(prefers-color-scheme: dark)" srcset="https://files.catbox.moe/6gvijw.png">
-      <img src="https://files.catbox.moe/6gvijw.png"/>
+      <img src="https://files.catbox.moe/6gvijw.png" width="550"/>
     </picture>
+</div>
 <br />
 
 #### Digit selection
 
 Use digits on the keyboard to quickly insert a suggestion from the list!
 
+<br />
+<div align="center">
  <picture>
       <source media="(prefers-color-scheme: light)" srcset="https://files.catbox.moe/5inerx.gif">
       <source media="(prefers-color-scheme: dark)" srcset="https://files.catbox.moe/ex2oww.gif">
-      <img src="https://files.catbox.moe/ex2oww.gif"/>
+      <img src="https://files.catbox.moe/ex2oww.gif" width="550"/>
     </picture>
+  </div>
 <br />
 
 #### Responsive
@@ -126,11 +142,14 @@ Use digits on the keyboard to quickly insert a suggestion from the list!
 Cross-platform and quick to use, built on top of a Radix trie binary dictionary.
 Read more about how all this works in our [Go library's docs](https://github.com/bastiangx/wordserve/tree/main/docs)
 
+<br />
+<div align="center">
  <picture>
       <source media="(prefers-color-scheme: light)" srcset="https://files.catbox.moe/ca82mt.png">
       <source media="(prefers-color-scheme: dark)" srcset="https://files.catbox.moe/8emcdr.png">
-      <img src="https://files.catbox.moe/8emcdr.png"/>
+      <img src="https://files.catbox.moe/8emcdr.png" height="160"/>
     </picture>
+</div>
 <br />
 <br />
 
@@ -138,28 +157,59 @@ Read more about how all this works in our [Go library's docs](https://github.com
 
 Many beautiful colorschemes to choose from, including dark and light modes out of the box
 
+<br />
+<div align="center">
  <picture>
       <source media="(prefers-color-scheme: light)" srcset="https://files.catbox.moe/ip7m7h.png">
       <source media="(prefers-color-scheme: dark)" srcset="https://files.catbox.moe/jr5cl6.png">
-      <img src="https://files.catbox.moe/jr5cl6.png"/>
+      <img src="https://files.catbox.moe/jr5cl6.png" width="550"/>
     </picture>
+</div>
 <br />
 
 #### Many many words
 
 Start with a simple `words.txt` file containing 65,000+ entries.
 
+<br />
+<div align="center">
  <picture>
       <source media="(prefers-color-scheme: light)" srcset="https://files.catbox.moe/z463kh.png">
       <source media="(prefers-color-scheme: dark)" srcset="https://files.catbox.moe/w4cn0v.png">
-      <img src="https://files.catbox.moe/w4cn0v.png"/>
+      <img src="https://files.catbox.moe/w4cn0v.png" width="550"/>
     </picture>
+</div>
 
-## Installation
+## Browser installations
 
-todo: chrome,firefox,edge,opera,vivaldi,zen
+### Chrome
 
-#### Building and development
+> Webstore pending review.
+
+### Firefox & Zen
+
+<a href="https://addons.mozilla.org/en-US/firefox/addon/wordserve/">
+  <div align="left">
+  <img src="https://files.catbox.moe/z6gtoo.png" alt="Firefox Add-on Store" height="120"/>
+  </div>
+</a>
+<br />
+
+Get the add-on from the [Firefox Add-on Store](https://addons.mozilla.org/en-US/firefox/addon/wordserve/)
+
+- same for [Zen browser](https://zen-browser.app) users, use the link above.
+
+### Opera, Vivaldi, Brave, Orion, Chromium
+
+> Webstore pending review.
+
+### Microsoft Edge
+
+> Edge add-ones pending review.
+
+---
+
+## Building and development
 
 ```sh
 git clone https://github.com/bastiangx/wordserve-extension.git
