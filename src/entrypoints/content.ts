@@ -54,14 +54,11 @@ export default defineContentScript({
           let stored: any = {};
           try {
             if ((browser as any).storage?.sync?.get) {
-              console.info("[WordServe] Content: settings load via storage.sync");
               stored = await (browser as any).storage.sync.get("wordserveSettings");
             } else {
-              console.info("[WordServe] Content: settings load via storage.local (no sync)");
               stored = await browser.storage.local.get("wordserveSettings");
             }
           } catch (e) {
-            console.info("[WordServe] Content: sync load failed, falling back to local");
             stored = await browser.storage.local.get("wordserveSettings");
           }
           const source = stored.wordserveSettings
@@ -111,7 +108,7 @@ export default defineContentScript({
             if (!next) return;
             this.updateSettings(next);
           });
-        } catch {}
+        } catch { }
       }
 
       private setupDOMObserver(): void {
@@ -148,7 +145,7 @@ export default defineContentScript({
         // Find all input elements within the element
         const inputs = element.querySelectorAll(
           'input[type="text"], input[type="search"], input[type="email"], input[type="url"], ' +
-            'input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]'
+          'input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]'
         );
         inputs.forEach((input) => {
           if (this.isTargetElement(input)) {
@@ -226,7 +223,7 @@ export default defineContentScript({
           const controller = new AutocompleteController({
             element,
             settings: this.settings,
-            onSelectionChanged: () => {},
+            onSelectionChanged: () => { },
           });
           this.controllers.set(element, controller);
           const observer = new MutationObserver((mutations) => {
