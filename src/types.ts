@@ -97,7 +97,7 @@ export interface DefaultConfig {
     prefixColor?: string;
     suffixColor?: string;
     dyslexicFont?: boolean;
-  rankingColor?: string;
+    rankingColor?: string;
     customColor?: string;
     customFontFamily?: string;
     customFontSize?: number;
@@ -142,23 +142,6 @@ export const DOMAIN_BLACKLIST = [
   "cash.app",
   "transferwise.com",
   "wise.com",
-  // emails
-  "mail.google.com",
-  "outlook.live.com",
-  "outlook.office365.com",
-  "mail.yahoo.com",
-  "protonmail.com",
-  "tutanota.com",
-  "web.whatsapp.com",
-  "web.telegram.org",
-  "messages.google.com",
-  // cloud
-  "drive.google.com",
-  "onedrive.live.com",
-  "dropbox.com",
-  "box.com",
-  "docs.google.com",
-  "outlook.office.com",
   // e-commerce
   "checkout.shopify.com",
   "secure.bigcommerce.com",
@@ -174,11 +157,6 @@ export const DOMAIN_BLACKLIST = [
   "uscis.gov",
   "dmv.org",
   "socialsecurity.gov",
-  // password managers
-  "lastpass.com",
-  "1password.com",
-  "bitwarden.com",
-  "keepassxc.org",
   // misc
   "console.aws.amazon.com",
   "portal.azure.com",
@@ -257,7 +235,7 @@ export const DEFAULT_SETTINGS: DefaultConfig = {
     prefixColor: undefined,
     suffixColor: undefined,
     dyslexicFont: false,
-  rankingColor: undefined,
+    rankingColor: undefined,
   },
   domains: {
     blacklistMode: true,
