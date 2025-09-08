@@ -449,7 +449,7 @@ export class InputHandler {
           wordEnd < textContent.length &&
           !this.autocompleteSeparator.test(textContent[wordEnd])
         ) {
-          wordEnd--;
+          wordEnd++;
         }
 
         wordRange.setStart(textNode, wordStart);

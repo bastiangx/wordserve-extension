@@ -39,6 +39,7 @@ export function getCaretCoordinates(
     "textIndent",
     "whiteSpace",
     "lineHeight",
+    "textAlign",
     "padding",
     "border",
     "boxSizing",
@@ -55,6 +56,18 @@ export function getCaretCoordinates(
   mirror.style.maxHeight = "none";
   mirror.style.overflow = "hidden";
   mirror.style.zIndex = "-1000";
+  // Wrapping behavior matches the element, especially TEXTAREA
+  const isTextarea = element.nodeName === "TEXTAREA";
+  if (isTextarea) {
+    mirror.style.whiteSpace = "pre-wrap";
+    (mirror.style as any).wordWrap = "break-word";
+    (mirror.style as any).overflowWrap = "break-word";
+  }
+  // Match the visible content width to account for scrollbars
+  const clientWidth = (element as HTMLTextAreaElement).clientWidth;
+  if (clientWidth && Number.isFinite(clientWidth)) {
+    mirror.style.width = `${clientWidth}px`;
+  }
   document.body.appendChild(mirror);
   try {
     const value = element.value;
@@ -78,12 +91,13 @@ export function getCaretCoordinates(
     const markerRect = marker.getBoundingClientRect();
     const mirrorRect = mirror.getBoundingClientRect();
     // Calc relative position
+    // Subtract element scroll so coordinates align with viewport position
     const x =
       elementRect.left +
-      (markerRect.left - mirrorRect.left) +
+      (markerRect.left - mirrorRect.left) -
       element.scrollLeft;
     const y =
-      elementRect.top + (markerRect.top - mirrorRect.top) + element.scrollTop;
+      elementRect.top + (markerRect.top - mirrorRect.top) - element.scrollTop;
     const height =
       markerRect.height || parseInt(computedStyle.lineHeight) || 16;
 
