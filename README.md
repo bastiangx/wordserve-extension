@@ -25,7 +25,7 @@ Lightweight Autosuggestions and abbrevations in your browser!
 </div>
 <br />
 
-<a href="https://addons.mozilla.org/en-US/firefox/addon/wordserve/"><img src="https://img.shields.io/badge/firefox supported-black?style=for-the-badge&logo=firefox&logoSize=auto&labelColor=%23363A4F&color=%23ef9f76" alt="Firefox addons extension badge"></a> <a href="https://github.com/bastiangx/wordserve-extension/blob/main/LICENSE"><img src="https://img.shields.io/badge/MIT-black?style=for-the-badge&label=license&labelColor=%23363A4F&color=%23b7bdf8" alt="MIT License"></a>
+<a href="https://addons.mozilla.org/en-US/firefox/addon/wordserve/"><img src="https://img.shields.io/badge/firefox-black?style=for-the-badge&logo=firefox&logoSize=auto&labelColor=%23363A4F&color=%23ef9f76" alt="Firefox addons extension badge"></a> <a href="https://github.com/bastiangx/wordserve-extension/blob/main/LICENSE"><img src="https://img.shields.io/badge/MIT-black?style=for-the-badge&label=license&labelColor=%23363A4F&color=%23b7bdf8" alt="MIT License"></a>
 <br />
 
 <a href="https://github.com/bastiangx/wordserve-extension/issues/new?assignees=&labels=bug&template=BUG-REPORT.yml&title=%5BBug%5D%3A+">Report a Bug</a>
