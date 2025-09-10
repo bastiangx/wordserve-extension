@@ -180,7 +180,17 @@ Start with a simple `words.txt` file containing 65,000+ entries.
 
 ### Chrome
 
-> Webstore pending review.
+<a href="https://chromewebstore.google.com/detail/mhalhjjhhaaakpfdgccljginjdeiogkg?utm_source=item-share-cb">
+  <div align="left">
+  <img src="https://files.catbox.moe/049mm2.png" alt="Chrome Add-on Store" height="120"/>
+  </div>
+</a>
+<br />
+
+- Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/mhalhjjhhaaakpfdgccljginjdeiogkg?utm_source=item-share-cb)
+
+> Supports all Chromium based browsers.
+
 
 ### Firefox & Zen
 
@@ -195,13 +205,17 @@ Get the add-on from the [Firefox Add-on Store](https://addons.mozilla.org/en-US/
 
 - same for [Zen browser](https://zen-browser.app) users, use the link above.
 
-### Opera, Vivaldi, Brave, Orion, Chromium
+### Vivaldi, Brave, Orion, Helium, etc
 
-> Webstore pending review.
+> Follow the Chrome installation instructions above.
 
 ### Microsoft Edge
 
 > Edge add-ones pending review.
+
+### Opera
+
+> Opera add-ons pending review.
 
 ---
 
