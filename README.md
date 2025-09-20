@@ -283,7 +283,6 @@ WXT will output the build files to `.output/` folder.
 | :--------------------: | ------------------------------------------------------------------------- |
 |   <code>tabs</code>    | Access basic tab context when needed (e.g., settings interactions).       |
 | <code>activeTab</code> | Allow actions on the current page when user interacts with the extension. |
-| <code>scripting</code> | Inject and manage the autocomplete UI handler on pages.                   |
 |  <code>storage</code>  | Store user options, theme, and abbreviations.                             |
 | <code>downloads</code> | Export settings and backups from the settings page.                       |
 
