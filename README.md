@@ -1,31 +1,34 @@
 <div align="center">
-  <a href="https://github.com/bastiangx/wordserve-extension/">
+  <a href="https://github.com/bastiangx/wordserve-obsidian">
  <picture>
-      <source media="(prefers-color-scheme: light)" srcset="https://files.catbox.moe/su0r1m.png">
-      <source media="(prefers-color-scheme: dark)" srcset="https://files.catbox.moe/syqbr0.png">
-      <img src="https://files.catbox.moe/syqbr0.png"/>
+      <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/ee3abcf9-a9ce-43e9-b6b4-9c3f75c141fc">
+      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/20a6113a-c211-4142-bcab-5da2fb39671a">
+      <img width="450" src="https://github.com/user-attachments/assets/20a6113a-c211-4142-bcab-5da2fb39671a"/>
     </picture>
   </a>
 </div>
 
 <div align="center">
-<h3>
+<h4>
 Lightweight Autosuggestions and abbrevations in your browser!
-</h3>
+</h4>
 
 <br />
 
 <div align="center">
     <picture>
       <source srcset="https://github.com/user-attachments/assets/0da6f300-0711-4f85-85c4-6a19c22a7f75" />
-      <img src="https://github.com/user-attachments/assets/0da6f300-0711-4f85-85c4-6a19c22a7f75" 
+      <img src="https://github.com/user-attachments/assets/0da6f300-0711-4f85-85c4-6a19c22a7f75"
         alt="Example usage of wordserve suggestions engine in a client app"
         width="550"/>
     </picture>
 </div>
 <br />
+<a href="https://chromewebstore.google.com/detail/wordserve/mhalhjjhhaaakpfdgccljginjdeiogkg"><img src="https://img.shields.io/badge/chrome-black?style=for-the-badge&logo=chromewebstore&logoSize=auto&labelColor=%23363A4F&color=%2389b4fa" alt="Google Chrome extension badge"></a> <a href="https://chromewebstore.google.com/detail/wordserve/mhalhjjhhaaakpfdgccljginjdeiogkg"><img src="https://img.shields.io/badge/Brave-black?style=for-the-badge&logo=brave&logoSize=auto&labelColor=%23363A4F&color=%23d7827e" alt="Brave extension badge"></a> <a href="https://chromewebstore.google.com/detail/wordserve/mhalhjjhhaaakpfdgccljginjdeiogkg"><img src="https://img.shields.io/badge/Vivaldi-black?style=for-the-badge&logo=vivaldi&logoSize=auto&labelColor=%23363A4F&color=%23363A4F" alt="Vivaldi extension badge"></a> 
 
-<a href="https://addons.mozilla.org/en-US/firefox/addon/wordserve/"><img src="https://img.shields.io/badge/firefox-black?style=for-the-badge&logo=firefox&logoSize=auto&labelColor=%23363A4F&color=%23ef9f76" alt="Firefox addons extension badge"></a> <a href="https://github.com/bastiangx/wordserve-extension/blob/main/LICENSE"><img src="https://img.shields.io/badge/MIT-black?style=for-the-badge&label=license&labelColor=%23363A4F&color=%23b7bdf8" alt="MIT License"></a>
+<a href="https://addons.mozilla.org/en-US/firefox/addon/wordserve/"><img src="https://img.shields.io/badge/firefox-black?style=for-the-badge&logo=firefoxbrowser&logoSize=auto&labelColor=%23363A4F&color=%23ef9f76" alt="Firefox addons extension badge"></a> <a href="https://addons.mozilla.org/en-US/firefox/addon/wordserve/"><img src="https://img.shields.io/badge/zen-black?style=for-the-badge&logo=zenbrowser&logoSize=auto&labelColor=%2322&color=%23222" alt="Zen browser addons extension badge"></a> 
+
+<a href="https://github.com/bastiangx/wordserve-extension/blob/main/LICENSE"><img src="https://img.shields.io/badge/MIT-black?style=for-the-badge&label=license&labelColor=%23363A4F&color=%23b7bdf8" alt="MIT License"></a>
 <br />
 
 <a href="https://github.com/bastiangx/wordserve-extension/issues/new?assignees=&labels=bug&template=BUG-REPORT.yml&title=%5BBug%5D%3A+">Report a Bug</a>
@@ -190,7 +193,6 @@ Start with a simple `words.txt` file containing 65,000+ entries.
 - Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/mhalhjjhhaaakpfdgccljginjdeiogkg?utm_source=item-share-cb)
 
 > Supports all Chromium based browsers.
-
 
 ### Firefox & Zen
 
