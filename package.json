@@ -17,7 +17,7 @@
     "Extension Packs"
   ],
   "displayName": "WordServe",
-  "version": "0.1.11",
+  "version": "0.1.2",
   "type": "module",
   "scripts": {
     "prep": "bun run scripts/prep.ts",
