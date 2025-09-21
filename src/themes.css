@@ -1,24 +1,88 @@
 /* Centralized theme tokens for the suggestions menu (PMenu and injected menu)
-   Each theme class sets the --ws-* CSS variables. No hard-coded inline colors elsewhere. */
+   Each theme class sets the --ws-* CSS variables */
 
 /* Catppuccin Mocha (dark) */
 .wordserve-menu-container:is(.ws-theme-catppuccin-mocha),
 .ws-theme-catppuccin-mocha {
-  --ws-bg: #1e1e2e; /* Base */
-  --ws-surface: #313244; /* Surface 0 */
-  --ws-overlay: #181825; /* Mantle */
-  --ws-fg: #cdd6f4; /* Text */
-  --ws-border: #45475a; /* Surface 1 as subtle border */
-  --ws-hover: #313244; /* hover on row */
-  --ws-selected: #45475a; /* selected row */
-  --ws-rank-border: #6c7086; /* Overlay 0 */
-  --ws-scrollbar-thumb: #6c7086; /* Overlay 0 */
-  --ws-scrollbar-thumb-hover: #a6adc8; /* Subtext 0 */
+  --ws-bg: #1e1e2e;
+  --ws-surface: #313244;
+  --ws-overlay: #181825;
+  --ws-fg: #cdd6f4;
+  --ws-rank-fg: #b4befe;
+  --ws-border: #45475a;
+  --ws-hover: #313244;
+  --ws-selected: #45475a;
+  --ws-rank-border: #313244;
+  --ws-scrollbar-thumb: #b4befe;
+  --ws-scrollbar-thumb-hover: #89b4fa;
 
-  --ws-intensity-normal: #cdd6f4; /* Text */
-  --ws-intensity-muted: #a6adc8; /* Subtext 0 */
-  --ws-intensity-faint: #7f849c; /* Overlay 1 */
-  --ws-intensity-accent: #b4befe; /* Lavender */
+  --ws-intensity-normal: #cdd6f4;
+  --ws-intensity-muted: #a6adc8;
+  --ws-intensity-faint: #7f849c;
+  --ws-intensity-accent: #b4befe;
+}
+
+/* Catppuccin Macchiato (dark) */
+.wordserve-menu-container:is(.ws-theme-catppuccin-macchiato),
+.ws-theme-catppuccin-macchiato {
+  --ws-bg: #24273a;
+  --ws-surface: #363a4f;
+  --ws-overlay: #1e2030;
+  --ws-fg: #cad3f5;
+  --ws-rank-fg: #b7bdf8;
+  --ws-border: #494d64;
+  --ws-hover: #363a4f;
+  --ws-selected: #494d64;
+  --ws-rank-border: #363a4f;
+  --ws-scrollbar-thumb: #b7bdf8;
+  --ws-scrollbar-thumb-hover: #8aadf4;
+
+  --ws-intensity-normal: #cad3f5;
+  --ws-intensity-muted: #a5adcb;
+  --ws-intensity-faint: #8087a2;
+  --ws-intensity-accent: #b7bdf8;
+}
+
+/* Catppuccin Frappé (dark) */
+.wordserve-menu-container:is(.ws-theme-catppuccin-frappe),
+.ws-theme-catppuccin-frappe {
+  --ws-bg: #303446;
+  --ws-surface: #414559;
+  --ws-overlay: #292c3c;
+  --ws-fg: #c6d0f5;
+  --ws-rank-fg: #b4befe;
+  --ws-border: #51576d;
+  --ws-hover: #414559;
+  --ws-selected: #51576d;
+  --ws-rank-border: #414559;
+  --ws-scrollbar-thumb: #babbf1;
+  --ws-scrollbar-thumb-hover: #8caaee;
+
+  --ws-intensity-normal: #c6d0f5;
+  --ws-intensity-muted: #a5adce;
+  --ws-intensity-faint: #838ba7;
+  --ws-intensity-accent: #babbf1;
+}
+
+/* Catppuccin Latte (light) */
+.wordserve-menu-container:is(.ws-theme-catppuccin-latte),
+.ws-theme-catppuccin-latte {
+  --ws-bg: #eff1f5;
+  --ws-surface: #ccd0da;
+  --ws-overlay: #e6e9ef;
+  --ws-fg: #4c4f69;
+  --ws-rank-fg: #7287fd;
+  --ws-border: #bcc0cc;
+  --ws-hover: #ccd0da;
+  --ws-selected: #bcc0cc;
+  --ws-rank-border: #ccd0da;
+  --ws-scrollbar-thumb: #7287fd;
+  --ws-scrollbar-thumb-hover: #1e66f5;
+
+  --ws-intensity-normal: #4c4f69;
+  --ws-intensity-muted: #6c6f85;
+  --ws-intensity-faint: #8c8fa1;
+  --ws-intensity-accent: #7287fd;
 }
 
 /* IV Spade (dark) */
@@ -28,17 +92,18 @@
   --ws-surface: #121212;
   --ws-overlay: #121212;
   --ws-fg: #d3c2c3;
+  --ws-rank-fg: #b7976a;
   --ws-border: #404040;
   --ws-hover: #121212;
   --ws-selected: #404040;
-  --ws-rank-border: #404040;
+  --ws-rank-border: #121212;
   --ws-scrollbar-thumb: #404040;
   --ws-scrollbar-thumb-hover: #bebebe;
 
   --ws-intensity-normal: #d3c2c3;
   --ws-intensity-muted: #bebebe;
   --ws-intensity-faint: #838383;
-  --ws-intensity-accent: #b7976a; /* main */
+  --ws-intensity-accent: #b7976a;
 }
 
 /* Iceberg Dark */
@@ -48,10 +113,11 @@
   --ws-surface: #232531;
   --ws-overlay: #232531;
   --ws-fg: #c6c8d1;
+  --ws-rank-fg: #84a0c6;
   --ws-border: #595e76;
   --ws-hover: #232531;
   --ws-selected: #595e76;
-  --ws-rank-border: #595e76;
+  --ws-rank-border: #232531;
   --ws-scrollbar-thumb: #595e76;
   --ws-scrollbar-thumb-hover: #d2d4de;
 
@@ -61,17 +127,18 @@
   --ws-intensity-accent: #84a0c6;
 }
 
-/* Iceberg Light (note: palette in reference resembles dark; keep a lighter mapping) */
+/* Iceberg Light */
 .wordserve-menu-container:is(.ws-theme-iceberg-light),
 .ws-theme-iceberg-light {
   --ws-bg: #e6e9f2;
   --ws-surface: #dbe0ec;
   --ws-overlay: #cfd6e6;
   --ws-fg: #232531;
+  --ws-rank-fg: #84a0c6;
   --ws-border: #cfd6e6;
   --ws-hover: #dbe0ec;
   --ws-selected: #cfd6e6;
-  --ws-rank-border: #cfd6e6;
+  --ws-rank-border: #dbe0ec;
   --ws-scrollbar-thumb: #8b8fa1;
   --ws-scrollbar-thumb-hover: #595e76;
 
@@ -88,6 +155,7 @@
   --ws-surface: #2e3440;
   --ws-overlay: #2e3440;
   --ws-fg: #d8dee9;
+  --ws-rank-fg: #88c0d0;
   --ws-border: #3b4252;
   --ws-hover: #2e3440;
   --ws-selected: #3b4252;
@@ -108,10 +176,11 @@
   --ws-surface: #e6edf5;
   --ws-overlay: #d8dee9;
   --ws-fg: #2e3440;
+  --ws-rank-fg: #8fbcbb;
   --ws-border: #d8dee9;
   --ws-hover: #e6edf5;
   --ws-selected: #d8dee9;
-  --ws-rank-border: #d8dee9;
+  --ws-rank-border: #e6edf5;
   --ws-scrollbar-thumb: #6a7791;
   --ws-scrollbar-thumb-hover: #8fbcbb;
 
@@ -128,6 +197,7 @@
   --ws-surface: #1a1a1a;
   --ws-overlay: #1a1a1a;
   --ws-fg: #e7e7e7;
+  --ws-rank-fg: #aca98a;
   --ws-border: #4c4c4c;
   --ws-hover: #1a1a1a;
   --ws-selected: #2a2a2a;
@@ -145,13 +215,14 @@
 .wordserve-menu-container:is(.ws-theme-dracula),
 .ws-theme-dracula {
   --ws-bg: #282a36;
-  --ws-surface: #20222c; /* sub-alt */
+  --ws-surface: #20222c;
   --ws-overlay: #20222c;
   --ws-fg: #f8f8f2;
+  --ws-rank-fg: #6272a4;
   --ws-border: #44475a;
   --ws-hover: #20222c;
   --ws-selected: #44475a;
-  --ws-rank-border: #6272a4;
+  --ws-rank-border: #20222c;
   --ws-scrollbar-thumb: #6272a4;
   --ws-scrollbar-thumb-hover: #bd93f9;
 
@@ -168,10 +239,11 @@
   --ws-surface: #232a2d;
   --ws-overlay: #232a2d;
   --ws-fg: #dadada;
+  --ws-rank-fg: #8ccf7e;
   --ws-border: #3a4448;
   --ws-hover: #232a2d;
   --ws-selected: #3a4448;
-  --ws-rank-border: #3a4448;
+  --ws-rank-border: #232a2d;
   --ws-scrollbar-thumb: #3a4448;
   --ws-scrollbar-thumb-hover: #6cbfbf;
 
@@ -188,6 +260,7 @@
   --ws-surface: #c1c7df;
   --ws-overlay: #c1c7df;
   --ws-fg: #506477;
+  --ws-rank-fg: #678198;
   --ws-border: #c1c7df;
   --ws-hover: #c1c7df;
   --ws-selected: #92a4be;
@@ -207,7 +280,8 @@
   --ws-bg: #fec8cd;
   --ws-surface: #f2babd;
   --ws-overlay: #f2babd;
-  --ws-fg: #A30100;
+  --ws-fg: #a30100;
+  --ws-rank-fg: #a30100;
   --ws-border: #f2babd;
   --ws-hover: #f2babd;
   --ws-selected: #eaa9ad;
@@ -215,8 +289,50 @@
   --ws-scrollbar-thumb: #eaa9ad;
   --ws-scrollbar-thumb-hover: #a30000;
 
-  --ws-intensity-normal: #A30100;
+  --ws-intensity-normal: #a30100;
   --ws-intensity-muted: #f6e9ea;
   --ws-intensity-faint: #e2cfd1;
   --ws-intensity-accent: #2e7dde;
+}
+
+/* Poimandres (dark) */
+.wordserve-menu-container:is(.ws-theme-poimandres-dark),
+.ws-theme-poimandres-dark {
+  --ws-bg: #1b1e28;
+  --ws-surface: #303340;
+  --ws-overlay: #202430;
+  --ws-fg: #a6accd;
+  --ws-rank-fg: #5ce4c7;
+  --ws-border: #404350;
+  --ws-hover: #303340;
+  --ws-selected: #303340;
+  --ws-rank-border: #404350;
+  --ws-scrollbar-thumb: #2e323f;
+  --ws-scrollbar-thumb-hover: #add7ff;
+
+  --ws-intensity-normal: #a6accd;
+  --ws-intensity-muted: #767c9d;
+  --ws-intensity-faint: #506477;
+  --ws-intensity-accent: #add7ff;
+}
+
+/* Poimandres (light) */
+.wordserve-menu-container:is(.ws-theme-poimandres-light),
+.ws-theme-poimandres-light {
+  --ws-bg: #fefeff;
+  --ws-surface: #c0d0df;
+  --ws-overlay: #ffffff;
+  --ws-fg: #3b3e48;
+  --ws-rank-fg: var(--ws-intensity-muted);
+  --ws-border: #c0d0df;
+  --ws-hover: #c0d0df;
+  --ws-selected: #c0d0df;
+  --ws-rank-border: #969cbd;
+  --ws-scrollbar-thumb: #969cbd;
+  --ws-scrollbar-thumb-hover: #0ebfff;
+
+  --ws-intensity-normal: #3b3e48;
+  --ws-intensity-muted: #969cbd;
+  --ws-intensity-faint: #c0d0df;
+  --ws-intensity-accent: #0ebfff;
 }
