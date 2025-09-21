@@ -132,6 +132,7 @@ export class AutocompleteController {
       return;
     }
     this.suggestions = suggestions;
+    this.inputHandler.setSuggestionCount(this.suggestions.length);
     this.selectedIndex = 0;
     this.isVisible = true;
     this.keyboardNavigationActive = false;
@@ -161,7 +162,7 @@ export class AutocompleteController {
       typeof rawFontSize === "string"
         ? parseInt(rawFontSize, 10) || 14
         : rawFontSize;
-  const fontWeight = this.settings.fontWeight ?? 400;
+    const fontWeight = this.settings.fontWeight ?? 400;
     const fontFamily = buildFontFamilyFromConfig({
       fontFamilyList: this.settings.fontFamilyList,
       customFontList: this.settings.customFontList,
@@ -177,7 +178,7 @@ export class AutocompleteController {
       compact: this.settings.compactMode,
       fontSize,
       fontWeight,
-  fontFamily,
+      fontFamily,
       fontItalic: this.settings.fontItalic ?? false,
       fontBold: this.settings.fontBold ?? false,
       menuBorder: this.settings.menuBorder,
@@ -192,12 +193,13 @@ export class AutocompleteController {
       suffixColorIntensity: this.settings.accessibility.suffixColorIntensity,
       prefixColor: this.settings.accessibility.prefixColor,
       suffixColor: this.settings.accessibility.suffixColor,
-  rankingColor: this.settings.accessibility.rankingColor,
+      rankingTextColor: this.settings.accessibility.rankingTextColor,
+      rankingBorderColor: this.settings.accessibility.rankingBorderColor,
       dyslexicFont: this.settings.accessibility.dyslexicFont,
       currentPrefixLength: this.currentWord.length,
-  theme: this.settings.theme ?? "dark",
-  allowMouseInsert: this.settings.allowMouseInsert,
-  allowMouseInteractions: this.settings.allowMouseInteractions,
+      theme: this.settings.theme ?? "dark",
+      allowMouseInsert: this.settings.allowMouseInsert,
+      allowMouseInteractions: this.settings.allowMouseInteractions,
     });
   }
 
@@ -412,6 +414,7 @@ export class AutocompleteController {
     this.suggestions = [];
     this.selectedIndex = 0;
     this.inputHandler.setMenuVisible(false);
+    this.inputHandler.setSuggestionCount(0);
     this.menuRenderer.hide();
   }
 

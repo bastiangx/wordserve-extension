@@ -38,7 +38,8 @@ export interface AutocompleteMenuOptions {
   prefixColor?: string;
   suffixColor?: string;
   dyslexicFont?: boolean;
-  rankingColor?: string;
+  rankingTextColor?: string;
+  rankingBorderColor?: string;
   currentPrefixLength?: number;
   theme?: import("@/lib/render/themes").ThemeId;
   allowMouseInsert?: boolean;
@@ -185,9 +186,11 @@ export class AutocompleteMenuRenderer {
       badgeEl.style.fontSize = `${badgeFont}px`;
       badgeEl.style.padding = `${badgePadY}px ${badgePadX}px`;
     }
-    if (options.rankingColor) {
-      badgeEl.style.borderColor = options.rankingColor;
-      badgeEl.style.color = options.rankingColor;
+    if (options.rankingTextColor) {
+      badgeEl.style.color = options.rankingTextColor;
+    }
+    if (options.rankingBorderColor) {
+      badgeEl.style.borderColor = options.rankingBorderColor;
     }
     if (options.rankingPosition === "left" && showRanking) {
       content.appendChild(badgeEl);
