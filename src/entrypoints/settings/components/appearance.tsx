@@ -478,17 +478,18 @@ export function AppearanceSettings({
                 </div>
                 <div className="flex items-center gap-3">
                   <Label className="min-w-[120px] text-base">
-                    Custom ranking color
+                    Ranking text color
                   </Label>
                   <Input
                     type="color"
                     value={
-                      pendingSettings.accessibility.rankingColor || "#6c7086"
+                      pendingSettings.accessibility.rankingTextColor ||
+                      "#6c7086"
                     }
                     onChange={(e) =>
                       updatePendingSetting("accessibility", {
                         ...pendingSettings.accessibility,
-                        rankingColor: e.target.value,
+                        rankingTextColor: e.target.value,
                       })
                     }
                     className="w-16 p-0 h-8"
@@ -499,7 +500,38 @@ export function AppearanceSettings({
                     onClick={() =>
                       updatePendingSetting("accessibility", {
                         ...pendingSettings.accessibility,
-                        rankingColor: undefined,
+                        rankingTextColor: undefined,
+                      })
+                    }
+                  >
+                    Reset
+                  </Button>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Label className="min-w-[120px] text-base">
+                    Ranking border color
+                  </Label>
+                  <Input
+                    type="color"
+                    value={
+                      pendingSettings.accessibility.rankingBorderColor ||
+                      "#6c7086"
+                    }
+                    onChange={(e) =>
+                      updatePendingSetting("accessibility", {
+                        ...pendingSettings.accessibility,
+                        rankingBorderColor: e.target.value,
+                      })
+                    }
+                    className="w-16 p-0 h-8"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      updatePendingSetting("accessibility", {
+                        ...pendingSettings.accessibility,
+                        rankingBorderColor: undefined,
                       })
                     }
                   >

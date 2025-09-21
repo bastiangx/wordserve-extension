@@ -20,6 +20,7 @@
   --ws-surface: #1f1d2e; /* surface */
   --ws-overlay: #26233a; /* overlay */
   --ws-fg: #e0def4; /* text */
+  --ws-rank-fg: var(--ws-fg);
   --ws-border: #403d52; /* highlight-med */
   --ws-hover: #1f1d2e; /* surface */
   --ws-selected: #21202e; /* highlight-low */
@@ -38,6 +39,7 @@
   --ws-surface: #fffaf3; /* surface */
   --ws-overlay: #f2e9e1; /* overlay */
   --ws-fg: #575279; /* text */
+  --ws-rank-fg: var(--ws-fg);
   --ws-border: #f2e9e1; /* overlay */
   --ws-hover: #f4ede8; /* highlight low */
   --ws-selected: #dfdad9; /* highlight med */
@@ -57,6 +59,7 @@
   --ws-surface: #fffaf3; /* surface */
   --ws-overlay: #f2e9e1; /* overlay */
   --ws-fg: #575279; /* text */
+  --ws-rank-fg: var(--ws-fg);
   --ws-border: #f2e9e1; /* overlay */
   --ws-hover: #f4ede8; /* highlight low */
   --ws-selected: #dfdad9; /* highlight med */
@@ -197,7 +200,7 @@
   font-weight: inherit;
   background: transparent;
   border: 1px solid var(--ws-rank-border);
-  color: var(--ws-fg);
+  color: var(--ws-rank-fg);
   padding: 2px 6px;
   border-radius: 4px;
   margin-left: 8px;
@@ -206,7 +209,7 @@
 
 .wordserve-menu-item.selected .wordserve-menu-item-rank {
   border-color: var(--ws-rank-border);
-  color: var(--ws-fg);
+  color: var(--ws-rank-fg);
 }
 
 .wordserve-menu-item.selected .wordserve-menu-item-number {
