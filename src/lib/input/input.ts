@@ -49,6 +49,7 @@ export class InputHandler {
   private autocompleteSeparator: RegExp;
   private menuVisible = false;
   private lastInputWasFromSuggestion = false;
+  private suggestionCount = 0;
 
   constructor(
     element: HTMLElement,
@@ -196,7 +197,7 @@ export class InputHandler {
       }
       return;
     }
-  // handled above
+    // handled above
 
     // Only handle these keys when menu is visible
     if (!this.menuVisible) {
@@ -204,13 +205,20 @@ export class InputHandler {
     }
 
     // Handle selection via configured chords first
-    if (eventMatchesAny(event as any, this.settings.keyBindings.insertWithSpace)) {
+    if (
+      eventMatchesAny(event as any, this.settings.keyBindings.insertWithSpace)
+    ) {
       event.preventDefault();
       event.stopPropagation();
       this.callbacks.onSelect(true);
       return;
     }
-    if (eventMatchesAny(event as any, this.settings.keyBindings.insertWithoutSpace)) {
+    if (
+      eventMatchesAny(
+        event as any,
+        this.settings.keyBindings.insertWithoutSpace
+      )
+    ) {
       event.preventDefault();
       event.stopPropagation();
       this.callbacks.onSelect(false);
@@ -239,22 +247,31 @@ export class InputHandler {
         smartBackspace.invalidateForElement(this.element);
       }
     }
-    // Digit quick select
+    // Digit quick select: handle only when index exists; otherwise close menu
     if (
       this.settings.numberSelection &&
       !hasAnyModifier() &&
       /^[1-9]$/.test(key)
     ) {
       const index = parseInt(key) - 1;
-      if (
-        index >= 0 &&
-        index < AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE
-      ) {
+      if (index >= 0 && index < this.suggestionCount) {
         event.preventDefault();
         event.stopPropagation();
         this.callbacks.onSelectByNumber(index);
         return;
       }
+      // Close the menu on invalid digit to allow normal typing of the digit
+      this.callbacks.onHideMenu();
+      return;
+    }
+    // When digit selection is enabled, any other alphanumeric key closes the menu
+    if (
+      this.settings.numberSelection &&
+      !hasAnyModifier() &&
+      /^[a-zA-Z0-9]$/.test(key)
+    ) {
+      this.callbacks.onHideMenu();
+      return;
     }
     // Non-alphanumeric single characters hide menu
     if (!/^[a-zA-Z0-9]$/.test(key) && key.length === 1) {
@@ -517,6 +534,13 @@ export class InputHandler {
 
   public setMenuVisible(visible: boolean): void {
     this.menuVisible = visible;
+  }
+
+  public setSuggestionCount(count: number): void {
+    this.suggestionCount = Math.max(
+      0,
+      Math.min(count, AUTOCOMPLETE_DEFAULTS.MAX_DIGIT_SELECTABLE)
+    );
   }
 
   public markInputFromSuggestion(): void {

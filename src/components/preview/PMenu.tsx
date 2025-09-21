@@ -138,7 +138,10 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
   useEffect(() => {
     // no-op: OpenDyslexic is pre-bundled via @font-face
   }, [settings.accessibility.dyslexicFont]);
-  const getFontWeight = (value: number | undefined, isBold: boolean | undefined): string => {
+  const getFontWeight = (
+    value: number | undefined,
+    isBold: boolean | undefined
+  ): string => {
     const base = typeof value === "number" ? value : 400;
     const effective = isBold ? Math.max(base, 700) : base;
     return String(effective);
@@ -177,7 +180,7 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
   );
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-  if (!showMenu || suggestions.length === 0) return;
+      if (!showMenu || suggestions.length === 0) return;
       if (eventMatchesAny(e, settings.keyBindings.navDown)) {
         e.preventDefault();
         e.stopPropagation();
@@ -204,7 +207,23 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
           e.preventDefault();
           e.stopPropagation();
           selectByIndex(idx);
+        } else {
+          // Invalid digit for selection: close menu, allow typing
+          setShowMenu(false);
         }
+        return;
+      }
+      // When digit selection is on, any key (letters/digits)
+      // that is not a handled quickselect should close the menu and allow normal typing
+      if (
+        settings.numberSelection &&
+        /^[a-zA-Z0-9]$/.test(e.key) &&
+        !e.altKey &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.shiftKey
+      ) {
+        setShowMenu(false);
         return;
       }
       if (eventMatchesAny(e, settings.keyBindings.insertWithSpace)) {
@@ -297,22 +316,27 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
             )}
             style={{
               fontSize: `${fontSize}px`,
-              fontWeight: getFontWeight(settings.fontWeight as any, settings.fontBold),
+              fontWeight: getFontWeight(
+                settings.fontWeight as any,
+                settings.fontBold
+              ),
               fontStyle: settings.fontItalic ? "italic" : "normal",
               fontFamily: settings.accessibility.dyslexicFont
                 ? `'OpenDyslexic', ` +
-                buildFontFamilyFromConfig({
-                  fontFamilyList: settings.fontFamilyList,
-                  customFontList: settings.customFontList,
-                })
+                  buildFontFamilyFromConfig({
+                    fontFamilyList: settings.fontFamilyList,
+                    customFontList: settings.customFontList,
+                  })
                 : buildFontFamilyFromConfig({
-                  fontFamilyList: settings.fontFamilyList,
-                  customFontList: settings.customFontList,
-                }),
+                    fontFamilyList: settings.fontFamilyList,
+                    customFontList: settings.customFontList,
+                  }),
               maxHeight: "200px",
               overflowY: "auto" as const,
               pointerEvents:
-                settings.allowMouseInteractions === false ? ("none" as const) : undefined,
+                settings.allowMouseInteractions === false
+                  ? ("none" as const)
+                  : undefined,
             }}
           >
             {suggestions.map((suggestion, index) => {
@@ -337,12 +361,12 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
               const preColor =
                 settings.accessibility.prefixColor ||
                 intensityMap[
-                settings.accessibility.prefixColorIntensity || "normal"
+                  settings.accessibility.prefixColorIntensity || "normal"
                 ];
               const sufColor =
                 settings.accessibility.suffixColor ||
                 intensityMap[
-                settings.accessibility.suffixColorIntensity || "normal"
+                  settings.accessibility.suffixColorIntensity || "normal"
                 ];
 
               return (
@@ -352,11 +376,14 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                   className={cn(
                     "wordserve-menu-item",
                     isSelected ? "selected" : "",
-                    settings.rankingPosition === "right" ? "justify-between" : ""
+                    settings.rankingPosition === "right"
+                      ? "justify-between"
+                      : ""
                   )}
                   style={{
                     height: `${rowHeight}px`,
-                    paddingLeft: settings.rankingPosition === "left" ? 0 : undefined,
+                    paddingLeft:
+                      settings.rankingPosition === "left" ? 0 : undefined,
                   }}
                   role="option"
                   aria-selected={isSelected}
@@ -380,12 +407,16 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                           className="wordserve-menu-item-rank"
                           style={{
                             borderColor:
-                              settings.accessibility.rankingColor || undefined,
+                              settings.accessibility.rankingBorderColor ||
+                              undefined,
                             color:
-                              settings.accessibility.rankingColor || undefined,
+                              settings.accessibility.rankingTextColor ||
+                              undefined,
                           }}
                         >
-                          {settings.numberSelection ? index + 1 : suggestion.rank}
+                          {settings.numberSelection
+                            ? index + 1
+                            : suggestion.rank}
                         </span>
                       )}
                       <span className="wordserve-menu-item-word truncate">
@@ -444,12 +475,16 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
                           className="wordserve-menu-item-rank"
                           style={{
                             borderColor:
-                              settings.accessibility.rankingColor || undefined,
+                              settings.accessibility.rankingBorderColor ||
+                              undefined,
                             color:
-                              settings.accessibility.rankingColor || undefined,
+                              settings.accessibility.rankingTextColor ||
+                              undefined,
                           }}
                         >
-                          {settings.numberSelection ? index + 1 : suggestion.rank}
+                          {settings.numberSelection
+                            ? index + 1
+                            : suggestion.rank}
                         </span>
                       )}
                     </>

@@ -1,7 +1,12 @@
 import { clamp, toNumber, toBool } from "@/lib/utils";
 import type { ThemeId } from "@/lib/render/themes";
 import type { DefaultConfig } from "@/types";
-import { parseChordString, type KeyChord, ALLOWED_KEYS, formatChords } from "@/lib/input/kbd";
+import {
+  parseChordString,
+  type KeyChord,
+  ALLOWED_KEYS,
+  formatChords,
+} from "@/lib/input/kbd";
 import { DEFAULT_SETTINGS } from "@/types";
 
 // coerce new chords config from string or arrays
@@ -14,7 +19,9 @@ function sanitizeChords(value: any): KeyChord[] {
         const key = v.key.toLowerCase();
         if (!ALLOWED_KEYS.has(key)) continue;
         const mods = Array.isArray(v.modifiers)
-          ? Array.from(new Set(v.modifiers.map((m: any) => String(m).toLowerCase())))
+          ? Array.from(
+              new Set(v.modifiers.map((m: any) => String(m).toLowerCase()))
+            )
           : [];
         list.push({ key, modifiers: mods as any });
       }
@@ -24,7 +31,7 @@ function sanitizeChords(value: any): KeyChord[] {
   const seen = new Set<string>();
   const out: KeyChord[] = [];
   for (const c of list) {
-    const sig = `${(c.modifiers||[]).slice().sort().join("+")}::${c.key}`;
+    const sig = `${(c.modifiers || []).slice().sort().join("+")}::${c.key}`;
     if (seen.has(sig)) continue;
     seen.add(sig);
     out.push(c);
@@ -32,7 +39,11 @@ function sanitizeChords(value: any): KeyChord[] {
   return out;
 }
 
-function coerceKBD(obj: any, fallback: DefaultConfig["keyBindings"], numberSelection: boolean) {
+function coerceKBD(
+  obj: any,
+  fallback: DefaultConfig["keyBindings"],
+  numberSelection: boolean
+) {
   const safe = (v: any, def: KeyChord[]) => {
     if (v === undefined) return def;
     const parsed = sanitizeChords(v);
@@ -40,7 +51,10 @@ function coerceKBD(obj: any, fallback: DefaultConfig["keyBindings"], numberSelec
     return parsed;
   };
   let kb = {
-    insertWithoutSpace: safe(obj?.insertWithoutSpace, fallback.insertWithoutSpace),
+    insertWithoutSpace: safe(
+      obj?.insertWithoutSpace,
+      fallback.insertWithoutSpace
+    ),
     insertWithSpace: safe(obj?.insertWithSpace, fallback.insertWithSpace),
     navUp: safe(obj?.navUp, fallback.navUp),
     navDown: safe(obj?.navDown, fallback.navDown),
@@ -51,7 +65,14 @@ function coerceKBD(obj: any, fallback: DefaultConfig["keyBindings"], numberSelec
   // If number selection is enabled, disallow plain digit chords without modifiers to avoid conflicts
   if (numberSelection) {
     const filterDigits = (list: KeyChord[]) =>
-      list.filter((c) => !(c.key.length === 1 && /[0-9]/.test(c.key) && (!c.modifiers || c.modifiers.length === 0)));
+      list.filter(
+        (c) =>
+          !(
+            c.key.length === 1 &&
+            /[0-9]/.test(c.key) &&
+            (!c.modifiers || c.modifiers.length === 0)
+          )
+      );
     kb.insertWithoutSpace = filterDigits(kb.insertWithoutSpace);
     kb.insertWithSpace = filterDigits(kb.insertWithSpace);
     kb.navUp = filterDigits(kb.navUp);
@@ -76,7 +97,7 @@ function coerceKBD(obj: any, fallback: DefaultConfig["keyBindings"], numberSelec
     const list = (cleaned[k] || []) as KeyChord[];
     const unique: KeyChord[] = [];
     for (const c of list) {
-      const sig = `${(c.modifiers||[]).slice().sort().join("+")}::${c.key}`;
+      const sig = `${(c.modifiers || []).slice().sort().join("+")}::${c.key}`;
       if (used.has(sig)) continue;
       used.add(sig);
       unique.push(c);
@@ -89,9 +110,9 @@ function coerceKBD(obj: any, fallback: DefaultConfig["keyBindings"], numberSelec
 }
 
 /**
-*  normalizeConfig takes an input config object (possibly partial, possibly with wrong types)
-*  and returns a fully populated DefaultConfig object with all values validated and sanitized.
-*/
+ *  normalizeConfig takes an input config object (possibly partial, possibly with wrong types)
+ *  and returns a fully populated DefaultConfig object with all values validated and sanitized.
+ */
 export function normalizeConfig(input: any): DefaultConfig {
   const merged = { ...DEFAULT_SETTINGS, ...(input || {}) } as any;
   const minWordLength = clamp(
@@ -117,6 +138,9 @@ export function normalizeConfig(input: any): DefaultConfig {
     "dark",
     "light",
     "catppuccin-mocha",
+    "catppuccin-macchiato",
+    "catppuccin-frappe",
+    "catppuccin-latte",
     "iv-spade",
     "iceberg-dark",
     "iceberg-light",
@@ -127,6 +151,8 @@ export function normalizeConfig(input: any): DefaultConfig {
     "everblush",
     "blueberry",
     "darling",
+    "poimandres-dark",
+    "poimandres-light",
   ]);
   const theme: ThemeId = allowedThemes.has(merged.theme)
     ? merged.theme
@@ -149,8 +175,8 @@ export function normalizeConfig(input: any): DefaultConfig {
     typeof fontSizeRaw === "number"
       ? clamp(fontSizeRaw, 12, 28)
       : typeof fontSizeRaw === "string" && fontSizeRaw.trim() !== ""
-        ? fontSizeRaw
-        : DEFAULT_SETTINGS.fontSize;
+      ? fontSizeRaw
+      : DEFAULT_SETTINGS.fontSize;
   // Support legacy string values by mapping to numeric
   const legacyMap: Record<string, number> = {
     thin: 100,
@@ -168,15 +194,23 @@ export function normalizeConfig(input: any): DefaultConfig {
     typeof fwRaw === "number"
       ? clamp(fwRaw, 100, 900)
       : typeof fwRaw === "string"
-        ? legacyMap[fwRaw] ?? DEFAULT_SETTINGS.fontWeight
-        : DEFAULT_SETTINGS.fontWeight;
-  const fontItalic = toBool(merged.fontItalic, DEFAULT_SETTINGS.fontItalic ?? false);
+      ? legacyMap[fwRaw] ?? DEFAULT_SETTINGS.fontWeight
+      : DEFAULT_SETTINGS.fontWeight;
+  const fontItalic = toBool(
+    merged.fontItalic,
+    DEFAULT_SETTINGS.fontItalic ?? false
+  );
   const fontBold = toBool(merged.fontBold, DEFAULT_SETTINGS.fontBold ?? false);
-  const allowedFonts = new Set(["JetBrains Mono", "Atkinson Hyperlegible", "OpenDyslexic", "Monaco"]);
+  const allowedFonts = new Set([
+    "JetBrains Mono",
+    "Atkinson Hyperlegible",
+    "OpenDyslexic",
+    "Monaco",
+  ]);
   const fontFamilyList = Array.isArray(merged.fontFamilyList)
     ? merged.fontFamilyList
-      .map((s: any) => (typeof s === "string" ? s : ""))
-      .filter((s: string) => allowedFonts.has(s))
+        .map((s: any) => (typeof s === "string" ? s : ""))
+        .filter((s: string) => allowedFonts.has(s))
     : DEFAULT_SETTINGS.fontFamilyList;
   const customFontList =
     typeof merged.customFontList === "string"
@@ -277,10 +311,16 @@ export function normalizeConfig(input: any): DefaultConfig {
       merged.accessibility?.dyslexicFont,
       DEFAULT_SETTINGS.accessibility.dyslexicFont ?? false
     ),
-    rankingColor:
-      typeof merged.accessibility?.rankingColor === "string"
+    rankingTextColor:
+      typeof merged.accessibility?.rankingTextColor === "string"
+        ? merged.accessibility.rankingTextColor
+        : typeof merged.accessibility?.rankingColor === "string"
         ? merged.accessibility.rankingColor
-        : DEFAULT_SETTINGS.accessibility.rankingColor,
+        : DEFAULT_SETTINGS.accessibility.rankingTextColor,
+    rankingBorderColor:
+      typeof merged.accessibility?.rankingBorderColor === "string"
+        ? merged.accessibility.rankingBorderColor
+        : DEFAULT_SETTINGS.accessibility.rankingBorderColor,
     customColor:
       typeof merged.accessibility?.customColor === "string"
         ? merged.accessibility.customColor
@@ -307,8 +347,8 @@ export function normalizeConfig(input: any): DefaultConfig {
     menuBorderRadius,
     fontSize,
     fontWeight,
-  fontItalic,
-  fontBold,
+    fontItalic,
+    fontBold,
     fontFamilyList,
     customFontList,
     debugMode,
@@ -320,8 +360,8 @@ export function normalizeConfig(input: any): DefaultConfig {
     autoInsertion,
     smartBackspace,
     rankingPosition,
-  allowMouseInsert,
-  allowMouseInteractions,
+    allowMouseInsert,
+    allowMouseInteractions,
     keyBindings,
     accessibility,
     domains,
