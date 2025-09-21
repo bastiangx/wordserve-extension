@@ -97,7 +97,8 @@ export interface DefaultConfig {
     prefixColor?: string;
     suffixColor?: string;
     dyslexicFont?: boolean;
-    rankingColor?: string;
+    rankingTextColor?: string;
+    rankingBorderColor?: string;
     customColor?: string;
     customFontFamily?: string;
     customFontSize?: number;
@@ -188,7 +189,7 @@ export const DEFAULT_SETTINGS: DefaultConfig = {
   maxSuggestions: 16,
   debounceTime: 5,
   theme: "dark",
-  numberSelection: true,
+  numberSelection: false,
   showRankingOverride: false,
   compactMode: false,
   menuBorder: true,
@@ -235,7 +236,8 @@ export const DEFAULT_SETTINGS: DefaultConfig = {
     prefixColor: undefined,
     suffixColor: undefined,
     dyslexicFont: false,
-    rankingColor: undefined,
+    rankingTextColor: undefined,
+    rankingBorderColor: undefined,
   },
   domains: {
     blacklistMode: true,
